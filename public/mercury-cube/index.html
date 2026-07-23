@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mercury Cube · Drops</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { width: 100%; height: 100%; }
+  body {
+    width: 100%; overflow-x: hidden;
+    /* светлая «пустота»: мягкий градиент вместо плоского белого */
+    background: radial-gradient(120% 90% at 50% 42%,
+      #fdfdfe 0%, #f4f6f9 55%, #e9ecf1 100%) fixed;
+  }
+  /* scroll runway — the drop timeline is scrubbed by scrolling through it */
+  .scroll-space { height: 160vh; }
+  @media (prefers-reduced-motion: reduce) { .scroll-space { display: none; } }
+  body {
+    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: #2a2e34;
+    background: #ffffff;
+  }
+  #app { position: fixed; inset: 0; }
+  canvas { display: block; }
+
+  .label {
+    position: fixed;
+    pointer-events: none;
+    user-select: none;
+    z-index: 5;
+  }
+  .label.br { bottom: 22px; right: 30px; font-size: 11px; letter-spacing: .28em;
+    text-transform: uppercase; color: #a7acb3; }
+  .label.bl { bottom: 22px; left: 32px; font-size: 11px; letter-spacing: .24em;
+    text-transform: uppercase; color: #b9bec5; }
+
+  /* =========================================================
+     DROP CARDS — 4 liquid blobs that landed in the corners
+     ========================================================= */
+  :root {
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .card {
+    position: fixed;
+    z-index: 6;
+    width: clamp(170px, 23.5vw, 265px);
+    aspect-ratio: 1 / 0.92;
+    border: 0;
+    background: none;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
+    opacity: 0;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    transition: opacity 300ms var(--ease-out);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .card.tl { left: 20vw; top: 19vh; }
+  .card.tr { left: 80vw; top: 19vh; }
+  .card.br { left: 80vw; top: 80vh; }
+  .card.bl { left: 20vw; top: 80vh; }
+
+  .card.shown { opacity: 1; pointer-events: auto; }
+
+  /* impact ripple — one ring pushed out by the landing */
+  .card::after {
+    content: "";
+    position: absolute; inset: 4%;
+    border-radius: 50%;
+    border: 1.5px solid rgba(90, 98, 110, .45);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .card.shown::after { animation: ripple 950ms var(--ease-out) 40ms; }
+  @keyframes ripple {
+    0%   { opacity: .5; transform: scale(.4); }
+    100% { opacity: 0;  transform: scale(1.55); }
+  }
+
+  .card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 260ms var(--ease-out);
+    will-change: transform;
+  }
+  /* the blob grows out of the impact point — the corner facing the cube */
+  .card.tl .card-inner { transform-origin: 82% 88%; }
+  .card.tr .card-inner { transform-origin: 18% 88%; }
+  .card.br .card-inner { transform-origin: 18% 12%; }
+  .card.bl .card-inner { transform-origin: 82% 12%; }
+  .card.shown .card-inner { animation: splat 780ms var(--ease-out) backwards; }
+  @keyframes splat {
+    0%   { opacity: 0; transform: scale(.22); }
+    45%  { opacity: 1; transform: scale(1.11); }
+    70%  { transform: scale(.955); }
+    100% { transform: scale(1); }
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .card:hover .card-inner { transform: scale(1.045); }
+  }
+  .card:active .card-inner { transform: scale(0.97); transition-duration: 120ms; }
+
+  /* =========================================================
+     MERCURY SPLAT — goo-merged blot + spray (the "клякса").
+     Composed for the TL corner, mirrored for the others.
+     ========================================================= */
+  /* soft puddle shadow under the splat (outside the goo filter) */
+  .card-inner::before {
+    content: "";
+    position: absolute; inset: 14% 6% 2% 6%;
+    border-radius: 50%;
+    background: radial-gradient(50% 44% at 50% 62%, rgba(40,46,56,.33), rgba(40,46,56,0) 72%);
+    filter: blur(4px);
+  }
+  .splat {
+    position: absolute;
+    inset: -24%;
+    filter: url(#goo);
+    z-index: 1;
+  }
+  .card.tr .splat { scale: -1 1; }
+  .card.br .splat { scale: -1 -1; }
+  .card.bl .splat { scale: 1 -1; }
+  .grow { position: absolute; inset: 18%; }
+
+  .grow i {
+    position: absolute;
+    border-radius: 50%;
+    --gx: 32%; --gy: 28%;
+    background: radial-gradient(circle at var(--gx) var(--gy),
+      #ffffff, #eef0f4 18%, #ccd2da 46%, #a9b0bb 72%, #868e9a 100%);
+  }
+  /* keep the light coming from the top-left on mirrored splats */
+  .card.tr .grow i { --gx: 68%; }
+  .card.br .grow i { --gx: 68%; --gy: 72%; }
+  .card.bl .grow i { --gy: 72%; }
+
+  /* main blot */
+  i.m {
+    inset: 3% 5% 7% 3%;
+    border-radius: 46% 54% 48% 52% / 52% 46% 56% 44%;
+    --hs: 3px; --ds: -12px;
+    box-shadow: inset 0 var(--hs) 7px rgba(255,255,255,.95),
+                inset 0 var(--ds) 20px rgba(60,66,76,.32);
+  }
+  .card.br .grow i.m, .card.bl .grow i.m { --hs: -3px; --ds: 12px; }
+  /* контр-отражение: фото внутри кляксы не должно зеркалиться */
+  .card.tr .grow i.m { scale: -1 1; }
+  .card.br .grow i.m { scale: -1 -1; }
+  .card.bl .grow i.m { scale: 1 -1; }
+  /* landing: fast liquid wobble that settles into the slow idle morph */
+  .card.shown i.m {
+    animation: wobble 900ms var(--ease-out) both,
+               morph var(--md, 9s) ease-in-out 900ms infinite;
+  }
+  @keyframes wobble {
+    0%   { border-radius: 50% 50% 50% 50% / 50% 50% 50% 50%; }
+    30%  { border-radius: 34% 66% 58% 42% / 62% 36% 64% 38%; }
+    62%  { border-radius: 58% 42% 38% 62% / 40% 62% 42% 60%; }
+    100% { border-radius: 46% 54% 48% 52% / 52% 46% 56% 44%; }
+  }
+  /* контрольные формы --r1..--r3 задаются случайно из JS для каждой кляксы */
+  @keyframes morph {
+    0%, 100% { border-radius: 46% 54% 48% 52% / 52% 46% 56% 44%; }
+    25% { border-radius: var(--r1, 56% 44% 40% 60% / 54% 40% 60% 46%); }
+    50% { border-radius: var(--r2, 40% 60% 54% 46% / 58% 50% 46% 42%); }
+    75% { border-radius: var(--r3, 60% 40% 58% 42% / 42% 62% 38% 58%); }
+  }
+
+  /* pseudopods and spray beads fly away from the cube on impact */
+  i.p1 { width: 24%;  height: 24%;  left: -3%;  top: 14%; }
+  i.p2 { width: 16%;  height: 16%;  left: 15%;  top: -3%; }
+  i.p3 { width: 12%;  height: 12%;  left: 52%;  top: -5%; }
+  /* единое целое: клякса — один морфящийся фото-блоб, без отдельных бусин */
+  .grow i:not(.m) { display: none; }
+  .card.shown i.p1 { animation: pop 500ms var(--ease-out) 100ms both; }
+  .card.shown i.p2 { animation: pop 500ms var(--ease-out) 160ms both; }
+  .card.shown i.p3 { animation: pop 500ms var(--ease-out) 220ms both; }
+  .card.shown i.d1 { animation: pop 450ms var(--ease-out) 280ms both; }
+  .card.shown i.d2 { animation: pop 450ms var(--ease-out) 340ms both; }
+  .card.shown i.d3 { animation: pop 450ms var(--ease-out) 400ms both; }
+  @keyframes pop { from { scale: 0; } }
+
+  .txt {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 4px;
+    padding: 0 16%;
+  }
+
+  /* text falls out of the drop, staggered, with a droplet bounce */
+  .card.shown .k   { animation: fall 620ms var(--ease-out) 200ms backwards; }
+  .card.shown .s   { animation: fall 620ms var(--ease-out) 270ms backwards; }
+  @keyframes fall {
+    0%   { opacity: 0; transform: translateY(-26px); filter: blur(4px); }
+    62%  { opacity: 1; transform: translateY(3px);   filter: blur(0); }
+    100% { opacity: 1; transform: translateY(0);     filter: blur(0); }
+  }
+
+  .k {
+    font-size: clamp(15px, 1.7vw, 21px);
+    font-weight: 700;
+    letter-spacing: .14em;
+    color: #1b1e24;
+  }
+  .s {
+    font-size: 11px;
+    letter-spacing: .24em;
+    text-transform: uppercase;
+    color: #5c626c;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card-inner, .grow i, .card::after,
+    .k, .s { animation: none !important; }
+    .card { transition: opacity .35s ease; }
+    .card-inner { transform: none !important; }
+  }
+
+  #ld {
+    position: fixed; inset: 0; display: grid; place-items: center;
+    background: #fdfdfe; z-index: 20; transition: opacity .8s ease;
+    color: #a7acb3; letter-spacing: .3em; text-transform: uppercase; font-size: 12px;
+  }
+  #ld.hide { opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <filter id="goo">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="b"/>
+      <feColorMatrix in="b" type="matrix"
+        values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -10" result="g"/>
+      <feComposite in="SourceGraphic" in2="g" operator="atop"/>
+    </filter>
+  </svg>
+  <div id="app"></div>
+  <div class="label bl">scroll · tap a drop</div>
+  <div class="label br">drag to orbit</div>
+
+  <button type="button" class="card tl" data-id="tl" aria-label="Студия">
+    <div class="card-inner">
+      <div class="splat"><div class="grow">
+        <i class="m"></i><i class="p1"></i><i class="p2"></i><i class="p3"></i>
+        <i class="d1"></i><i class="d2"></i><i class="d3"></i>
+      </div></div>
+<div class="txt"><span class="k">STUDIO</span><span class="s">студия</span></div>
+    </div>
+  </button>
+  <button type="button" class="card tr" data-id="tr" aria-label="Работы">
+    <div class="card-inner">
+      <div class="splat"><div class="grow">
+        <i class="m"></i><i class="p1"></i><i class="p2"></i><i class="p3"></i>
+        <i class="d1"></i><i class="d2"></i><i class="d3"></i>
+      </div></div>
+<div class="txt"><span class="k">WORKS</span><span class="s">работы</span></div>
+    </div>
+  </button>
+  <button type="button" class="card br" data-id="br" aria-label="Лаборатория">
+    <div class="card-inner">
+      <div class="splat"><div class="grow">
+        <i class="m"></i><i class="p1"></i><i class="p2"></i><i class="p3"></i>
+        <i class="d1"></i><i class="d2"></i><i class="d3"></i>
+      </div></div>
+<div class="txt"><span class="k">LAB</span><span class="s">лаборатория</span></div>
+    </div>
+  </button>
+  <button type="button" class="card bl" data-id="bl" aria-label="Контакт">
+    <div class="card-inner">
+      <div class="splat"><div class="grow">
+        <i class="m"></i><i class="p1"></i><i class="p2"></i><i class="p3"></i>
+        <i class="d1"></i><i class="d2"></i><i class="d3"></i>
+      </div></div>
+<div class="txt"><span class="k">CONTACT</span><span class="s">контакт</span></div>
+    </div>
+  </button>
+
+  <div class="scroll-space"></div>
+  <div id="ld">flowing…</div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <script type="module">
+  import * as THREE from 'three';
+  import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+  import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+  import { MarchingCubes } from 'three/addons/objects/MarchingCubes.js';
+  import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+  import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+  import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+  import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+  const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const app = document.getElementById('app');
+
+  /* ---------- renderer / scene / camera ---------- */
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  app.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  // фон-«пустота»: мягкий светлый радиальный градиент текстурой
+  // (прозрачный канвас нельзя — bloom-проход серит альфу)
+  {
+    const cv = document.createElement('canvas');
+    cv.width = 512; cv.height = 512;
+    const cx = cv.getContext('2d');
+    const g = cx.createRadialGradient(256, 215, 40, 256, 256, 380);
+    g.addColorStop(0, '#ffffff');
+    g.addColorStop(0.55, '#f7f9fb');
+    g.addColorStop(1, '#edf0f4');
+    cx.fillStyle = g; cx.fillRect(0, 0, 512, 512);
+    const t = new THREE.CanvasTexture(cv);
+    t.colorSpace = THREE.SRGBColorSpace;
+    scene.background = t;
+  }
+
+  const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 100);
+  camera.position.set(0, 0.4, 8.5);
+
+  /* ---------- environment ---------- */
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  function makeEnv() {
+    const cv = document.createElement('canvas');
+    cv.width = 4; cv.height = 512;
+    const cx = cv.getContext('2d');
+    const g = cx.createLinearGradient(0, 0, 0, 512);
+    g.addColorStop(0.0, '#ffffff');
+    g.addColorStop(0.5, '#eef1f5');
+    g.addColorStop(1.0, '#f4f6f8');
+    cx.fillStyle = g; cx.fillRect(0, 0, 4, 512);
+    const t = new THREE.CanvasTexture(cv);
+    t.mapping = THREE.EquirectangularReflectionMapping;
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }
+  const envTex = pmrem.fromEquirectangular(makeEnv()).texture;
+  scene.environment = envTex;
+
+  /* ---------- controls ---------- */
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.06;
+  controls.enablePan = false;
+  controls.minDistance = 4;
+  controls.maxDistance = 16;
+  controls.autoRotate = false;
+  controls.enableZoom = false;             // wheel scrolls the page instead
+  renderer.domElement.style.touchAction = 'pan-y'; // touch scroll passes through
+
+  /* ---------- soft cube geometry ---------- */
+  function softCube(e, size, segs) {
+    const r = 2 / e;
+    const half = size / 2;
+    let g = new THREE.BoxGeometry(1, 1, 1, segs, segs, segs);
+    g.deleteAttribute('uv');
+    g.deleteAttribute('normal');
+    g = mergeVertices(g);
+    const pos = g.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i) * 2, y = pos.getY(i) * 2, z = pos.getZ(i) * 2;
+      const n = Math.pow(
+        Math.pow(Math.abs(x), r) + Math.pow(Math.abs(y), r) + Math.pow(Math.abs(z), r),
+        1 / r);
+      pos.setXYZ(i, half * x / n, half * y / n, half * z / n);
+    }
+    g.computeVertexNormals();
+    return g;
+  }
+  const geo = softCube(0.42, 2.6, 96);
+
+  /* ---------- flow / noise shader strings ---------- */
+  const NOISE = `
+  vec3 mod289(vec3 x){return x - floor(x*(1.0/289.0))*289.0;}
+  vec4 mod289(vec4 x){return x - floor(x*(1.0/289.0))*289.0;}
+  vec4 permute(vec4 x){return mod289(((x*34.0)+1.0)*x);}
+  vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
+  float snoise(vec3 v){
+    const vec2 C = vec2(1.0/6.0, 1.0/3.0);
+    const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+    vec3 i  = floor(v + dot(v, C.yyy));
+    vec3 x0 = v - i + dot(i, C.xxx);
+    vec3 g = step(x0.yzx, x0.xyz);
+    vec3 l = 1.0 - g;
+    vec3 i1 = min(g.xyz, l.zxy);
+    vec3 i2 = max(g.xyz, l.zxy);
+    vec3 x1 = x0 - i1 + C.xxx;
+    vec3 x2 = x0 - i2 + C.yyy;
+    vec3 x3 = x0 - D.yyy;
+    i = mod289(i);
+    vec4 p = permute(permute(permute(
+              i.z + vec4(0.0, i1.z, i2.z, 1.0))
+            + i.y + vec4(0.0, i1.y, i2.y, 1.0))
+            + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+    float n_ = 0.142857142857;
+    vec3 ns = n_ * D.wyz - D.xzx;
+    vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+    vec4 x_ = floor(j * ns.z);
+    vec4 y_ = floor(j - 7.0 * x_);
+    vec4 x = x_ * ns.x + ns.yyyy;
+    vec4 y = y_ * ns.x + ns.yyyy;
+    vec4 h = 1.0 - abs(x) - abs(y);
+    vec4 b0 = vec4(x.xy, y.xy);
+    vec4 b1 = vec4(x.zw, y.zw);
+    vec4 s0 = floor(b0)*2.0 + 1.0;
+    vec4 s1 = floor(b1)*2.0 + 1.0;
+    vec4 sh = -step(h, vec4(0.0));
+    vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy;
+    vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
+    vec3 p0 = vec3(a0.xy, h.x);
+    vec3 p1 = vec3(a0.zw, h.y);
+    vec3 p2 = vec3(a1.xy, h.z);
+    vec3 p3 = vec3(a1.zw, h.w);
+    vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
+    p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+    vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+    m = m * m;
+    return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+  }`;
+
+  const FLOW = `
+  uniform float uTime;
+  uniform float uAmp;
+  uniform float uFreq;
+  float flowField(vec3 p){
+    float t = uTime;
+    float n = snoise(p * uFreq + vec3(0.0, 0.0, t * 0.55));
+    n += 0.50 * snoise(p * (uFreq * 2.0) + vec3(t * 0.45, 0.0, 0.0));
+    n += 0.25 * snoise(p * (uFreq * 4.0) + vec3(0.0, t * 0.9, 0.0));
+    // прогиб внутрь ограничен: фото-бокс (полуребро 0.975, зазор до угла
+    // оболочки 0.099 по нормали) гарантированно остаётся под волнами
+    return max(n * uAmp, -0.09);
+  }
+  vec3 displacePos(vec3 p, vec3 nrm){
+    return p + nrm * flowField(p);
+  }`;
+
+  const BEGINNORMAL = `
+  vec3 objectNormal;
+  {
+    vec3 n0 = normal;
+    float eps = 0.02;
+    float f0 = flowField(position);
+    vec3 grad = vec3(
+      flowField(position + vec3(eps, 0.0, 0.0)) - f0,
+      flowField(position + vec3(0.0, eps, 0.0)) - f0,
+      flowField(position + vec3(0.0, 0.0, eps)) - f0) / eps;
+    objectNormal = normalize(n0 - (grad - dot(grad, n0) * n0));
+  }`;
+
+  const BEGINVERTEX = `vec3 transformed = displacePos(position, normal);`;
+
+  /* ---------- cube material (liquid water-glass shell) ----------
+     transmission lets the photo box inside show through; the displaced
+     normals of the waves refract and smear the photos like water */
+  const material = new THREE.MeshPhysicalMaterial({
+    color: 0xeef1f5,
+    metalness: 0.0,
+    roughness: 0.07,
+    transmission: 1.0,
+    thickness: 0.5,
+    ior: 1.35,
+    clearcoat: 0.3,
+    clearcoatRoughness: 0.25,
+    reflectivity: 0.5,
+    envMapIntensity: 1.0
+  });
+
+  let shaderRef = null;
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uTime = { value: 0 };
+    shader.uniforms.uAmp = { value: 0.12 };
+    shader.uniforms.uFreq = { value: 0.35 };
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <beginnormal_vertex>', BEGINNORMAL)
+      .replace('#include <begin_vertex>', BEGINVERTEX)
+      .replace('void main() {', NOISE + FLOW + '\nvoid main() {');
+    shaderRef = shader;
+  };
+
+  const shape = new THREE.Mesh(geo, material);
+  shape.scale.setScalar(0.95);
+  shape.rotation.z = 0.32;
+  scene.add(shape);
+
+  /* ---------- photos under the waves: rigid box inside the shell ----------
+     порядок граней: +x, -x, +y, -y, +z, -z — замени URL на свои файлы,
+     например 'photos/1.jpg' … 'photos/6.jpg' рядом с index.html */
+  // случайный сид на загрузку: фото рандомные, но куб и угловые капли
+  // гарантированно показывают одну и ту же картинку
+  const salt = Math.random().toString(36).slice(2, 7);
+  const PHOTOS = [1, 2, 3, 4, 5, 6].map(n => `https://picsum.photos/seed/${salt}${n}/512`);
+  const texLoader = new THREE.TextureLoader();
+  const photoMats = PHOTOS.map(u => {
+    const t = texLoader.load(u);
+    t.colorSpace = THREE.SRGBColorSpace;
+    // toneMapped:false — фото не гасятся ACES-тонмаппингом под стеклом
+    return new THREE.MeshBasicMaterial({ map: t, toneMapped: false });
+  });
+  // 1.95 + ограничение прогиба волн внутрь (см. flowField) — бокс никогда
+  // не выходит за оболочку, а UV граней остаются чистыми
+  const photoBox = new THREE.Mesh(new THREE.BoxGeometry(1.95, 1.95, 1.95), photoMats);
+  shape.add(photoBox); // rotates and pulses together with the cube
+
+  // фото из куба «выпадают» в угловые капли: карточка i несёт грань i,
+  // под полупрозрачным серебристым бликом — как под плёнкой жидкости
+  const rnd = (a, b) => Math.round(a + Math.random() * (b - a));
+  const blobR = () =>
+    `${rnd(36,64)}% ${rnd(36,64)}% ${rnd(36,64)}% ${rnd(36,64)}% / ` +
+    `${rnd(36,64)}% ${rnd(36,64)}% ${rnd(36,64)}% ${rnd(36,64)}%`;
+  document.querySelectorAll('.card').forEach((card, i) => {
+    const m = card.querySelector('i.m');
+    m.style.background =
+      `radial-gradient(circle at 32% 28%, rgba(255,255,255,.72), rgba(238,240,244,.42) 38%, ` +
+      `rgba(204,210,218,.22) 68%, rgba(134,142,154,.38) 100%), url(${PHOTOS[i]}) center/cover`;
+    // случайные изгибы: у каждой кляксы свой цикл форм и свой темп
+    m.style.setProperty('--r1', blobR());
+    m.style.setProperty('--r2', blobR());
+    m.style.setProperty('--r3', blobR());
+    m.style.setProperty('--md', (7 + Math.random() * 5).toFixed(1) + 's');
+  });
+
+  /* ---------- lights ---------- */
+  const keyLight = new THREE.DirectionalLight(0xffffff, 1.07);
+  keyLight.position.set(5, 6, 6);
+  scene.add(keyLight);
+  const rim = new THREE.DirectionalLight(0x9fb6ff, 0.73);
+  rim.position.set(-6, -2, -4);
+  scene.add(rim);
+  const fill = new THREE.PointLight(0xffd9b3, 0.33, 40);
+  fill.position.set(-4, 3, 5);
+  scene.add(fill);
+  const ground = new THREE.DirectionalLight(0xffffff, 0.9);
+  ground.position.set(0, -6, 3);
+  scene.add(ground);
+
+  /* ---------- post-processing ---------- */
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.18, 0.5, 0.85);
+  composer.addPass(bloom);
+  composer.addPass(new OutputPass());
+
+  /* =========================================================
+     DROP REVEAL — 4 mercury drops fly to the 4 corners,
+     splat, and hand off to the liquid-blob cards.
+     ========================================================= */
+  const PLANE_Z0 = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+  const _ray = new THREE.Ray();
+  const _a = new THREE.Vector3();
+
+  // clockwise; scroll scrubs them out one after another, each with its own flight style
+  const CORNERS = [
+    { id: 'tl', size: 0.45, dur: 1.75, lift: 0.9,  spin: 0, wob: 0    }, // high classic arc
+    { id: 'tr', size: 0.36, dur: 1.95, lift: 0.45, spin: 2, wob: 0    }, // tight corkscrew
+    { id: 'br', size: 0.52, dur: 1.43, lift: 0.12, spin: 0, wob: 0.3  }, // fast heavy wobble
+    { id: 'bl', size: 0.40, dur: 2.20, lift: 1.4,  spin: 1, wob: 0.15 }, // lazy high spiral
+  ];
+
+  function ndcToWorld(nx, ny, out) {
+    out.set(nx, ny, 0.5).unproject(camera);
+    _ray.origin.copy(camera.position);
+    _ray.direction.copy(out.sub(camera.position).normalize());
+    const hit = _ray.intersectPlane(PLANE_Z0, out);
+    return hit ? out : null;
+  }
+
+  // quadratic bezier
+  function bezier(p0, p1, p2, t, out) {
+    const u = 1 - t;
+    out.set(
+      u*u*p0.x + 2*u*t*p1.x + t*t*p2.x,
+      u*u*p0.y + 2*u*t*p1.y + t*t*p2.y,
+      u*u*p0.z + 2*u*t*p1.z + t*t*p2.z
+    );
+    return out;
+  }
+  function easeInOut(t) { return t * t * (3 - 2 * t); }
+
+  // point on the (possibly corkscrewed) flight path at eased parameter e
+  function pathPoint(d, e, out) {
+    bezier(d.start, d.ctrl, d.end, e, out);
+    if (d.spin) {
+      const th = e * d.spin * Math.PI * 2;
+      const r = 0.32 * Math.sin(Math.PI * e);
+      out.addScaledVector(d.side, Math.cos(th) * r)
+         .addScaledVector(d.up2, Math.sin(th) * r);
+    }
+    return out;
+  }
+
+  // splash beads still use plain little spheres (they fly apart, no seams to hide)
+  const dropShaders = [];
+  function makeDropMat() {
+    // водяные брызги — в тон летящим каплям
+    const m = new THREE.MeshPhysicalMaterial({
+      color: 0xf2f5f8, metalness: 0.0, roughness: 0.15,
+      transmission: 0.9, thickness: 0.15, ior: 1.33,
+      clearcoat: 0.5, clearcoatRoughness: 0.2,
+      envMapIntensity: 1.0, transparent: true, opacity: 1
+    });
+    m.onBeforeCompile = (shader) => {
+      shader.uniforms.uTime = { value: 0 };
+      shader.uniforms.uAmp = { value: 0.02 };
+      shader.uniforms.uFreq = { value: 0.3 };
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <beginnormal_vertex>', BEGINNORMAL)
+        .replace('#include <begin_vertex>', BEGINVERTEX)
+        .replace('void main() {', NOISE + FLOW + '\nvoid main() {');
+      dropShaders.push(shader);
+    };
+    return m;
+  }
+
+  const SEG = 0.21; // scroll fraction each drop's flight occupies
+  const TRAIL = 14; // metaballs tracing back along the curved path — the bending tail
+
+  // one marching-cubes field renders every drop: overlapping balls fuse into
+  // a single seamless surface that bends and pinches like real water
+  const GOO_S = 3.6; // field half-extent, world units
+  // прозрачная вода: сквозь каплю преломляются куб и фон
+  const gooMat = new THREE.MeshPhysicalMaterial({
+    color: 0xf2f5f8, metalness: 0.0, roughness: 0.15,
+    transmission: 0.95, thickness: 0.4, ior: 1.33,
+    clearcoat: 0.5, clearcoatRoughness: 0.2, envMapIntensity: 1.0
+  });
+  const goo = new MarchingCubes(72, gooMat, false, false, 30000);
+  goo.scale.setScalar(GOO_S);
+  scene.add(goo);
+  // add a metaball at world position p with world surface radius R
+  function addBall(p, R) {
+    if (R <= 0.001) return;
+    const rf = R / (2 * GOO_S);
+    goo.addBall(p.x / (2 * GOO_S) + 0.5, p.y / (2 * GOO_S) + 0.5,
+                p.z / (2 * GOO_S) + 0.5, rf * rf * (goo.isolation + 12), 12);
+  }
+
+  const drops = [];
+  CORNERS.forEach((c, i) => {
+    drops.push({
+      ...c, seg0: 0.03 + i * 0.24,
+      start: new THREE.Vector3(), ctrl: new THREE.Vector3(), end: new THREE.Vector3(),
+      side: new THREE.Vector3(), up2: new THREE.Vector3(),
+      prevT: 0, start0: 0, manual: false, landed: false,
+      card: document.querySelector('.card.' + c.id)
+    });
+  });
+
+  // compute flight geometry from the current camera (cube → corner arc);
+  // aim at the cube-facing corner of the card — the splat's transform-origin
+  function prepDrop(d) {
+    const r = d.card.getBoundingClientRect();
+    const cx = r.left + r.width / 2 + Math.sign(innerWidth / 2 - r.left - r.width / 2) * r.width * 0.32;
+    const cy = r.top + r.height / 2 + Math.sign(innerHeight / 2 - r.top - r.height / 2) * r.height * 0.34;
+    const nx = (cx / innerWidth) * 2 - 1;
+    const ny = -((cy / innerHeight) * 2 - 1);
+    const end = ndcToWorld(nx, ny, d.end);
+    if (!end) return false;
+    _a.copy(end); const len = _a.length() || 1;
+    // start: at the cube surface, along the same diagonal → longer flight,
+    // so the water jet has room to stretch and bend
+    d.start.copy(end).multiplyScalar(0.95 / len);
+    d.start.y += 0.15;
+    // control: midpoint pushed outward + lifted → a splashy arc
+    d.ctrl.copy(d.start).add(end).multiplyScalar(0.5);
+    d.ctrl.addScaledVector(end.clone().normalize(), len * 0.22);
+    d.ctrl.y += d.lift;
+    // spiral basis: two axes perpendicular to the flight direction
+    _a.copy(end).sub(d.start).normalize();
+    d.side.crossVectors(_a, camera.up).normalize();
+    d.up2.crossVectors(d.side, _a);
+    return true;
+  }
+
+  // card click → replay that drop's landing on a timer, independent of scroll
+  function flyDrop(d, start0) {
+    d.start0 = start0;
+    d.manual = true;
+  }
+
+  /* splash satellites on landing */
+  const splashGeo = new THREE.SphereGeometry(1, 12, 10);
+  const splashMat = () => makeDropMat();
+  const SPLASH = 28;
+  const splashes = [];
+  for (let i = 0; i < SPLASH; i++) {
+    const m = new THREE.Mesh(splashGeo, splashMat());
+    m.visible = false; m.scale.setScalar(0.05);
+    scene.add(m);
+    splashes.push({ mesh: m, vel: new THREE.Vector3(), life: 0 });
+  }
+  let splashIdx = 0;
+  function burstSplash(at) {
+    for (let i = 0; i < 7; i++) {
+      const s = splashes[splashIdx]; splashIdx = (splashIdx + 1) % SPLASH;
+      const ang = Math.random() * Math.PI * 2;
+      const spd = 1.4 + Math.random() * 1.6;
+      s.vel.set(Math.cos(ang) * spd, 1.2 + Math.random() * 1.4, Math.sin(ang) * spd * 0.6);
+      s.mesh.position.copy(at);
+      s.mesh.scale.setScalar(0.05 + Math.random() * 0.06);
+      s.mesh.visible = true;
+      (s.mesh.material).opacity = 1;
+      s.life = 0.5 + Math.random() * 0.2;
+    }
+  }
+  const GRAV = -6.5;
+  function updateSplashes(dt) {
+    for (const s of splashes) {
+      if (s.life <= 0) { if (s.mesh.visible) s.mesh.visible = false; continue; }
+      s.life -= dt;
+      s.vel.y += GRAV * dt;
+      s.mesh.position.addScaledVector(s.vel, dt);
+      const m = s.mesh.material;
+      m.opacity = Math.max(s.life / 0.7, 0);
+      if (s.life <= 0) s.mesh.visible = false;
+    }
+  }
+
+  let gooDirty = false; // поле ещё содержит шары с прошлого кадра
+  function updateDrops(dt, now) {
+    let active = 0;
+    for (const d of drops) {
+      let t;
+      if (d.manual) {           // click replay runs on the clock
+        if (now < d.start0) { d.ft = 0; continue; }
+        t = Math.min((now - d.start0) / d.dur, 1);
+        if (t >= 1) d.manual = false;
+      } else {                  // otherwise the scroll position owns the timeline
+        t = Math.min(Math.max((prog - d.seg0) / SEG, 0), 1);
+      }
+      // card / splash / cube-pulse state — every frame, even while the field sleeps
+      if (t >= 0.8 && !d.landed) {
+        d.landed = true;
+        d.card.classList.add('shown');
+        burstSplash(d.end);
+      } else if (t < 0.8 && d.landed) {
+        d.landed = false;
+        d.card.classList.remove('shown');
+      }
+      // cube reacts both to launch and to a drop soaking back in on reverse scroll
+      if ((t > 0) !== (d.prevT > 0)) pulse = Math.max(pulse, 0.85);
+      d.prevT = t;
+      d.ft = t;
+      if (t > 0 && t < 1) active++;
+    }
+    // ponytail: metaball reset+polygonize (64³ field) runs only while flying;
+    // one extra pass after the last ball vanishes clears the mesh
+    if (!active && !gooDirty) return;
+    goo.reset();
+    for (const d of drops) if (d.ft > 0 && d.ft < 1) applyDrop(d, d.ft);
+    goo.update();
+    gooDirty = active > 0;
+  }
+
+  // feed one drop into the goo field at flight progress t
+  // (0 = inside the cube, 1 = landed); works scrubbing forwards and backwards
+  function applyDrop(d, t) {
+    if (!prepDrop(d)) return;
+    const e = easeInOut(t);
+    const phase = Math.sin(Math.PI * Math.min(t / 0.82, 1));
+    const melt = t < 0.82 ? 1 : Math.max(1 - (t - 0.82) / 0.18, 0); // soak into landing
+    const grow = 0.45 + 0.55 * Math.min(t / 0.14, 1);  // emerge from the cube surface
+    const wb = 1 + d.wob * Math.sin(e * Math.PI * 7) * phase;
+    const R = d.size * grow * melt * wb;
+
+    addBall(pathPoint(d, e, _a), R);                   // head
+    // water tail: metaballs laid back along the curved path — the streak bends
+    // with the arc, stays attached to the cube early on, thins to a point and
+    // pinches off like a real jet of water (paths are short, so reach far back)
+    const back = 0.8 * phase;
+    if (back > 0.02) {
+      for (let k = 1; k <= TRAIL; k++) {
+        const f = k / (TRAIL + 1);
+        const ek = e - back * f;
+        if (ek <= 0.001) break;
+        const ripple = 1 + 0.08 * Math.sin(k * 1.7 + clock.elapsedTime * 8);
+        addBall(pathPoint(d, ek, _a), R * 0.72 * Math.pow(1 - f, 1.1) * ripple);
+      }
+    }
+  }
+
+  /* click a card → it dissolves and its drop replays the whole landing */
+  document.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('click', () => {
+      const d = drops.find(x => x.id === card.dataset.id);
+      if (REDUCED || !d || d.manual) return;
+      card.classList.remove('shown');
+      flyDrop(d, clock.elapsedTime + 0.18);
+      pulse = Math.max(pulse, 0.6);
+    });
+  });
+
+  /* ---------- main loop ---------- */
+  const clock = new THREE.Clock();
+  const loader = document.getElementById('ld');
+  const BASE_SPIN = 0.26;
+  let pulse = 0;
+  let prog = 0; // smoothed scroll progress 0..1
+  let maxScroll = 0; // кэш: layout читаем только на старте и при resize
+  const measure = () =>
+    { maxScroll = Math.max(document.documentElement.scrollHeight - innerHeight, 0); };
+  measure();
+
+  if (REDUCED) for (const d of drops) d.card.classList.add('shown');
+
+  function animate() {
+    requestAnimationFrame(animate);
+    const dt = Math.min(clock.getDelta(), 0.05);
+    const t = clock.elapsedTime;
+    if (shaderRef) shaderRef.uniforms.uTime.value = t;
+
+    // idle spin + burst pulse (squash then settle)
+    pulse = Math.max(pulse - dt * 4.0, 0);
+    const ps = 0.95 * (1 + pulse * 0.09);
+    shape.scale.set(ps, ps, ps);
+    shape.rotation.y += BASE_SPIN * dt + pulse * 2.4 * dt;
+    shape.rotation.x = Math.sin(t * 0.4) * 0.12;
+
+    // scroll owns the drop timeline
+    prog += ((maxScroll > 0 ? scrollY / maxScroll : 0) - prog) * Math.min(dt * 14, 1);
+
+    if (!REDUCED) updateDrops(dt, t);
+    updateSplashes(dt);
+    for (const s of dropShaders) s.uniforms.uTime.value = t;
+
+    controls.update();
+    composer.render();
+  }
+  animate();
+
+  requestAnimationFrame(() => {
+    setTimeout(() => loader.classList.add('hide'), 250);
+  });
+
+  addEventListener('resize', () => {
+    measure();
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+    composer.setSize(innerWidth, innerHeight);
+    bloom.setSize(innerWidth, innerHeight);
+  });
+  </script>
+</body>
+</html>
