@@ -3,6 +3,7 @@
 import React from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Check, Send, ArrowDown } from "lucide-react";
+import VariantSwitcher from "./VariantSwitcher";
 
 const SECTIONS = [
   {
@@ -110,6 +111,8 @@ export default function ServicesPage() {
 
   return (
     <div className="bg-neutral-50 dark:bg-neutral-950 min-h-screen text-neutral-900 dark:text-neutral-100 font-sans">
+      <VariantSwitcher />
+
       {/* Hero Intro */}
       <section className="max-w-7xl mx-auto px-6 pt-16 pb-24 border-b border-neutral-200 dark:border-neutral-800">
         <div className="max-w-3xl">
