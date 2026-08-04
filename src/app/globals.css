@@ -40,6 +40,15 @@ body {
   animation: marquee 25s linear infinite;
 }
 
+/* Горизонтальные ленты: прокрутка есть, полосы прокрутки нет */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Enable smooth scrolling */
 html {
   scroll-behavior: smooth;
