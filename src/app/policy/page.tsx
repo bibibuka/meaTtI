@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { ArrowLeft, Shield } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 export default function PolicyPage() {
   return (
@@ -17,10 +17,6 @@ export default function PolicyPage() {
 
         {/* Title */}
         <header className="mb-12 border-b border-neutral-200 dark:border-neutral-800 pb-8">
-          <div className="flex items-center gap-2 text-emerald-500 mb-2">
-            <Shield className="w-6 h-6" />
-            <span className="text-sm font-bold uppercase tracking-wider">Документ ФЗ-152</span>
-          </div>
           <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-neutral-950 dark:text-white">
             Политика Конфиденциальности
           </h1>

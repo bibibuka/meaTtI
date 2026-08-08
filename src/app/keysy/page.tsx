@@ -59,10 +59,7 @@ function CaseDetail({ c }: { c: Case }) {
     <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm h-full flex flex-col p-6 sm:p-8 md:p-12">
       {/* Header */}
       <div className="border-b border-neutral-100 dark:border-neutral-800 pb-6 md:pb-8 mb-6 md:mb-8">
-        <span className="text-xs font-mono text-blue-600 dark:text-blue-400 uppercase tracking-widest font-semibold">
-          [{c.num}] {c.category}
-        </span>
-        <h2 className="text-xl sm:text-2xl md:text-4xl font-normal tracking-tight text-neutral-950 dark:text-white mt-3 leading-tight">
+        <h2 className="text-xl sm:text-2xl md:text-4xl font-normal tracking-tight text-neutral-950 dark:text-white leading-tight">
           {c.title}
         </h2>
       </div>
@@ -156,10 +153,7 @@ export default function CasesPage() {
       {/* Hero */}
       <section className="max-w-7xl mx-auto px-6 pt-12 pb-16 border-b border-neutral-200 dark:border-neutral-800">
         <div className="max-w-3xl">
-          <span className="text-xs font-mono font-semibold uppercase tracking-widest text-blue-600 dark:text-blue-400">
-            Реализованные проекты
-          </span>
-          <h1 className="text-4xl md:text-6xl font-light tracking-tight mt-3 mb-6">
+          <h1 className="text-4xl md:text-6xl font-light tracking-tight mb-6">
             Наши Кейсы
           </h1>
           <p className="text-base md:text-lg text-neutral-500 dark:text-neutral-400 font-light leading-relaxed">

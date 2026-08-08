@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { Sparkles, Terminal, FileText, Globe, Heart } from "lucide-react";
+import { Terminal, FileText, Globe, Heart } from "lucide-react";
 
 const TEAM = [
   {
@@ -59,12 +59,6 @@ export default function TeamPage() {
       {/* Hero Header */}
       <section className="max-w-7xl mx-auto px-6 pt-16 pb-20">
         <div className="max-w-3xl">
-          {/* Memphis Badge */}
-          <div className="inline-flex items-center gap-2 border-4 border-black dark:border-white bg-[#2563eb] text-white font-extrabold px-4 py-2 text-sm uppercase shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] dark:shadow-[3px_3px_0px_0px_rgba(255,255,255,1)] mb-8">
-            <Sparkles className="w-4 h-4" />
-            <span>Memphis Design Pop</span>
-          </div>
-
           <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tight text-black dark:text-white leading-none mb-8">
             НАША КОМАНДА
           </h1>
