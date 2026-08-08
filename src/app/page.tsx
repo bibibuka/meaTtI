@@ -102,16 +102,13 @@ export default function HomePage() {
 
         <div className="relative max-w-7xl mx-auto w-full z-10">
           {/* Kinetic Offer */}
-          <div className="w-fit mb-8">
-            <WaveRule className="mb-6" />
-            <h1 className="text-5xl md:text-8xl font-black tracking-tight leading-none select-none">
-              МЫ СТРОИМ <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600">
-                ЧИСТЫЙ КОД
-              </span> <br />
-              И СМЕЛЫЙ ДИЗАЙН.
-            </h1>
-          </div>
+          <h1 className="text-5xl md:text-8xl font-black tracking-tight leading-none mb-8 select-none">
+            МЫ СТРОИМ <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600">
+              ЧИСТЫЙ КОД
+            </span> <br />
+            И СМЕЛЫЙ ДИЗАЙН.
+          </h1>
 
           <p className="text-lg md:text-2xl text-neutral-600 max-w-2xl font-light mb-12">
             Создаем технологичные решения, которые выведут ваш продукт в топ. Разрабатываем сайты, настраиваем рекламу, автоматизируем процессы и строим экосистемы.
