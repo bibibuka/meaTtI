@@ -2,9 +2,12 @@
 
 import React, { useRef } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowUpRight, CheckCircle2, ChevronRight, Send, Terminal, Sparkles, Layers, Cpu, Award } from "lucide-react";
 import { useRouter } from "next/navigation";
+
+const MercuryCube = dynamic(() => import("@/components/MercuryCube"), { ssr: false });
 
 const SERVICES = [
   {
@@ -259,6 +262,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* 3.5. MERCURY CUBE — 3D navigation drops */}
+      <MercuryCube />
 
       {/* 4. WORK STAGES */}
       <section className="py-24 px-6 max-w-7xl mx-auto w-full">
