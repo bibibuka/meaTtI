@@ -39,21 +39,16 @@ body {
   animation: marquee 25s linear infinite;
 }
 
-/* Волна-линейка над заголовками. Тайл — один период 64px, поэтому линия
-   тянется на любую ширину без растяжения. Сдвиг ровно на период за 6s
-   linear — тот же такт, что у волны в шапке. */
+/* Волна-линейка над заголовками: путь длиной в два периода уезжает влево
+   ровно на один за 6s linear — тот же такт, что у волны в шапке. */
 .wave-rule {
-  height: 12px;
-  width: 100%;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='12'%3E%3Cpath d='M0,6 q16,-6 32,0 t32,0' fill='none' stroke='%232563eb' stroke-width='2'/%3E%3C/svg%3E");
-  background-repeat: repeat-x;
-  background-size: 64px 12px;
+  transform-box: view-box;
   animation: wave-rule 6s linear infinite;
 }
 
 @keyframes wave-rule {
   to {
-    background-position-x: -64px;
+    transform: translateX(-200px);
   }
 }
 
