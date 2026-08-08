@@ -3,6 +3,7 @@
 import React from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Terminal, FileText, Globe, Heart } from "lucide-react";
+import WaveRule from "@/components/WaveRule";
 
 const TEAM = [
   {
@@ -59,6 +60,7 @@ export default function TeamPage() {
       {/* Hero Header */}
       <section className="max-w-7xl mx-auto px-6 pt-16 pb-20">
         <div className="max-w-3xl">
+          <WaveRule className="mb-6" />
           <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tight text-black dark:text-white leading-none mb-8">
             НАША КОМАНДА
           </h1>

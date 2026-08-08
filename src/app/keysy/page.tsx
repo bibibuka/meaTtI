@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, MotionConfig } from "framer-motion";
 import { ArrowRight, Send } from "lucide-react";
+import WaveRule from "@/components/WaveRule";
 
 const CASES = [
   {
@@ -59,6 +60,7 @@ function CaseDetail({ c }: { c: Case }) {
     <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm h-full flex flex-col p-6 sm:p-8 md:p-12">
       {/* Header */}
       <div className="border-b border-neutral-100 dark:border-neutral-800 pb-6 md:pb-8 mb-6 md:mb-8">
+        <WaveRule className="mb-4" />
         <h2 className="text-xl sm:text-2xl md:text-4xl font-normal tracking-tight text-neutral-950 dark:text-white leading-tight">
           {c.title}
         </h2>
@@ -153,6 +155,7 @@ export default function CasesPage() {
       {/* Hero */}
       <section className="max-w-7xl mx-auto px-6 pt-12 pb-16 border-b border-neutral-200 dark:border-neutral-800">
         <div className="max-w-3xl">
+          <WaveRule className="mb-5" />
           <h1 className="text-4xl md:text-6xl font-light tracking-tight mb-6">
             Наши Кейсы
           </h1>

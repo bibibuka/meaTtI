@@ -4,6 +4,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useReducedMotion } from "framer-motion";
 import { ArrowUpRight, ChevronRight, Layers, Cpu, Award } from "lucide-react";
+import WaveRule from "@/components/WaveRule";
 
 const MercuryCube = dynamic(() => import("@/components/MercuryCube"), { ssr: false });
 
@@ -100,6 +101,8 @@ export default function HomePage() {
         </div>
 
         <div className="relative max-w-7xl mx-auto w-full z-10">
+          <WaveRule className="mb-6" />
+
           {/* Kinetic Offer */}
           <h1 className="text-5xl md:text-8xl font-black tracking-tight leading-none mb-8 select-none">
             МЫ СТРОИМ <br />
@@ -159,6 +162,7 @@ export default function HomePage() {
       <section id="services" className="py-24 px-6 max-w-7xl mx-auto w-full">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
           <div>
+            <WaveRule className="mb-4" />
             <h2 className="text-3xl md:text-5xl font-black tracking-tight text-foreground">
               ЧЕМ МЫ МОЖЕМ ПОМОЧЬ
             </h2>
@@ -204,6 +208,7 @@ export default function HomePage() {
       <section className="py-24 px-6 bg-neutral-50 dark:bg-neutral-950 border-y border-neutral-200 dark:border-neutral-900">
         <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-5">
+            <WaveRule className="mb-4" />
             <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-6 text-foreground">
               ПОЧЕМУ ВЫБИРАЮТ MAETTI
             </h2>

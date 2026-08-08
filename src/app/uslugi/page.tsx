@@ -4,6 +4,7 @@ import React, { useState, useSyncExternalStore } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Send, Plus, Minus, Code, Bot, Cpu, Workflow, TrendingUp, Search } from "lucide-react";
 import { SECTIONS } from "./data";
+import WaveRule from "@/components/WaveRule";
 
 const ICON_MAP = {
   code: Code,
@@ -39,6 +40,7 @@ export default function ServicesPage() {
       {/* Hero */}
       <section className="max-w-7xl mx-auto px-6 pt-12 pb-16 border-b border-neutral-200 dark:border-neutral-800">
         <div className="max-w-3xl">
+          <WaveRule className="mb-5" />
           <h1 className="text-4xl md:text-6xl font-light tracking-tight mb-6">
             Наши Услуги
           </h1>

@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import WaveRule from "@/components/WaveRule";
 
 export default function PolicyPage() {
   return (
@@ -17,6 +18,7 @@ export default function PolicyPage() {
 
         {/* Title */}
         <header className="mb-12 border-b border-neutral-200 dark:border-neutral-800 pb-8">
+          <WaveRule className="mb-4" />
           <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-neutral-950 dark:text-white">
             Политика Конфиденциальности
           </h1>
