@@ -92,7 +92,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col w-full">
       {/* 1. HERO SECTION */}
-      <section className="relative min-h-[85vh] flex flex-col justify-center overflow-hidden px-6 py-20 bg-white text-neutral-950">
+      <section className="relative min-h-[calc(85vh-6rem)] flex flex-col justify-center overflow-hidden px-6 pb-20 bg-white text-neutral-950">
         {/* Colorful blob backgrounds */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-purple-500/40 blur-[100px] animate-pulse" />
