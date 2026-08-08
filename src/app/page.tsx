@@ -1,11 +1,9 @@
 "use client";
 
-import React, { useRef } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { motion, useReducedMotion } from "framer-motion";
-import { ArrowUpRight, CheckCircle2, ChevronRight, Send, Terminal, Sparkles, Layers, Cpu, Award } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useReducedMotion } from "framer-motion";
+import { ArrowUpRight, ChevronRight, Sparkles, Layers, Cpu, Award } from "lucide-react";
 
 const MercuryCube = dynamic(() => import("@/components/MercuryCube"), { ssr: false });
 
@@ -84,21 +82,8 @@ const ADVANTAGES = [
   },
 ];
 
-const STAGES = [
-  { number: "01", title: "Исследование", desc: "Анализируем бизнес-процессы, пишем ТЗ, утверждаем интерфейсы." },
-  { number: "02", title: "Дизайн и Прототип", desc: "Создаем дизайн-систему, строим архитектуру, готовим мокапы." },
-  { number: "03", title: "Разработка", desc: "Пишем чистый типизированный код, интегрируем базы данных." },
-  { number: "04", title: "Тестирование и Запуск", desc: "Покрываем тестами, проверяем нагрузки, деплоим на надежные сервера." }
-];
-
 export default function HomePage() {
-  const router = useRouter();
   const shouldReduceMotion = useReducedMotion();
-
-  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    router.push("/spasibo");
-  };
 
   // Split text for kinetic typography dance
   const word = "АБСОЛЮТНОЕ.ЦЕННОЕ.ЦИФРОВОЕ.";
@@ -265,68 +250,6 @@ export default function HomePage() {
 
       {/* 3.5. MERCURY CUBE — 3D navigation drops */}
       <MercuryCube />
-
-      {/* 4. WORK STAGES */}
-      <section className="py-24 px-6 max-w-7xl mx-auto w-full">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">Процесс</span>
-          <h2 className="text-3xl md:text-5xl font-black tracking-tight mt-2 text-foreground">
-            КАК МЫ РАБОТАЕМ
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {STAGES.map((stage, idx) => (
-            <div key={idx} className="relative group">
-              <div className="absolute top-0 left-0 text-7xl font-black text-neutral-200/50 dark:text-neutral-800/30 group-hover:text-blue-600/20 transition-colors pointer-events-none">
-                {stage.number}
-              </div>
-              <div className="relative pt-12">
-                <h3 className="text-xl font-bold text-foreground mb-3">{stage.title}</h3>
-                <p className="text-sm text-neutral-500 leading-relaxed">{stage.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 5. QUICK ACTION / FORM */}
-      <section className="py-24 px-6 bg-blue-600 text-white">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-6xl font-black tracking-tight mb-8">
-            ОБСУДИМ ВАШ ПРОЕКТ?
-          </h2>
-          <p className="text-lg md:text-xl font-medium mb-12 max-w-xl mx-auto opacity-80">
-            Оставьте свои контакты, и мы свяжемся с вами в течение 30 минут, чтобы составить первичное техническое задание.
-          </p>
-
-          <form onSubmit={handleFormSubmit} className="flex flex-col md:flex-row gap-4 max-w-2xl mx-auto">
-            <input
-              type="text"
-              placeholder="Ваше имя"
-              required
-              className="flex-1 bg-white border-2 border-transparent focus:border-black rounded-full px-6 py-4 text-black placeholder-neutral-500 outline-none font-semibold"
-            />
-            <input
-              type="text"
-              placeholder="Телефон или Telegram"
-              required
-              className="flex-1 bg-white border-2 border-transparent focus:border-black rounded-full px-6 py-4 text-black placeholder-neutral-500 outline-none font-semibold"
-            />
-            <button
-              type="submit"
-              className="bg-white hover:bg-neutral-100 text-blue-600 font-extrabold px-8 py-4 rounded-full transition-transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer shadow-lg"
-            >
-              <span>Отправить</span>
-              <Send className="w-4 h-4" />
-            </button>
-          </form>
-
-          <p className="text-xs opacity-60 mt-6">
-            Нажимая кнопку, вы соглашаетесь с нашей Политикой конфиденциальности.
-          </p>
-        </div>
-      </section>
     </div>
   );
 }
