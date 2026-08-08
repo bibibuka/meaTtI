@@ -1,15 +1,14 @@
 @import "tailwindcss";
 
+/* Сайт всегда светлый. Вариант dark: переведён с системной темы на класс
+   .dark, который нигде не выставляется — поэтому все существующие
+   dark:*-классы просто никогда не срабатывают, править их не нужно. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
+  color-scheme: light;
   --background: #ffffff;
   --foreground: #0a0a0a;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #f5f5f5;
-  }
 }
 
 @theme inline {

@@ -104,16 +104,16 @@ export default function HomePage() {
   return (
     <div className="flex flex-col w-full">
       {/* 1. HERO SECTION */}
-      <section className="relative min-h-[85vh] flex flex-col justify-center overflow-hidden px-6 py-20 bg-neutral-950 text-white">
+      <section className="relative min-h-[85vh] flex flex-col justify-center overflow-hidden px-6 py-20 bg-white text-neutral-950">
         {/* Colorful blob backgrounds */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-purple-600/40 blur-[100px] animate-pulse" />
-          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-blue-600/30 blur-[120px]" />
+        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-purple-500/40 blur-[100px] animate-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-blue-500/30 blur-[120px]" />
         </div>
 
         <div className="relative max-w-7xl mx-auto w-full z-10">
           {/* Tag */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/20 text-xs font-semibold uppercase tracking-wider text-blue-400 mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-600/10 rounded-full border border-blue-600/20 text-xs font-semibold uppercase tracking-wider text-blue-700 mb-8">
             <Sparkles className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: "3s" }} />
             <span>Digital Engineering Studio</span>
           </div>
@@ -121,13 +121,13 @@ export default function HomePage() {
           {/* Kinetic Offer */}
           <h1 className="text-5xl md:text-8xl font-black tracking-tight leading-none mb-8 select-none">
             МЫ СТРОИМ <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-indigo-500">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600">
               ЧИСТЫЙ КОД
             </span> <br />
             И СМЕЛЫЙ ДИЗАЙН.
           </h1>
 
-          <p className="text-lg md:text-2xl text-neutral-400 max-w-2xl font-light mb-12">
+          <p className="text-lg md:text-2xl text-neutral-600 max-w-2xl font-light mb-12">
             Создаем технологичные решения, которые выведут ваш продукт в топ. Разрабатываем сайты, настраиваем рекламу, автоматизируем процессы и строим экосистемы.
           </p>
 
@@ -140,7 +140,7 @@ export default function HomePage() {
             </Link>
             <a
               href="#services"
-              className="bg-neutral-900 hover:bg-neutral-800 text-white border border-neutral-800 font-bold px-8 py-4 rounded-full text-base transition-all duration-200 flex items-center gap-2"
+              className="bg-neutral-900 hover:bg-neutral-800 text-white font-bold px-8 py-4 rounded-full text-base transition-all duration-200 flex items-center gap-2"
             >
               <span>Наши услуги</span>
               <ChevronRight className="w-4 h-4" />
@@ -150,10 +150,10 @@ export default function HomePage() {
 
         {/* Endless scrolling kinetic typography */}
         {!shouldReduceMotion ? (
-          <div className="absolute bottom-6 left-0 right-0 w-full overflow-hidden py-4 border-y border-white/5 select-none bg-black/40 backdrop-blur-sm pointer-events-none">
+          <div className="absolute bottom-6 left-0 right-0 w-full overflow-hidden py-4 border-y border-neutral-200 select-none bg-white/40 backdrop-blur-sm pointer-events-none">
             <div className="flex whitespace-nowrap animate-marquee">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex gap-8 text-2xl md:text-4xl font-extrabold text-neutral-800/80 uppercase tracking-widest px-4">
+                <div key={i} className="flex gap-8 text-2xl md:text-4xl font-extrabold text-neutral-200 uppercase tracking-widest px-4">
                   {chars.map((char, index) => (
                     <span
                       key={index}
@@ -167,7 +167,7 @@ export default function HomePage() {
             </div>
           </div>
         ) : (
-          <div className="absolute bottom-6 left-0 right-0 w-full py-4 border-y border-white/5 bg-black/40 text-center text-neutral-600 text-sm tracking-widest uppercase">
+          <div className="absolute bottom-6 left-0 right-0 w-full py-4 border-y border-neutral-200 bg-white/40 text-center text-neutral-400 text-sm tracking-widest uppercase">
             АБСОЛЮТНОЕ • ЦЕННОЕ • ЦИФРОВОЕ
           </div>
         )}
