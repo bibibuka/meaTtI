@@ -101,16 +101,17 @@ export default function HomePage() {
         </div>
 
         <div className="relative max-w-7xl mx-auto w-full z-10">
-          <WaveRule className="mb-6" />
-
           {/* Kinetic Offer */}
-          <h1 className="text-5xl md:text-8xl font-black tracking-tight leading-none mb-8 select-none">
-            МЫ СТРОИМ <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600">
-              ЧИСТЫЙ КОД
-            </span> <br />
-            И СМЕЛЫЙ ДИЗАЙН.
-          </h1>
+          <div className="w-fit mb-8">
+            <WaveRule className="mb-6" />
+            <h1 className="text-5xl md:text-8xl font-black tracking-tight leading-none select-none">
+              МЫ СТРОИМ <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600">
+                ЧИСТЫЙ КОД
+              </span> <br />
+              И СМЕЛЫЙ ДИЗАЙН.
+            </h1>
+          </div>
 
           <p className="text-lg md:text-2xl text-neutral-600 max-w-2xl font-light mb-12">
             Создаем технологичные решения, которые выведут ваш продукт в топ. Разрабатываем сайты, настраиваем рекламу, автоматизируем процессы и строим экосистемы.
@@ -161,7 +162,7 @@ export default function HomePage() {
       {/* 2. SERVICES GRID SECTION */}
       <section id="services" className="py-24 px-6 max-w-7xl mx-auto w-full">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
-          <div>
+          <div className="w-fit">
             <WaveRule className="mb-4" />
             <h2 className="text-3xl md:text-5xl font-black tracking-tight text-foreground">
               ЧЕМ МЫ МОЖЕМ ПОМОЧЬ
@@ -208,10 +209,12 @@ export default function HomePage() {
       <section className="py-24 px-6 bg-neutral-50 dark:bg-neutral-950 border-y border-neutral-200 dark:border-neutral-900">
         <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-5">
-            <WaveRule className="mb-4" />
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-6 text-foreground">
-              ПОЧЕМУ ВЫБИРАЮТ MAETTI
-            </h2>
+            <div className="w-fit mb-6">
+              <WaveRule className="mb-4" />
+              <h2 className="text-3xl md:text-5xl font-black tracking-tight text-foreground">
+                ПОЧЕМУ ВЫБИРАЮТ MAETTI
+              </h2>
+            </div>
             <p className="text-neutral-500 leading-relaxed mb-8">
               Мы ценим ваше время и ресурсы. Наша команда создает гибкие программные продукты, ориентируясь на конечные бизнес-показатели, а не только на красивый код.
             </p>

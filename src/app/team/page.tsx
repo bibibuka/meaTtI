@@ -60,10 +60,12 @@ export default function TeamPage() {
       {/* Hero Header */}
       <section className="max-w-7xl mx-auto px-6 pt-16 pb-20">
         <div className="max-w-3xl">
-          <WaveRule className="mb-6" />
-          <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tight text-black dark:text-white leading-none mb-8">
-            НАША КОМАНДА
-          </h1>
+          <div className="w-fit mb-8">
+            <WaveRule className="mb-6" />
+            <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tight text-black dark:text-white leading-none">
+              НАША КОМАНДА
+            </h1>
+          </div>
           <p className="text-lg md:text-xl text-neutral-700 dark:text-neutral-400 font-medium max-w-2xl leading-relaxed">
             Мы не просто фрилансеры-одиночки. Мы сплоченная студия инженеров и дизайнеров, любящих свое дело и готовых создавать продукты высшего пилотажа.
           </p>

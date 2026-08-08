@@ -18,10 +18,12 @@ export default function PolicyPage() {
 
         {/* Title */}
         <header className="mb-12 border-b border-neutral-200 dark:border-neutral-800 pb-8">
-          <WaveRule className="mb-4" />
-          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-neutral-950 dark:text-white">
-            Политика Конфиденциальности
-          </h1>
+          <div className="w-fit">
+            <WaveRule className="mb-4" />
+            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-neutral-950 dark:text-white">
+              Политика Конфиденциальности
+            </h1>
+          </div>
           <p className="text-sm text-neutral-400 mt-2">
             Редакция от {new Date().toLocaleDateString("ru-RU")}
           </p>
