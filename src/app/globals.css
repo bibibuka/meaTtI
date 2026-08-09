@@ -52,6 +52,91 @@ body {
   }
 }
 
+/* Каракули на шторе перехода. Позиция и наклон заданы отдельными свойствами
+   translate/rotate — transform остаётся свободен под анимацию. Периоды, размах
+   и фаза приходят из инлайновых --dur/--reach/--sway/--phase. */
+.doodle {
+  position: absolute;
+  translate: -50% -50%;
+}
+
+/* Обёртка везёт фигурку по горизонтали: alternate вместо перемотки, чтобы
+   ход разворачивался плавно, а не прыгал в начало. */
+.doodle-sail {
+  animation: doodle-sail var(--dur) ease-in-out var(--phase) infinite alternate;
+}
+@keyframes doodle-sail {
+  from {
+    transform: translateX(calc(var(--reach) * -1));
+  }
+  to {
+    transform: translateX(var(--reach));
+  }
+}
+
+/* Качка на волне: вверх-вниз с завалом на борт. */
+.doodle-bob {
+  animation: doodle-bob var(--sway) ease-in-out var(--phase) infinite;
+}
+@keyframes doodle-bob {
+  0%,
+  100% {
+    transform: translateY(-2.5px) rotate(-2.5deg);
+  }
+  50% {
+    transform: translateY(2.5px) rotate(2.5deg);
+  }
+}
+
+/* Рябь: сама линия внутри viewBox уезжает на один период. */
+.doodle-ripple {
+  transform-box: view-box;
+  animation: doodle-ripple var(--sway) linear infinite;
+}
+@keyframes doodle-ripple {
+  to {
+    transform: translateX(-30px);
+  }
+}
+
+/* Порыв ветра: пролетает вбок и тает, но не исчезает совсем. */
+.doodle-gust {
+  animation: doodle-gust var(--dur) ease-in-out var(--phase) infinite;
+}
+@keyframes doodle-gust {
+  0% {
+    transform: translateX(-16px);
+    opacity: 0.15;
+  }
+  30%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(22px);
+    opacity: 0.15;
+  }
+}
+
+.doodle-spin {
+  animation: doodle-spin var(--dur) linear var(--phase) infinite;
+}
+@keyframes doodle-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Отступ под фиксированную шапку отдан прозрачной верхней рамке корня
+   страницы, а отрицательный margin возвращает всё на прежнее место. Фон
+   рамкой закрашивается — поэтому под прозрачной шапкой виден фон именно этой
+   страницы, а не белый body. Паддинги самих страниц при этом не трогаем.
+   Цепочка: main > обёртка из template.tsx > корень страницы. */
+main > * > * {
+  margin-top: -6rem;
+  border-top: 6rem solid transparent;
+}
+
 /* Горизонтальные ленты: прокрутка есть, полосы прокрутки нет */
 .no-scrollbar {
   scrollbar-width: none;
