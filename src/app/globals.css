@@ -220,9 +220,9 @@ html::-webkit-scrollbar {
   transition: opacity 240ms ease;
 }
 
-/* Узкие экраны: полосы прокрутки там и так нет, а колонка контента
+/* Телефоны: полосы прокрутки там и так нет, а колонка контента
    на всю ширину — водолазу негде встать, не перекрыв текст. */
-@media (max-width: 1023px) {
+@media (max-width: 639px) {
   .dive-controller,
   .bubble-trail {
     display: none;
