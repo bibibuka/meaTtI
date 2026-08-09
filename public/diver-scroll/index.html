@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta
+      name="description"
+      content="Тестовый прототип: схематичный водолаз вместо ползунка прокрутки."
+    />
+    <title>Водолаз вместо ползунка — прототип maeTtI</title>
+    <link rel="stylesheet" href="./diver-scroll.css" />
+    <script type="module" src="./scroll-controller.mjs"></script>
+  </head>
+  <body>
+    <main class="depth-page" id="depth-page">
+      <section class="surface section" aria-labelledby="prototype-title">
+        <a class="back-link" href="../" aria-label="Вернуться на главную страницу">
+          <span aria-hidden="true">←</span>
+          на сайт
+        </a>
+
+        <div class="surface-copy">
+          <p class="context-line">Тестовый скролл-контрол</p>
+          <h1 id="prototype-title">Водолаз<br />вместо ползунка</h1>
+          <p class="lead">
+            Листайте страницу как обычно или потяните водолаза за собой.
+            Пройденная глубина остаётся наверху синей верёвкой.
+          </p>
+        </div>
+
+        <p class="scroll-cue">
+          <span class="cue-line" aria-hidden="true"></span>
+          вниз, к глубине
+        </p>
+
+        <svg
+          class="surface-wave"
+          viewBox="0 0 420 32"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <path d="M -70 17 q 35 -12 70 0 t 70 0 t 70 0 t 70 0 t 70 0 t 70 0 t 70 0" />
+        </svg>
+      </section>
+
+      <section class="section depth-section depth-25" aria-labelledby="depth-25-title">
+        <div class="section-copy">
+          <p class="depth-number">25 м</p>
+          <h2 id="depth-25-title">Свет ещё рядом</h2>
+          <p>Водолаз спокойно держится у верёвки, а ласты отвечают на движение страницы.</p>
+        </div>
+        <svg class="section-doodle fin-doodle" viewBox="0 0 120 72" aria-hidden="true">
+          <path d="M 18 51 C 28 27 47 13 78 9 C 56 26 50 39 50 51" />
+          <path d="M 8 51 q 12 -8 24 0 t 24 0 t 24 0 t 24 0" />
+        </svg>
+      </section>
+
+      <section class="section depth-section depth-50" aria-labelledby="depth-50-title">
+        <div class="section-copy">
+          <p class="depth-number">50 м</p>
+          <h2 id="depth-50-title">Дыхание видно</h2>
+          <p>Раз в три секунды водолаз выпускает пачку: первые пузырьки поднимаются выше последних и растворяются.</p>
+        </div>
+        <svg class="section-doodle ring-doodle" viewBox="0 0 90 90" aria-hidden="true">
+          <circle cx="45" cy="45" r="31" />
+          <circle cx="45" cy="45" r="13" />
+          <path d="M 45 14 v 18 M 45 58 v 18 M 14 45 h 18 M 58 45 h 18" />
+        </svg>
+      </section>
+
+      <section class="section depth-section depth-75" aria-labelledby="depth-75-title">
+        <div class="section-copy">
+          <p class="depth-number">75 м</p>
+          <h2 id="depth-75-title">Верёвка помнит путь</h2>
+          <p>Яркая часть линии всегда равна уже пройденному расстоянию — без отдельной шкалы.</p>
+        </div>
+        <svg class="section-doodle bubbles-doodle" viewBox="0 0 100 120" aria-hidden="true">
+          <circle cx="56" cy="91" r="8" />
+          <circle cx="39" cy="61" r="12" />
+          <circle cx="68" cy="28" r="17" />
+        </svg>
+      </section>
+
+      <section class="section depth-section seabed" aria-labelledby="depth-100-title">
+        <div class="section-copy">
+          <p class="depth-number">100 м</p>
+          <h2 id="depth-100-title">Дно теста</h2>
+          <p>Отсюда водолаза можно одним движением вернуть к поверхности.</p>
+        </div>
+        <svg class="seabed-line" viewBox="0 0 600 120" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M -30 92 C 65 54 120 112 205 79 C 290 47 362 111 445 77 C 504 52 553 77 630 55" />
+          <path d="M 108 76 l 16 -24 l 18 21 M 371 80 l 21 -31 l 22 24" />
+        </svg>
+      </section>
+    </main>
+
+    <div class="bubble-trail" id="bubble-trail" aria-hidden="true"></div>
+
+    <aside
+      class="dive-controller"
+      id="dive-controller"
+      data-active="true"
+      data-direction="down"
+      data-moving="false"
+      data-dragging="false"
+      aria-label="Навигация по глубине страницы"
+    >
+      <output class="depth-meter" id="depth-meter" for="diver-thumb">000 м</output>
+
+      <div class="dive-track" id="dive-track" aria-hidden="true">
+        <svg
+          class="rope-svg"
+          viewBox="0 0 120 1000"
+          preserveAspectRatio="none"
+          focusable="false"
+        >
+          <path
+            class="rope remaining-rope"
+            d="M 92 0 C 84 45 100 88 91 133 C 82 178 100 221 91 267 C 83 314 99 358 91 404 C 83 451 100 493 91 540 C 82 586 100 630 91 676 C 83 723 100 766 91 813 C 82 859 99 905 91 950 C 88 968 89 984 92 1000"
+          />
+          <path
+            class="rope completed-rope"
+            id="rope-progress"
+            d="M 92 0 C 84 45 100 88 91 133 C 82 178 100 221 91 267 C 83 314 99 358 91 404 C 83 451 100 493 91 540 C 82 586 100 630 91 676 C 83 723 100 766 91 813 C 82 859 99 905 91 950 C 88 968 89 984 92 1000"
+          />
+          <circle class="surface-knot" cx="92" cy="3" r="5" />
+        </svg>
+      </div>
+
+      <button
+        class="diver-thumb"
+        id="diver-thumb"
+        type="button"
+        role="scrollbar"
+        aria-label="Глубина страницы. Потяните водолаза вверх или вниз"
+        aria-controls="depth-page"
+        aria-orientation="vertical"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="0"
+        aria-valuetext="0 процентов, поверхность"
+      >
+        <span class="sr-only">Положение прокрутки</span>
+        <svg
+          class="diver-art"
+          viewBox="0 0 104 108"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          focusable="false"
+          aria-hidden="true"
+        >
+          <g class="diver-float">
+            <path class="tank" d="M 36 35 C 36 30 39 27 44 27 C 49 27 52 30 52 35 L 52 65 C 52 70 49 73 44 73 C 39 73 36 70 36 65 Z" />
+            <path class="tank-valve" d="M 41 27 L 41 23 L 47 23 L 47 27" />
+            <path class="harness" d="M 37 43 L 52 43 M 37 61 L 52 61" />
+
+            <g class="rear-fin">
+              <path d="M 47 65 C 46 75 43 82 40 88" />
+              <path d="M 40 86 L 31 99 L 43 96 L 47 88" />
+            </g>
+            <g class="front-fin">
+              <path d="M 56 66 C 58 76 60 82 64 88" />
+              <path d="M 63 86 L 67 101 L 73 91 L 66 85" />
+            </g>
+
+            <path class="torso" d="M 48 34 C 55 32 62 37 64 45 L 62 63 C 59 69 50 70 44 65 L 42 45 C 42 39 44 36 48 34 Z" />
+            <path class="belt" d="M 43 61 C 49 64 56 65 62 62" />
+            <circle class="head" cx="58" cy="23" r="9" />
+            <path class="mask" d="M 54 19 C 59 17 64 18 67 21 L 65 26 L 55 26 Z" />
+            <path class="regulator" d="M 67 25 q 6 0 6 4 M 71 29 q 2 3 5 0" />
+            <path class="hose" d="M 70 27 C 74 41 66 47 61 47" />
+            <path class="rope-arm" d="M 61 40 L 69 49 L 77 44 L 83 45" />
+            <path class="near-arm" d="M 58 44 L 66 56 L 77 53" />
+            <path class="grip" d="M 81 42 q 5 3 0 7" />
+          </g>
+        </svg>
+      </button>
+    </aside>
+  </body>
+</html>

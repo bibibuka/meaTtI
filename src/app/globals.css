@@ -137,6 +137,283 @@ main > * > * {
   border-top: 6rem solid transparent;
 }
 
+/* =========================================================
+   DIVER SCROLL — водолаз вместо ползунка прокрутки.
+   Разметка и логика в <DiverScroll/>, прототип в public/diver-scroll/.
+   ========================================================= */
+
+/* Нативный ползунок убран: его роль играет водолаз. */
+html {
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar {
+  display: none;
+}
+
+.bubble-trail {
+  position: fixed;
+  z-index: 39;
+  inset: 0;
+  overflow: hidden;
+  color: #155dfc;
+  pointer-events: none;
+}
+
+.released-bubble {
+  --bubble-drift: 0px;
+  --bubble-rise: 14px;
+  position: absolute;
+  aspect-ratio: 1;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.78);
+  animation: released-bubble 1.5s linear forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes released-bubble {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.68);
+  }
+  8% {
+    opacity: 0.78;
+  }
+  34% {
+    opacity: 0.62;
+    transform: translate(
+        calc(-50% + var(--bubble-drift)),
+        calc(-50% - var(--bubble-rise) + 6px)
+      )
+      scale(1);
+  }
+  72% {
+    opacity: 0.34;
+    transform: translate(
+        calc(-50% + var(--bubble-drift)),
+        calc(-50% - var(--bubble-rise) + 2px)
+      )
+      scale(1.04);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(
+        calc(-50% + var(--bubble-drift)),
+        calc(-50% - var(--bubble-rise))
+      )
+      scale(1.08);
+  }
+}
+
+/* Панель прокликивается насквозь — ловит указатель только сам водолаз. */
+.dive-controller {
+  position: fixed;
+  z-index: 40;
+  top: 7rem;
+  right: -0.3rem;
+  bottom: clamp(2.75rem, 6vh, 4.5rem);
+  width: clamp(4.5rem, 6vw, 6rem);
+  color: #155dfc;
+  opacity: 0.72;
+  pointer-events: none;
+  transition: opacity 240ms ease;
+}
+
+/* Узкие экраны: полосы прокрутки там и так нет, а колонка контента
+   на всю ширину — водолазу негде встать, не перекрыв текст. */
+@media (max-width: 1023px) {
+  .dive-controller,
+  .bubble-trail {
+    display: none;
+  }
+}
+
+.dive-controller[data-active="true"],
+.dive-controller[data-dragging="true"],
+.dive-controller:hover,
+.dive-controller:focus-within {
+  opacity: 1;
+}
+
+.depth-meter {
+  position: absolute;
+  right: 0.75rem;
+  bottom: -1.85rem;
+  min-width: 4rem;
+  color: #475569;
+  font-family: var(--font-mono), "SFMono-Regular", Consolas, monospace;
+  font-size: 0.72rem;
+  text-align: right;
+  pointer-events: none;
+}
+
+.dive-track,
+.rope-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.rope-svg {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.rope {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.remaining-rope {
+  stroke: #bfdbfe;
+  stroke-width: 1.4;
+  stroke-dasharray: 2 8;
+}
+
+.completed-rope {
+  stroke: currentColor;
+  stroke-width: 2;
+  clip-path: inset(0 0 100% 0);
+  will-change: clip-path;
+}
+
+.surface-knot {
+  fill: #ffffff;
+  stroke: currentColor;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.diver-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 72%;
+  aspect-ratio: 104 / 108;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 2px solid transparent;
+  outline-offset: 6px;
+  border-radius: 50%;
+  background: transparent;
+  color: currentColor;
+  cursor: grab;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  will-change: transform;
+}
+
+.diver-thumb:focus {
+  outline-color: #155dfc;
+}
+
+.dive-controller[data-dragging="true"] .diver-thumb {
+  cursor: grabbing;
+}
+
+.diver-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.diver-float {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: diver-float 3.4s ease-in-out infinite;
+}
+
+@keyframes diver-float {
+  0%,
+  100% {
+    transform: translateY(-2px) rotate(-1.5deg);
+  }
+  50% {
+    transform: translateY(2px) rotate(1.5deg);
+  }
+}
+
+.rear-fin,
+.front-fin {
+  transform-box: fill-box;
+  transform-origin: top center;
+}
+
+.rear-fin {
+  animation: rear-fin 2.2s ease-in-out infinite;
+}
+
+.front-fin {
+  animation: front-fin 2.2s ease-in-out -1.1s infinite;
+}
+
+@keyframes rear-fin {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+}
+
+@keyframes front-fin {
+  0%,
+  100% {
+    transform: rotate(5deg);
+  }
+  50% {
+    transform: rotate(-4deg);
+  }
+}
+
+/* Быстрее сучит ластами и наклоняется по ходу движения. */
+.dive-controller[data-moving="true"] .rear-fin,
+.dive-controller[data-moving="true"] .front-fin {
+  animation-duration: 0.42s;
+}
+
+.dive-controller[data-direction="down"][data-moving="true"] .diver-art {
+  transform: translateY(2px) rotate(1.5deg);
+}
+
+.dive-controller[data-direction="up"][data-moving="true"] .diver-art {
+  transform: translateY(-2px) rotate(-1.5deg);
+}
+
+.dive-controller[data-dragging="true"] .diver-art {
+  transform: scale(1.035);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .diver-thumb:hover .diver-art {
+    transform: scale(1.025);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble-trail {
+    display: none;
+  }
+
+  .diver-art,
+  .diver-float,
+  .rear-fin,
+  .front-fin {
+    transform: none !important;
+  }
+}
+
 /* Горизонтальные ленты: прокрутка есть, полосы прокрутки нет */
 .no-scrollbar {
   scrollbar-width: none;
