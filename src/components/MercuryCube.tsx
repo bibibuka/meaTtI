@@ -6,10 +6,6 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { MarchingCubes } from "three/examples/jsm/objects/MarchingCubes.js";
-import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
-import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
-import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
-import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 
 /* ---------- flow / noise shader strings (verbatim from the original cube) ---------- */
 const NOISE = `
@@ -60,19 +56,20 @@ float snoise(vec3 v){
   return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
 }`;
 
-const FLOW = `
+// `fine` keeps the third noise octave; the low profile drops it (invisible on a phone,
+// but it is a third of the shader's noise cost)
+const FLOW = (fine: boolean) => `
 uniform float uTime;
 uniform float uAmp;
 uniform float uFreq;
+// flowField(position) — computed once in beginnormal_vertex, reused by begin_vertex
+float gF0;
 float flowField(vec3 p){
   float t = uTime;
   float n = snoise(p * uFreq + vec3(0.0, 0.0, t * 0.55));
   n += 0.50 * snoise(p * (uFreq * 2.0) + vec3(t * 0.45, 0.0, 0.0));
-  n += 0.25 * snoise(p * (uFreq * 4.0) + vec3(0.0, t * 0.9, 0.0));
+  ${fine ? "n += 0.25 * snoise(p * (uFreq * 4.0) + vec3(0.0, t * 0.9, 0.0));" : ""}
   return max(n * uAmp, -0.09);
-}
-vec3 displacePos(vec3 p, vec3 nrm){
-  return p + nrm * flowField(p);
 }`;
 
 const BEGINNORMAL = `
@@ -80,15 +77,15 @@ vec3 objectNormal;
 {
   vec3 n0 = normal;
   float eps = 0.02;
-  float f0 = flowField(position);
+  gF0 = flowField(position);
   vec3 grad = vec3(
-    flowField(position + vec3(eps, 0.0, 0.0)) - f0,
-    flowField(position + vec3(0.0, eps, 0.0)) - f0,
-    flowField(position + vec3(0.0, 0.0, eps)) - f0) / eps;
+    flowField(position + vec3(eps, 0.0, 0.0)) - gF0,
+    flowField(position + vec3(0.0, eps, 0.0)) - gF0,
+    flowField(position + vec3(0.0, 0.0, eps)) - gF0) / eps;
   objectNormal = normalize(n0 - (grad - dot(grad, n0) * n0));
 }`;
 
-const BEGINVERTEX = `vec3 transformed = displacePos(position, normal);`;
+const BEGINVERTEX = `vec3 transformed = position + normal * gF0;`;
 
 /* ---------- the four corner drops: text + link + flight style ---------- */
 const ITEMS = [
@@ -111,7 +108,6 @@ type Drop = {
   end: THREE.Vector3;
   side: THREE.Vector3;
   up2: THREE.Vector3;
-  prevT: number;
   landed: boolean;
   ft: number;
   card: HTMLElement | null;
@@ -128,12 +124,20 @@ export default function MercuryCube() {
     if (!sectionRef.current || !mountRef.current) return;
 
     const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    /* Phones and tablets get a cheaper scene. What actually stalls them is the extra
+       transmission pass and the marching-cubes grid, not the polygon counts. */
+    const LOW = matchMedia("(max-width: 900px), (pointer: coarse)").matches;
+    const flow = FLOW(!LOW);
     const W = () => mount.clientWidth;
     const H = () => mount.clientHeight;
 
     /* ---------- renderer / scene / camera ---------- */
+    // we render straight to the screen (no composer), so MSAA here is real antialiasing
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, LOW ? 1.25 : 1.75));
+    // the transmission pass re-renders the opaque scene + a full mip chain every frame;
+    // it is only ever seen through a heavily distorted refraction, so it does not need full res
+    renderer.transmissionResolutionScale = LOW ? 0.4 : 0.7;
     renderer.setSize(W(), H());
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
@@ -216,7 +220,7 @@ export default function MercuryCube() {
       g.computeVertexNormals();
       return g;
     }
-    const geo = softCube(0.42, 2.6, 96);
+    const geo = softCube(0.42, 2.6, LOW ? 40 : 64);
 
     /* ---------- cube material (liquid water-glass shell) ---------- */
     const material = new THREE.MeshPhysicalMaterial({
@@ -226,7 +230,8 @@ export default function MercuryCube() {
       transmission: 1.0,
       thickness: 0.5,
       ior: 1.35,
-      clearcoat: 0.3,
+      // clearcoat is a second specular lobe on top of an already heavy transmission shader
+      clearcoat: LOW ? 0 : 0.3,
       clearcoatRoughness: 0.25,
       reflectivity: 0.5,
       envMapIntensity: 1.0,
@@ -240,7 +245,7 @@ export default function MercuryCube() {
       shader.vertexShader = shader.vertexShader
         .replace("#include <beginnormal_vertex>", BEGINNORMAL)
         .replace("#include <begin_vertex>", BEGINVERTEX)
-        .replace("void main() {", NOISE + FLOW + "\nvoid main() {");
+        .replace("void main() {", NOISE + flow + "\nvoid main() {");
       shaderRef = shader as unknown as { uniforms: Record<string, THREE.IUniform> };
     };
 
@@ -300,13 +305,6 @@ export default function MercuryCube() {
     ground.position.set(0, -6, 3);
     scene.add(ground);
 
-    /* ---------- post-processing ---------- */
-    const composer = new EffectComposer(renderer);
-    composer.addPass(new RenderPass(scene, camera));
-    const bloom = new UnrealBloomPass(new THREE.Vector2(W(), H()), 0.18, 0.5, 0.85);
-    composer.addPass(bloom);
-    composer.addPass(new OutputPass());
-
     /* ---------- drop flight ---------- */
     const PLANE_Z0 = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
     const _ray = new THREE.Ray();
@@ -363,13 +361,12 @@ export default function MercuryCube() {
         shader.vertexShader = shader.vertexShader
           .replace("#include <beginnormal_vertex>", BEGINNORMAL)
           .replace("#include <begin_vertex>", BEGINVERTEX)
-          .replace("void main() {", NOISE + FLOW + "\nvoid main() {");
+          .replace("void main() {", NOISE + flow + "\nvoid main() {");
         dropShaders.push(shader as unknown as { uniforms: Record<string, THREE.IUniform> });
       };
       return m;
     }
 
-    const SEG = 0.21;
     const TRAIL = 14;
     const GOO_S = 3.6;
     const gooMat = new THREE.MeshPhysicalMaterial({
@@ -383,9 +380,17 @@ export default function MercuryCube() {
       clearcoatRoughness: 0.2,
       envMapIntensity: 1.0,
     });
-    const goo = new MarchingCubes(72, gooMat, false, false, 30000);
+    // res^3 voxels are reset + polygonized in JS every frame while drops fly — this number
+    // is the single biggest CPU cost in the scene. Lower it first if it still stutters.
+    const goo = new MarchingCubes(LOW ? 32 : 48, gooMat, false, false, 30000);
     goo.scale.setScalar(GOO_S);
     scene.add(goo);
+    // stock reset() walks size^3 with 5 indexed writes each; typed-array fill is a memset
+    goo.reset = () => {
+      goo.field.fill(0);
+      goo.normal_cache.fill(0);
+      goo.palette.fill(0);
+    };
     function addBall(p: THREE.Vector3, R: number) {
       if (R <= 0.001) return;
       const rf = R / (2 * GOO_S);
@@ -411,7 +416,6 @@ export default function MercuryCube() {
       end: new THREE.Vector3(),
       side: new THREE.Vector3(),
       up2: new THREE.Vector3(),
-      prevT: 0,
       landed: false,
       ft: 0,
       card: cardEls[it.id] ?? null,
@@ -433,7 +437,7 @@ export default function MercuryCube() {
       d.start.copy(end).multiplyScalar(0.95 / len);
       d.start.y += 0.15;
       d.ctrl.copy(d.start).add(end).multiplyScalar(0.5);
-      d.ctrl.addScaledVector(end.clone().normalize(), len * 0.22);
+      d.ctrl.addScaledVector(_a.copy(end).normalize(), len * 0.22);
       d.ctrl.y += d.lift;
       _a.copy(end).sub(d.start).normalize();
       d.side.crossVectors(_a, camera.up).normalize();
@@ -506,10 +510,21 @@ export default function MercuryCube() {
     let gooDirty = false;
     let pulse = 0;
     let prog = 0;
-    function updateDrops() {
-      let active = 0;
+    /* Scroll only arms a drop — crossing its seg0 threshold. From there the flight plays
+       out on its own clock over d.dur seconds, and rewinds the same way when the scroll
+       goes back past the threshold. So the animation is never half-finished, and once
+       every drop has settled the marching cubes grid stops rebuilding entirely. */
+    function updateDrops(dt: number) {
+      let moving = 0;
       for (const d of drops) {
-        const t = Math.min(Math.max((prog - d.seg0) / SEG, 0), 1);
+        const want = prog >= d.seg0 ? 1 : 0;
+        const prev = d.ft;
+        if (d.ft !== want) {
+          const step = dt / d.dur;
+          d.ft = want ? Math.min(d.ft + step, 1) : Math.max(d.ft - step, 0);
+          moving++;
+        }
+        const t = d.ft;
         if (t >= 0.8 && !d.landed) {
           d.landed = true;
           d.card?.classList.add("shown");
@@ -518,16 +533,13 @@ export default function MercuryCube() {
           d.landed = false;
           d.card?.classList.remove("shown");
         }
-        if ((t > 0) !== (d.prevT > 0)) pulse = Math.max(pulse, 0.85);
-        d.prevT = t;
-        d.ft = t;
-        if (t > 0 && t < 1) active++;
+        if ((t > 0) !== (prev > 0)) pulse = Math.max(pulse, 0.85);
       }
-      if (!active && !gooDirty) return;
+      if (!moving && !gooDirty) return;
       goo.reset();
       for (const d of drops) if (d.ft > 0 && d.ft < 1) applyDrop(d, d.ft);
       goo.update();
-      gooDirty = active > 0;
+      gooDirty = moving > 0;
     }
 
     /* ---------- main loop ---------- */
@@ -568,12 +580,12 @@ export default function MercuryCube() {
 
       prog += (targetProg() - prog) * Math.min(dt * 14, 1);
 
-      if (!REDUCED) updateDrops();
+      if (!REDUCED) updateDrops(dt);
       updateSplashes(dt);
       for (const s of dropShaders) s.uniforms.uTime.value = t;
 
       controls.update();
-      composer.render();
+      renderer.render(scene, camera);
     }
     animate();
 
@@ -581,8 +593,6 @@ export default function MercuryCube() {
       camera.aspect = W() / H();
       camera.updateProjectionMatrix();
       renderer.setSize(W(), H());
-      composer.setSize(W(), H());
-      bloom.setSize(W(), H());
     }
     window.addEventListener("resize", onResize);
 
@@ -591,7 +601,6 @@ export default function MercuryCube() {
       io.disconnect();
       window.removeEventListener("resize", onResize);
       controls.dispose();
-      composer.dispose();
       geo.dispose();
       splashGeo.dispose();
       gooMat.dispose();
