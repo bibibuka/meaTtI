@@ -6,6 +6,10 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { MarchingCubes } from "three/examples/jsm/objects/MarchingCubes.js";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 
 /* ---------- flow / noise shader strings (verbatim from the original cube) ---------- */
 const NOISE = `
@@ -88,11 +92,13 @@ vec3 objectNormal;
 const BEGINVERTEX = `vec3 transformed = position + normal * gF0;`;
 
 /* ---------- the four corner drops: text + link + flight style ---------- */
+/* dur is the whole flight in seconds. It is also the cost knob: the marching cubes grid
+   only rebuilds while a drop moves, so a shorter flight is directly less CPU work. */
 const ITEMS = [
-  { id: "tl", k: "УСЛУГИ", s: "разработка", href: "/uslugi", size: 0.45, dur: 1.75, lift: 0.9, spin: 0, wob: 0 },
-  { id: "tr", k: "КЕЙСЫ", s: "работы", href: "/keysy", size: 0.36, dur: 1.95, lift: 0.45, spin: 2, wob: 0 },
-  { id: "br", k: "КОМАНДА", s: "команда", href: "/team", size: 0.52, dur: 1.43, lift: 0.12, spin: 0, wob: 0.3 },
-  { id: "bl", k: "КОНТАКТЫ", s: "связь", href: "/contacts", size: 0.4, dur: 2.2, lift: 1.4, spin: 1, wob: 0.15 },
+  { id: "tl", k: "УСЛУГИ", s: "разработка", href: "/uslugi", size: 0.45, dur: 0.32, lift: 0.9, spin: 0, wob: 0 },
+  { id: "tr", k: "КЕЙСЫ", s: "работы", href: "/keysy", size: 0.36, dur: 0.36, lift: 0.45, spin: 2, wob: 0 },
+  { id: "br", k: "КОМАНДА", s: "команда", href: "/team", size: 0.52, dur: 0.28, lift: 0.12, spin: 0, wob: 0.3 },
+  { id: "bl", k: "КОНТАКТЫ", s: "связь", href: "/contacts", size: 0.4, dur: 0.4, lift: 1.4, spin: 1, wob: 0.15 },
 ] as const;
 
 type Drop = {
@@ -102,7 +108,7 @@ type Drop = {
   lift: number;
   spin: number;
   wob: number;
-  seg0: number;
+  delay: number;
   start: THREE.Vector3;
   ctrl: THREE.Vector3;
   end: THREE.Vector3;
@@ -128,16 +134,26 @@ export default function MercuryCube() {
        transmission pass and the marching-cubes grid, not the polygon counts. */
     const LOW = matchMedia("(max-width: 900px), (pointer: coarse)").matches;
     const flow = FLOW(!LOW);
+    /* Размер — отдельно от LOW: то тир производительности (900px и сенсор, туда попадают
+       планшеты), а мельче куб нужен именно на телефоне. Брейкпоинт как у водолаза. */
+    const SHRINK = matchMedia("(max-width: 639px)").matches ? 1 / 1.5 : 1;
+    const CUBE_SCALE = 0.95 * SHRINK;
     const W = () => mount.clientWidth;
     const H = () => mount.clientHeight;
 
     /* ---------- renderer / scene / camera ---------- */
-    // we render straight to the screen (no composer), so MSAA here is real antialiasing
+    // note: inert while the composer is in use — its render targets are not multisampled,
+    // so nothing is ever drawn into the default framebuffer's MSAA buffer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, LOW ? 1.25 : 1.75));
-    // the transmission pass re-renders the opaque scene + a full mip chain every frame;
-    // it is only ever seen through a heavily distorted refraction, so it does not need full res
-    renderer.transmissionResolutionScale = LOW ? 0.4 : 0.7;
+    /* The transmission pass re-renders the opaque scene + a full mip chain every frame, so
+       it is worth shrinking — but this is a fraction of an already small phone buffer, and
+       the photos inside the cube are only ever seen through it. Cutting it hard there saves
+       very little in absolute pixels and costs most of their legibility. */
+    /* Проход прозрачности пересчитывает непрозрачную сцену плюс мип-цепочку каждый кадр,
+       поэтому его урезание — главная экономия здесь. Но оно же размывает картинку сквозь
+       стекло, а на десктопе решено вернуть резкость, поэтому там почти без урезания. */
+    renderer.transmissionResolutionScale = LOW ? 0.85 : 0.9;
     renderer.setSize(W(), H());
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
@@ -226,15 +242,27 @@ export default function MercuryCube() {
     const material = new THREE.MeshPhysicalMaterial({
       color: 0xeef1f5,
       metalness: 0.0,
-      roughness: 0.07,
+      /* Матовость стекла. В three она же задаёт размытие того, что видно сквозь него:
+         lod = log2(размер буфера) * roughness * clamp(ior*2-2, 0, 1). При ior 1.35 это
+         roughness * 0.7, то есть 0.12 даёт мягкую дымку примерно на первом мип-уровне.
+         Выше ~0.2 начнёт расплываться и блик, а это снова уводит в пелену.
+         На десктопе оставлено исходное 0.07: на большом экране дымка читалась как брак. */
+      roughness: LOW ? 0.12 : 0.07,
       transmission: 1.0,
       thickness: 0.5,
       ior: 1.35,
-      // clearcoat is a second specular lobe on top of an already heavy transmission shader
-      clearcoat: LOW ? 0 : 0.3,
+      /* Пелена: зеркальная составляющая складывается ПОВЕРХ преломлённого фото. Два её
+         источника широкие и равномерные — отражение сплошь белого окружения и размытая
+         доля clearcoat (roughness 0.25) от четырёх ламп. Оба гасим. Резкие блики от самих
+         ламп при roughness 0.07 остаются — это они читаются как стекло.
+         Поднять envMapIntensity, если куб станет плоским и пластмассовым. */
+      clearcoat: 0,
       clearcoatRoughness: 0.25,
-      reflectivity: 0.5,
-      envMapIntensity: 1.0,
+      /* reflectivity убран намеренно: в three это не отдельный параметр, а псевдоним,
+         который пишет в ior по формуле (1 + 0.4r)/(1 - 0.4r). Стоя после ior он молча
+         перебивал заявленные 1.35 на 1.5 — оконное стекло вместо воды, и чем выше ior,
+         тем сильнее френелевское отражение, то есть та самая пелена. */
+      envMapIntensity: 0.3,
     });
 
     let shaderRef: { uniforms: Record<string, THREE.IUniform> } | null = null;
@@ -250,7 +278,7 @@ export default function MercuryCube() {
     };
 
     const shape = new THREE.Mesh(geo, material);
-    shape.scale.setScalar(0.95);
+    shape.scale.setScalar(CUBE_SCALE);
     shape.rotation.z = 0.32;
     scene.add(shape);
 
@@ -305,6 +333,18 @@ export default function MercuryCube() {
     ground.position.set(0, -6, 3);
     scene.add(ground);
 
+    /* ---------- post-processing ---------- */
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    /* Порог считается ДО тонмаппинга, по линейному HDR. Белый фон сцены в линейном
+       пространстве это ровно 1.0, поэтому любой порог ниже единицы (были 0.85 и 0.92)
+       захватывает весь фон целиком — свечение размазывается по кадру и ложится туманом
+       на куб. Выше единицы под него попадают только блики стекла, которые реально
+       ярче белого. Аргументы: разрешение, сила, радиус, порог. */
+    const bloom = new UnrealBloomPass(new THREE.Vector2(W(), H()), 0.18, 0.5, 1.2);
+    composer.addPass(bloom);
+    composer.addPass(new OutputPass());
+
     /* ---------- drop flight ---------- */
     const PLANE_Z0 = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
     const _ray = new THREE.Ray();
@@ -326,8 +366,11 @@ export default function MercuryCube() {
       );
       return out;
     }
-    function easeInOut(t: number) {
-      return t * t * (3 - 2 * t);
+    /* The drop is flung off a spinning cube, so it leaves at full speed and decelerates
+       into the landing. A symmetric ease would read as floating once the flight is this
+       short. Derivative at t=0 is 2.6, at t=1 it is 0. */
+    function easeFling(t: number) {
+      return 1 - Math.pow(1 - t, 2.6);
     }
     function pathPoint(d: Drop, e: number, out: THREE.Vector3) {
       bezier(d.start, d.ctrl, d.end, e, out);
@@ -339,9 +382,11 @@ export default function MercuryCube() {
       return out;
     }
 
-    const dropShaders: { uniforms: Record<string, THREE.IUniform> }[] = [];
+    /* Splashes are 0.05-wide specks. They used to carry the full noise displacement
+       shader, which is invisible at that size and cost 12 noise samples per vertex on
+       every one of them. One material per splash is still needed for its own fade. */
     function makeDropMat() {
-      const m = new THREE.MeshPhysicalMaterial({
+      return new THREE.MeshPhysicalMaterial({
         color: 0xf2f5f8,
         metalness: 0.0,
         roughness: 0.15,
@@ -354,20 +399,12 @@ export default function MercuryCube() {
         transparent: true,
         opacity: 1,
       });
-      m.onBeforeCompile = (shader) => {
-        shader.uniforms.uTime = { value: 0 };
-        shader.uniforms.uAmp = { value: 0.02 };
-        shader.uniforms.uFreq = { value: 0.3 };
-        shader.vertexShader = shader.vertexShader
-          .replace("#include <beginnormal_vertex>", BEGINNORMAL)
-          .replace("#include <begin_vertex>", BEGINVERTEX)
-          .replace("void main() {", NOISE + flow + "\nvoid main() {");
-        dropShaders.push(shader as unknown as { uniforms: Record<string, THREE.IUniform> });
-      };
-      return m;
     }
 
-    const TRAIL = 14;
+    /* TRAIL and BACK go together: the gap between trail balls is BACK/(TRAIL+1), and once
+       that gap grows past roughly a ball radius the streak beads up instead of merging. */
+    const TRAIL = 10;
+    const BACK = 0.55;
     const GOO_S = 3.6;
     const gooMat = new THREE.MeshPhysicalMaterial({
       color: 0xf2f5f8,
@@ -382,7 +419,7 @@ export default function MercuryCube() {
     });
     // res^3 voxels are reset + polygonized in JS every frame while drops fly — this number
     // is the single biggest CPU cost in the scene. Lower it first if it still stutters.
-    const goo = new MarchingCubes(LOW ? 32 : 48, gooMat, false, false, 30000);
+    const goo = new MarchingCubes(LOW ? 28 : 40, gooMat, false, false, 30000);
     goo.scale.setScalar(GOO_S);
     scene.add(goo);
     // stock reset() walks size^3 with 5 indexed writes each; typed-array fill is a memset
@@ -403,6 +440,11 @@ export default function MercuryCube() {
       );
     }
 
+    /* ARM is the scroll progress that fires the drops. GAP staggers their launches;
+       at 0 all four leave together, which is the current look. */
+    const ARM = 0.06;
+    const GAP = 0;
+
     const drops: Drop[] = ITEMS.map((it, i) => ({
       id: it.id,
       size: it.size,
@@ -410,7 +452,7 @@ export default function MercuryCube() {
       lift: it.lift,
       spin: it.spin,
       wob: it.wob,
-      seg0: 0.03 + i * 0.24,
+      delay: i * GAP,
       start: new THREE.Vector3(),
       ctrl: new THREE.Vector3(),
       end: new THREE.Vector3(),
@@ -434,8 +476,9 @@ export default function MercuryCube() {
       if (!end) return false;
       _a.copy(end);
       const len = _a.length() || 1;
-      d.start.copy(end).multiplyScalar(0.95 / len);
-      d.start.y += 0.15;
+      // старт на поверхности куба — обязан ехать вместе с его размером
+      d.start.copy(end).multiplyScalar(CUBE_SCALE / len);
+      d.start.y += 0.15 * SHRINK;
       d.ctrl.copy(d.start).add(end).multiplyScalar(0.5);
       d.ctrl.addScaledVector(_a.copy(end).normalize(), len * 0.22);
       d.ctrl.y += d.lift;
@@ -447,14 +490,14 @@ export default function MercuryCube() {
 
     function applyDrop(d: Drop, t: number) {
       if (!prepDrop(d)) return;
-      const e = easeInOut(t);
+      const e = easeFling(t);
       const phase = Math.sin(Math.PI * Math.min(t / 0.82, 1));
       const melt = t < 0.82 ? 1 : Math.max(1 - (t - 0.82) / 0.18, 0);
       const grow = 0.45 + 0.55 * Math.min(t / 0.14, 1);
       const wb = 1 + d.wob * Math.sin(e * Math.PI * 7) * phase;
       const R = d.size * grow * melt * wb;
       addBall(pathPoint(d, e, _a), R);
-      const back = 0.8 * phase;
+      const back = BACK * phase;
       if (back > 0.02) {
         for (let k = 1; k <= TRAIL; k++) {
           const f = k / (TRAIL + 1);
@@ -468,7 +511,9 @@ export default function MercuryCube() {
 
     /* ---------- splash satellites ---------- */
     const splashGeo = new THREE.SphereGeometry(1, 12, 10);
-    const SPLASH = 28;
+    // all four land within ~0.1s of each other and a splash lives ~0.6s, so the pool has
+    // to hold every burst at once: 4 drops * 5 per burst, plus headroom
+    const SPLASH = 24;
     const splashes: { mesh: THREE.Mesh; vel: THREE.Vector3; life: number }[] = [];
     for (let i = 0; i < SPLASH; i++) {
       const m = new THREE.Mesh(splashGeo, makeDropMat());
@@ -479,7 +524,7 @@ export default function MercuryCube() {
     }
     let splashIdx = 0;
     function burstSplash(at: THREE.Vector3) {
-      for (let i = 0; i < 7; i++) {
+      for (let i = 0; i < 5; i++) {
         const s = splashes[splashIdx];
         splashIdx = (splashIdx + 1) % SPLASH;
         const ang = Math.random() * Math.PI * 2;
@@ -510,36 +555,37 @@ export default function MercuryCube() {
     let gooDirty = false;
     let pulse = 0;
     let prog = 0;
-    /* Scroll only arms a drop — crossing its seg0 threshold. From there the flight plays
-       out on its own clock over d.dur seconds, and rewinds the same way when the scroll
-       goes back past the threshold. So the animation is never half-finished, and once
-       every drop has settled the marching cubes grid stops rebuilding entirely. */
+    /* Crossing ARM starts one clock; every drop reads its own progress off it, offset by
+       its delay, so the flights always play out fully no matter how fast the page is
+       scrolled. Scrolling back runs the same clock backwards. Once the clock hits either
+       end nothing moves and the marching cubes grid stops rebuilding. */
+    const SEQ_END = Math.max(...drops.map((d) => d.delay + d.dur));
+    let seq = 0;
+
     function updateDrops(dt: number) {
-      let moving = 0;
+      const prevSeq = seq;
+      seq = Math.min(Math.max(seq + (prog >= ARM ? dt : -dt), 0), SEQ_END);
+      const moving = seq !== prevSeq;
+
       for (const d of drops) {
-        const want = prog >= d.seg0 ? 1 : 0;
-        const prev = d.ft;
-        if (d.ft !== want) {
-          const step = dt / d.dur;
-          d.ft = want ? Math.min(d.ft + step, 1) : Math.max(d.ft - step, 0);
-          moving++;
-        }
-        const t = d.ft;
-        if (t >= 0.8 && !d.landed) {
+        const was = d.ft;
+        d.ft = Math.min(Math.max((seq - d.delay) / d.dur, 0), 1);
+        if (d.ft >= 0.8 && !d.landed) {
           d.landed = true;
           d.card?.classList.add("shown");
           burstSplash(d.end);
-        } else if (t < 0.8 && d.landed) {
+        } else if (d.ft < 0.8 && d.landed) {
           d.landed = false;
           d.card?.classList.remove("shown");
         }
-        if ((t > 0) !== (prev > 0)) pulse = Math.max(pulse, 0.85);
+        if ((d.ft > 0) !== (was > 0)) pulse = Math.max(pulse, 0.85);
       }
+
       if (!moving && !gooDirty) return;
       goo.reset();
       for (const d of drops) if (d.ft > 0 && d.ft < 1) applyDrop(d, d.ft);
       goo.update();
-      gooDirty = moving > 0;
+      gooDirty = moving;
     }
 
     /* ---------- main loop ---------- */
@@ -573,7 +619,7 @@ export default function MercuryCube() {
       if (shaderRef) shaderRef.uniforms.uTime.value = t;
 
       pulse = Math.max(pulse - dt * 4.0, 0);
-      const ps = 0.95 * (1 + pulse * 0.09);
+      const ps = CUBE_SCALE * (1 + pulse * 0.09);
       shape.scale.set(ps, ps, ps);
       shape.rotation.y += BASE_SPIN * dt + pulse * 2.4 * dt;
       shape.rotation.x = Math.sin(t * 0.4) * 0.12;
@@ -582,10 +628,9 @@ export default function MercuryCube() {
 
       if (!REDUCED) updateDrops(dt);
       updateSplashes(dt);
-      for (const s of dropShaders) s.uniforms.uTime.value = t;
 
       controls.update();
-      renderer.render(scene, camera);
+      composer.render();
     }
     animate();
 
@@ -593,6 +638,8 @@ export default function MercuryCube() {
       camera.aspect = W() / H();
       camera.updateProjectionMatrix();
       renderer.setSize(W(), H());
+      composer.setSize(W(), H());
+      bloom.setSize(W(), H());
     }
     window.addEventListener("resize", onResize);
 
@@ -601,6 +648,7 @@ export default function MercuryCube() {
       io.disconnect();
       window.removeEventListener("resize", onResize);
       controls.dispose();
+      composer.dispose();
       geo.dispose();
       splashGeo.dispose();
       gooMat.dispose();
