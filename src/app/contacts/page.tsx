@@ -1,177 +1,221 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Terminal, Send, CheckSquare, Square, RefreshCw } from "lucide-react";
+import { Send, Terminal, ShieldCheck, RefreshCw } from "lucide-react";
 
 export default function ContactsPage() {
   const router = useRouter();
-  const [bootLogs, setBootLogs] = useState<string[]>([]);
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [message, setMessage] = useState("");
-  const [consent, setConsent] = useState(false);
+  const [consent, setConsent] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState("");
-
-  useEffect(() => {
-    const logs = [
-      "SYSTEM INITIATED: SECURE CLIENT HANDSHAKE PROTOCOL",
-      "ESTABLISHING CRYPTO CHANNEL TO MAETTI BACKEND...",
-      "CIPHER: AES-256-GCM / PROTOCOL: WSS://SECURE.MAETTI.RU",
-      "GET /API/CONTACTS - STATUS: 200 OK",
-      "TERMINAL SHELL INITIATED. WELCOME, GUEST CLIENT."
-    ];
-    
-    logs.forEach((log, index) => {
-      setTimeout(() => {
-        setBootLogs((prev) => [...prev, log]);
-      }, (index + 1) * 300);
-    });
-  }, []);
+  const [logs, setLogs] = useState<string[]>([]);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!consent) {
-      setSubmitStatus("ERR: USER CONSENT REQ [152-FZ] NOT SPECIFIED.");
+      setErrorMsg("C:\\MAETTI> ERROR: User consent required.");
       return;
     }
 
+    setErrorMsg("");
     setIsSubmitting(true);
-    setSubmitStatus("SENDING CLIENT ENVELOPE...");
+    
+    const newLogs = [
+      `C:\\MAETTI\\Contacts> set [Имя]="${name}"`,
+      `C:\\MAETTI\\Contacts> set [Контакты]="${contact}"`,
+      `C:\\MAETTI\\Contacts> send-packet.exe --secure`,
+      "Connecting to api.maetti.ru [192.168.1.100]...",
+      "Status: 200 OK - Message delivered successfully.",
+      "Redirecting to /spasibo..."
+    ];
+
+    newLogs.forEach((log, index) => {
+      setTimeout(() => {
+        setLogs((prev) => [...prev, log]);
+      }, (index + 1) * 250);
+    });
 
     setTimeout(() => {
-      setSubmitStatus("SUCCESS: PACKET TRANSMITTED. REDIRECTING...");
-      setTimeout(() => {
-        router.push("/spasibo");
-      }, 800);
-    }, 1500);
+      router.push("/spasibo");
+    }, 2000);
   };
 
   return (
-    <div className="bg-[#050505] min-h-screen text-[#00e5ff] font-mono p-6 md:p-12 relative flex flex-col justify-center items-center">
-      {/* Neon Glow Grid Overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(0,229,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,229,255,0.03)_1px,transparent_1px)] bg-[size:30px_30px] pointer-events-none" />
-
-      <div className="relative max-w-3xl w-full border-2 border-[#00e5ff] bg-[#0c0c0c] rounded-lg p-6 md:p-8 shadow-[0_0_25px_rgba(0,229,255,0.15)] z-10">
+    <div className="bg-neutral-950 min-h-screen text-neutral-200 font-mono p-4 sm:p-8 md:p-12 flex flex-col justify-center items-center select-text">
+      
+      {/* CMD Window Container */}
+      <div className="w-full max-w-3xl bg-[#0c0c0c] border border-neutral-700 shadow-2xl rounded-sm overflow-hidden">
         
-        {/* Terminal Header */}
-        <div className="flex items-center justify-between border-b border-[#00e5ff]/40 pb-4 mb-6 text-xs md:text-sm text-[#00e5ff]/70">
-          <div className="flex items-center gap-2">
-            <Terminal className="w-4 h-4 text-[#00e5ff] animate-pulse" />
-            <span className="font-bold">secure_shell_v1.0.8_maetti.exe</span>
+        {/* Windows CMD Title Bar */}
+        <div className="bg-[#1f1f1f] px-3 py-1.5 flex items-center justify-between border-b border-neutral-800 text-xs select-none">
+          <div className="flex items-center gap-2 text-neutral-300">
+            <div className="w-4 h-4 bg-black text-white text-[10px] font-bold flex items-center justify-center border border-neutral-600 rounded-xs">
+              C:\
+            </div>
+            <span className="font-semibold tracking-wide">Command Prompt - MAETTI.EXE</span>
           </div>
-          <div className="flex gap-1.5">
-            <div className="w-3 h-3 rounded-full border border-[#00e5ff]/50 bg-transparent" />
-            <div className="w-3 h-3 rounded-full border border-[#00e5ff]/50 bg-transparent" />
-            <div className="w-3 h-3 rounded-full border border-[#00e5ff] bg-[#00e5ff]/20" />
+          <div className="flex items-center gap-2 text-neutral-400">
+            <span className="px-2 py-0.5 hover:bg-neutral-700 hover:text-white cursor-pointer transition-colors">_</span>
+            <span className="px-2 py-0.5 hover:bg-neutral-700 hover:text-white cursor-pointer transition-colors">□</span>
+            <span className="px-2 py-0.5 hover:bg-red-600 hover:text-white cursor-pointer transition-colors">✕</span>
           </div>
         </div>
 
-        {/* Boot Logs */}
-        <div className="space-y-1 mb-8 text-[11px] md:text-xs text-[#00e5ff]/80 bg-[#070707] p-4 border border-[#00e5ff]/20 rounded-md max-h-40 overflow-y-auto">
-          {bootLogs.map((log, idx) => (
-            <div key={idx} className="flex gap-2">
-              <span className="text-[#00e5ff]/40">[{new Date().toLocaleTimeString()}]</span>
-              <span>{log}</span>
-            </div>
-          ))}
-          {bootLogs.length === 5 && (
-            <div className="text-[#00e5ff] animate-pulse flex items-center gap-1">
-              <span>$ cursor_ready_</span>
-            </div>
-          )}
-        </div>
-
-        {/* Terminal Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center gap-2 border-b border-[#00e5ff]/30 py-2">
-            <span className="text-[#00e5ff]/60 shrink-0">guest@maetti:~$ set_name --input=</span>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="введите ваше имя..."
-              required
-              className="bg-transparent border-none outline-none text-[#00e5ff] placeholder-[#00e5ff]/30 flex-1 py-1"
-            />
-          </div>
-
-          <div className="flex flex-col md:flex-row md:items-center gap-2 border-b border-[#00e5ff]/30 py-2">
-            <span className="text-[#00e5ff]/60 shrink-0">guest@maetti:~$ set_contact --input=</span>
-            <input
-              type="text"
-              value={contact}
-              onChange={(e) => setContact(e.target.value)}
-              placeholder="telegram / телефон / email..."
-              required
-              className="bg-transparent border-none outline-none text-[#00e5ff] placeholder-[#00e5ff]/30 flex-1 py-1"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2 border-b border-[#00e5ff]/30 py-2">
-            <span className="text-[#00e5ff]/60">guest@maetti:~$ write_message</span>
-            <textarea
-              rows={4}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="опишите вашу задачу или оставьте комментарий..."
-              required
-              className="bg-transparent border-none outline-none text-[#00e5ff] placeholder-[#00e5ff]/30 flex-1 py-1 resize-none h-24"
-            />
-          </div>
-
-          {/* Consent Checkbox */}
-          <div className="flex items-start gap-3 select-none">
-            <button
-              type="button"
-              onClick={() => setConsent(!consent)}
-              className="mt-0.5 shrink-0 text-[#00e5ff]"
-              aria-label="Toggle Consent Checkbox"
-            >
-              {consent ? (
-                <CheckSquare className="w-5 h-5" />
-              ) : (
-                <Square className="w-5 h-5" />
-              )}
-            </button>
-            <p className="text-xs text-[#00e5ff]/60 leading-tight">
-              согласен с{" "}
-              <Link href="/policy" className="underline hover:text-[#00e5ff] transition-colors font-bold">
-                политикой обработки данных
-              </Link>{" "}
-              согласно 152-ФЗ РФ.
+        {/* CMD Terminal Body */}
+        <div className="p-6 md:p-8 space-y-6 text-sm text-[#cccccc] font-mono leading-relaxed bg-black">
+          
+          {/* Header Info */}
+          <div>
+            <p className="text-neutral-400">
+              C:\Users\Guest\MAETTI&gt; <span className="text-white font-bold">contact-us.cmd</span>
             </p>
           </div>
 
-          {/* Controls */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-4 border-t border-[#00e5ff]/30">
-            {submitStatus && (
-              <div className="text-xs font-bold uppercase tracking-wider text-[#00e5ff] flex items-center gap-2 bg-[#00e5ff]/10 px-3 py-2 border border-[#00e5ff]/30 rounded">
-                {isSubmitting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
-                <span>{submitStatus}</span>
+          {/* Quick Actions Bar */}
+          <div className="border border-neutral-800 bg-[#080808] p-3 text-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-neutral-400">
+              <Terminal className="w-4 h-4 text-emerald-400" />
+              <span>Форма обратной связи. Заполните поля ниже:</span>
+            </div>
+            <a
+              href="https://t.me/maetti_agency_stub"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 underline font-semibold"
+            >
+              <span>[ Наш Telegram ]</span>
+            </a>
+          </div>
+
+          {/* Clean CMD Form */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            
+            {/* Field 1: Name */}
+            <div className="space-y-1">
+              <label className="block text-xs text-neutral-400 font-mono">
+                C:\MAETTI\Contacts&gt; set <span className="text-emerald-400 font-bold">[Имя]</span>=
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Иван Петров"
+                required
+                className="w-full bg-[#111111] border border-neutral-800 focus:border-emerald-500 outline-none text-white px-3 py-2 text-sm font-mono transition-colors placeholder:text-neutral-600"
+              />
+            </div>
+
+            {/* Field 2: Contact */}
+            <div className="space-y-1">
+              <label className="block text-xs text-neutral-400 font-mono">
+                C:\MAETTI\Contacts&gt; set <span className="text-emerald-400 font-bold">[Контакты]</span>=
+              </label>
+              <input
+                type="text"
+                value={contact}
+                onChange={(e) => setContact(e.target.value)}
+                placeholder="Telegram @username / Телефон / Email"
+                required
+                className="w-full bg-[#111111] border border-neutral-800 focus:border-emerald-500 outline-none text-white px-3 py-2 text-sm font-mono transition-colors placeholder:text-neutral-600"
+              />
+            </div>
+
+            {/* Field 3: Message */}
+            <div className="space-y-1">
+              <label className="block text-xs text-neutral-400 font-mono">
+                C:\MAETTI\Contacts&gt; set <span className="text-emerald-400 font-bold">[Сообщение]</span>=
+              </label>
+              <textarea
+                rows={3}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Опишите ваш проект или задачу..."
+                required
+                className="w-full bg-[#111111] border border-neutral-800 focus:border-emerald-500 outline-none text-white px-3 py-2 text-sm font-mono transition-colors placeholder:text-neutral-600 resize-none"
+              />
+            </div>
+
+            {/* Consent Checkbox */}
+            <div className="flex items-center gap-2 pt-1 text-xs text-neutral-400 select-none">
+              <input
+                type="checkbox"
+                id="consentCheck"
+                checked={consent}
+                onChange={(e) => setConsent(e.target.checked)}
+                className="accent-emerald-500 w-4 h-4 cursor-pointer"
+              />
+              <label htmlFor="consentCheck" className="cursor-pointer">
+                Согласен на обработку данных •{" "}
+                <Link href="/policy" className="underline hover:text-white">
+                  Политика
+                </Link>
+              </label>
+            </div>
+
+            {/* Error Message if any */}
+            {errorMsg && (
+              <div className="text-xs text-red-400 bg-red-950/40 border border-red-800 p-2 font-mono">
+                {errorMsg}
               </div>
             )}
-            {!submitStatus && <div />}
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="inline-flex items-center justify-center gap-2 bg-[#00e5ff] text-black font-extrabold px-6 py-3 rounded hover:bg-[#00e5ff]/80 active:scale-95 transition-all duration-200 shadow-[0_0_15px_rgba(0,229,255,0.4)] disabled:opacity-50 cursor-pointer text-sm"
-            >
-              <span>EXECUTE_SUBMIT</span>
-              <Send className="w-4 h-4" />
-            </button>
+            {/* Dynamic Console Output Logs */}
+            {logs.length > 0 && (
+              <div className="bg-[#050505] border border-neutral-800 p-3 space-y-1 text-xs font-mono text-emerald-400">
+                {logs.map((log, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="text-neutral-600">&gt;</span>
+                    <span>{log}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <div className="pt-3 flex flex-wrap items-center justify-between gap-4">
+              <span className="text-xs text-neutral-500">
+                C:\MAETTI\Contacts&gt; <span className="animate-pulse font-bold text-white">_</span>
+              </span>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="inline-flex items-center gap-2 bg-neutral-200 text-black hover:bg-emerald-400 font-bold text-xs uppercase tracking-wider px-6 py-2.5 transition-all duration-200 cursor-pointer disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Отправка...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>[ Enter ] Отправить</span>
+                    <Send className="w-3.5 h-3.5" />
+                  </>
+                )}
+              </button>
+            </div>
+
+          </form>
+
+        </div>
+
+        {/* Window Footer */}
+        <div className="bg-[#111111] px-4 py-2 border-t border-neutral-800 text-[11px] text-neutral-500 flex flex-wrap items-center justify-between gap-2 select-none">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Прямое подключение: Telegram @maetti</span>
           </div>
-        </form>
+          <span>ИП Маетный Д. А. • ИНН 772412345678</span>
+        </div>
+
       </div>
 
-      {/* Info Footnote */}
-      <div className="mt-8 text-center text-xs text-[#00e5ff]/50 space-y-2">
-        <p>прямая ссылка: <a href="https://t.me/maetti_agency_stub" className="underline hover:text-[#00e5ff]">t.me/maetti</a></p>
-        <p>ИП Маетный Д. А. • ИНН 772412345678 • ОГРНИП 321774600123456</p>
-      </div>
     </div>
   );
 }
