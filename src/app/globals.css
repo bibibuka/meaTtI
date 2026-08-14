@@ -446,6 +446,45 @@ html {
 }
 
 /* =========================================================
+   РАБОЧИЙ СТОЛ — секция <WinDesktop/> в самом низу главной.
+   Пока она занимает экран целиком, на <html> висит .desk-on:
+   шапка уезжает вверх, водолаз гаснет — чтобы кадр был как
+   на настоящем ПК.
+   ========================================================= */
+.win-ui {
+  font-family: Tahoma, "Segoe UI", Verdana, sans-serif;
+}
+.ios-ui {
+  font-family: -apple-system, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+}
+
+/* Открытие «приложения» на айфоне: рывок из точки касания. */
+.ios-open {
+  animation: ios-open 260ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+@keyframes ios-open {
+  from {
+    opacity: 0;
+    transform: scale(0.88);
+  }
+}
+
+header {
+  transition: transform 350ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.desk-on header {
+  transform: translateY(-100%);
+}
+/* Водолаз гаснет своим же переходом (см. .dive-controller выше);
+   ползунку отдельно снимаем клики, иначе он ловит их невидимым. */
+.desk-on .dive-controller {
+  opacity: 0;
+}
+.desk-on .diver-thumb {
+  pointer-events: none;
+}
+
+/* =========================================================
    MERCURY CUBE — drop cards (liquid splat blobs with photos)
    Lives inside the sticky pin container of <MercuryCube/>.
    ========================================================= */

@@ -6,7 +6,7 @@ import { useReducedMotion } from "framer-motion";
 import { ArrowUpRight, ChevronRight, Layers, Cpu, Award } from "lucide-react";
 import WaveRule from "@/components/WaveRule";
 
-const MercuryCube = dynamic(() => import("@/components/MercuryCube"), { ssr: false });
+const WinDesktop = dynamic(() => import("@/components/WinDesktop"), { ssr: false });
 
 const SERVICES = [
   {
@@ -245,8 +245,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 3.5. MERCURY CUBE — 3D navigation drops */}
-      <MercuryCube />
+      {/* 3.5. РАБОЧИЙ СТОЛ — навигация ярлыками, шапка на нём прячется */}
+      <WinDesktop />
     </div>
   );
 }
