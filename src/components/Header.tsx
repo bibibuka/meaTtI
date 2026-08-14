@@ -440,8 +440,11 @@ export default function Header() {
                 className="text-blue-600"
                 // На переходе гребень прячем: под шапкой такое же голубое
                 // полотно шторы, и линия читалась бы швом поперёк заставки.
+                // Не анимировать здесь pathLength: framer-motion делает его через
+                // stroke-dasharray, а с non-scaling-stroke длины штрихов считаются в
+                // экранных пикселях — линия при таком viewBox рассыпается в точки.
+                // Появление и так на opacity.
                 animate={{
-                  pathLength: submerged && !pending ? 1 : 0,
                   opacity: submerged && !pending ? 1 : 0,
                   d: reduce ? WAVE_LINE[state][0] : WAVE_LINE[state],
                 }}
@@ -449,8 +452,7 @@ export default function Header() {
                   d: reduce
                     ? { duration: 0 }
                     : { duration: 6, repeat: Infinity, ease: "linear" },
-                  pathLength: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
-                  opacity: { duration: 0.3 },
+                  opacity: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
                 }}
               />
             </svg>
