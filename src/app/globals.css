@@ -21,6 +21,13 @@
   color-scheme: light;
   --background: #ffffff;
   --foreground: #0a0a0a;
+  --kelp-h: max(6rem, 5vw);
+}
+
+@media (max-width: 48rem) {
+  :root {
+    --kelp-h: 12rem;
+  }
 }
 
 @theme inline {
@@ -219,13 +226,15 @@ html::-webkit-scrollbar {
   }
 }
 
-/* Панель прокликивается насквозь — ловит указатель только сам водолаз. */
+/* Панель прокликивается насквозь — ловит указатель только сам водолаз.
+   Нижний предел трека заканчивается на уровне ламинарий (чуть выше кустов),
+   чтобы водолаз останавливался прямо над верхушками растений в нижнем состоянии. */
 .dive-controller {
   position: fixed;
   z-index: 40;
   top: 7rem;
   right: -0.3rem;
-  bottom: clamp(2.75rem, 6vh, 4.5rem);
+  bottom: calc(var(--kelp-h) + 3.8rem - 20px);
   width: clamp(4.5rem, 6vw, 6rem);
   color: #155dfc;
   opacity: 0.72;
@@ -247,18 +256,6 @@ html::-webkit-scrollbar {
 .dive-controller:hover,
 .dive-controller:focus-within {
   opacity: 1;
-}
-
-.depth-meter {
-  position: absolute;
-  right: 0.75rem;
-  bottom: -1.85rem;
-  min-width: 4rem;
-  color: #475569;
-  font-family: var(--font-mono), "SFMono-Regular", Consolas, monospace;
-  font-size: 0.72rem;
-  text-align: right;
-  pointer-events: none;
 }
 
 .dive-track,
@@ -467,30 +464,43 @@ html {
 .kelp-strip {
   --kelp-blue: #155dfc;
   --kelp-pale: #b6d7ff;
-  /* Высота полосы — единственная ручка размера. Сцена прижата низом и режется
-     сверху (xMidYMax slice), поэтому масштаб куста = max(ширина/1440, высота/430).
-     На широком экране выигрывает ширина, и полоса обязана поспевать за ней,
-     иначе верхушки срежет. На узком выигрывает высота: сцена кадрируется вбок,
-     кустов видно меньше, зато они остаются читаемыми, а не превращаются в пыль. */
-  --kelp-h: max(6rem, 5vw);
   position: relative;
   width: 100%;
   height: var(--kelp-h);
-  /* Ложимся поверх низа страницы, а не отдельной полосой под ней: у каждой
-     страницы свой фон (контакты почти чёрные, команда кремовая), и блок в
-     потоке вставлял между ними чужой прямоугольник. Отрицательный отступ
-     ровно в свою высоту — вклад в поток нулевой, кусты растут на фоне самой
-     страницы. Клики не ловим, так что перекрытый низ остаётся рабочим. */
-  margin-top: calc(-1 * var(--kelp-h));
   overflow: hidden;
   pointer-events: none;
   contain: layout paint;
 }
 
-@media (max-width: 48rem) {
-  .kelp-strip {
-    --kelp-h: 12rem;
-  }
+.kelp-strip--invert {
+  --kelp-blue: #38b6ff;
+  --kelp-pale: #60a5fa;
+}
+
+.kelp-strip--invert .kelp-scene .blade,
+.kelp-strip--invert .kelp-scene .leaf {
+  fill: #ffffff !important;
+}
+
+.kelp-strip--invert .kelp-layer--rear {
+  color: #60a5fa;
+  stroke: #60a5fa;
+  opacity: 0.85;
+}
+
+.kelp-strip--invert .kelp-layer--front {
+  color: #38b6ff;
+  stroke: #38b6ff;
+}
+
+.kelp-strip--invert .seabed-line--rear {
+  stroke: #3b82f6;
+  stroke-width: 1.6;
+}
+
+.kelp-strip--invert .seabed-line--front {
+  stroke: #38b6ff;
+  stroke-width: 2;
 }
 
 .kelp-scene {

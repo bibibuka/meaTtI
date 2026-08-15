@@ -43,7 +43,6 @@ export default function DiverScroll() {
     const track = controller.querySelector<HTMLElement>(".dive-track")!;
     const thumb = controller.querySelector<HTMLButtonElement>(".diver-thumb")!;
     const rope = controller.querySelector<SVGPathElement>(".completed-rope")!;
-    const meter = controller.querySelector<HTMLElement>(".depth-meter")!;
     const diverArt = thumb.querySelector<SVGSVGElement>(".diver-art")!;
     const grip = thumb.querySelector<SVGPathElement>(".grip")!;
     const regulator = thumb.querySelector<SVGPathElement>(".regulator")!;
@@ -127,7 +126,6 @@ export default function DiverScroll() {
             : `${percent} процентов, глубина ${percent} метров`,
       );
       rope.style.clipPath = `inset(0 0 ${((1 - progress) * 100).toFixed(2)}% 0)`;
-      meter.textContent = `${String(percent).padStart(3, "0")} м`;
     }
 
     function setDirection(nextProgress: number) {
@@ -317,8 +315,6 @@ export default function DiverScroll() {
         data-dragging="false"
         aria-label="Навигация по глубине страницы"
       >
-        <output className="depth-meter">000 м</output>
-
         <div className="dive-track" aria-hidden="true">
           <svg
             className="rope-svg"

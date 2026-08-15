@@ -52,8 +52,8 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      {/* Accordion List */}
-      <section className="max-w-5xl mx-auto px-6 py-12">
+      {/* Services List */}
+      <section className="max-w-7xl mx-auto px-6 py-16">
         <div className="divide-y divide-neutral-200 dark:divide-neutral-800 border-t border-b border-neutral-200 dark:border-neutral-800">
           {SECTIONS.map((sec) => {
             const isOpen = isOpenId(sec.id);

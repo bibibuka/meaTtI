@@ -55,7 +55,7 @@ export default function TeamPage() {
       };
 
   return (
-    <div className="relative bg-[#FFFDF0] dark:bg-neutral-950 min-h-screen text-black dark:text-neutral-200 pb-24 font-sans bg-[radial-gradient(#e0e0d0_1px,transparent_1px)] [background-size:20px_20px] dark:bg-[radial-gradient(#202020_1px,transparent_1px)]">
+    <div className="relative bg-[#FFFDF0] dark:bg-neutral-950 min-h-screen text-black dark:text-neutral-200 pb-20 md:pb-24 font-sans bg-[radial-gradient(#e0e0d0_1px,transparent_1px)] [background-size:20px_20px] dark:bg-[radial-gradient(#202020_1px,transparent_1px)]">
       
       {/* Hero Header */}
       <section className="max-w-7xl mx-auto px-6 pt-16 pb-20">

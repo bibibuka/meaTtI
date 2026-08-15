@@ -7,9 +7,9 @@
    на всех страницах кроме неё. Своего фона у полосы нет: она отрицательным
    отступом ложится на низ самой страницы — см. .kelp-strip в globals.css. */
 
-export default function KelpFrame() {
+export default function KelpFrame({ className = "" }: { className?: string }) {
   return (
-    <div className="kelp-strip" aria-hidden="true">
+    <div className={`kelp-strip ${className}`} aria-hidden="true">
       <svg
         className="kelp-scene"
         viewBox="0 0 1440 430"
@@ -20,6 +20,7 @@ export default function KelpFrame() {
           <g id="kelp-a-c" transform="scale(.18)">
             <path
               className="blade"
+              fill="#ffffff"
               d="M -7 0 C -20 -61 -4 -111 -19 -170 C -34 -231 -8 -291 -20 -356 C 10 -326 18 -269 6 -211 C -6 -153 17 -88 8 0 Z"
             />
             <path className="vein" d="M 1 -8 C -5 -90 6 -166 -2 -246 C -6 -288 0 -321 -5 -344" />
@@ -27,12 +28,14 @@ export default function KelpFrame() {
           <g id="kelp-a-a" transform="scale(.18)">
             <path
               className="blade"
+              fill="#ffffff"
               d="M -8 0 C -34 -43 -57 -94 -44 -151 C -36 -188 -54 -224 -68 -251 C -29 -230 -12 -190 -17 -146 C -23 -94 -4 -50 3 0 Z"
             />
           </g>
           <g id="kelp-a-b" transform="scale(.18)">
             <path
               className="blade"
+              fill="#ffffff"
               d="M 3 0 C 15 -40 42 -74 37 -120 C 34 -151 49 -178 67 -198 C 72 -158 60 -124 53 -94 C 45 -59 29 -26 12 0 Z"
             />
           </g>
@@ -43,6 +46,7 @@ export default function KelpFrame() {
           <g id="kelp-c-c" transform="scale(.18)">
             <path
               className="blade"
+              fill="#ffffff"
               d="M -7 0 C -3 -58 -28 -111 -16 -169 C -5 -220 -27 -263 -43 -301 C -2 -277 15 -233 6 -184 C -4 -126 18 -65 9 0 Z"
             />
             <path className="vein" d="M 1 -8 C -4 -67 -7 -126 -3 -180 C 1 -225 -13 -263 -34 -290" />
@@ -50,12 +54,14 @@ export default function KelpFrame() {
           <g id="kelp-c-a" transform="scale(.18)">
             <path
               className="blade"
+              fill="#ffffff"
               d="M -5 0 C -33 -34 -58 -66 -59 -108 C -60 -139 -79 -162 -98 -178 C -88 -137 -73 -106 -63 -78 C -52 -43 -30 -19 -14 0 Z"
             />
           </g>
           <g id="kelp-c-b" transform="scale(.18)">
             <path
               className="blade"
+              fill="#ffffff"
               d="M 1 0 C 17 -41 47 -77 41 -124 C 37 -160 54 -193 73 -216 C 79 -171 65 -135 57 -101 C 48 -61 30 -26 12 0 Z"
             />
           </g>
@@ -84,16 +90,16 @@ export default function KelpFrame() {
 
           <g id="kelp-e-left" transform="scale(.18)">
             <path className="stem" d="M -4 -65 C -41 -87 -55 -111 -61 -142" />
-            <path className="leaf" d="M -25 -83 C -55 -82 -69 -100 -67 -126 C -41 -127 -25 -111 -25 -83 Z" />
+            <path className="leaf" fill="#ffffff" d="M -25 -83 C -55 -82 -69 -100 -67 -126 C -41 -127 -25 -111 -25 -83 Z" />
           </g>
           <g id="kelp-e-right" transform="scale(.18)">
             <path className="stem" d="M 2 -105 C 38 -127 51 -153 56 -184" />
-            <path className="leaf" d="M 21 -121 C 50 -122 68 -140 67 -166 C 40 -167 22 -150 21 -121 Z" />
+            <path className="leaf" fill="#ffffff" d="M 21 -121 C 50 -122 68 -140 67 -166 C 40 -167 22 -150 21 -121 Z" />
           </g>
           <g id="kelp-e-main" transform="scale(.18)">
             <path className="stem" d="M 0 0 C -15 -79 18 -150 -6 -251" />
-            <path className="leaf" d="M -10 -181 C -39 -187 -51 -207 -44 -232 C -17 -226 -3 -207 -10 -181 Z" />
-            <path className="leaf" d="M 0 -216 C 25 -229 38 -252 29 -276 C 4 -264 -7 -241 0 -216 Z" />
+            <path className="leaf" fill="#ffffff" d="M -10 -181 C -39 -187 -51 -207 -44 -232 C -17 -226 -3 -207 -10 -181 Z" />
+            <path className="leaf" fill="#ffffff" d="M 0 -216 C 25 -229 38 -252 29 -276 C 4 -264 -7 -241 0 -216 Z" />
           </g>
           <g id="kelp-e-base" transform="scale(.18)">
             <path className="holdfast" d="M -17 2 Q -10 -13 -3 0 Q 3 -17 9 0 Q 14 -11 20 2" />
@@ -102,6 +108,7 @@ export default function KelpFrame() {
           <g id="kelp-g-a" transform="scale(.18)">
             <path
               className="blade"
+              fill="#ffffff"
               d="M -5 0 C -16 -55 -2 -103 -13 -155 C -25 -210 -4 -260 -13 -318 C 14 -288 18 -239 8 -190 C -2 -137 15 -72 7 0 Z"
             />
             <path className="vein" d="M 1 -7 C -5 -75 5 -137 -3 -205 C -6 -247 0 -279 -3 -308" />
@@ -109,6 +116,7 @@ export default function KelpFrame() {
           <g id="kelp-g-b" transform="scale(.18)">
             <path
               className="blade"
+              fill="#ffffff"
               d="M 2 0 C 14 -38 37 -72 33 -113 C 30 -145 44 -177 60 -204 C 67 -163 53 -128 47 -98 C 40 -59 24 -25 11 0 Z"
             />
             <path className="vein" d="M 8 -6 C 25 -55 38 -105 49 -149 C 53 -168 56 -185 58 -197" />
@@ -120,6 +128,7 @@ export default function KelpFrame() {
           <g id="kelp-h-b" transform="scale(.18)">
             <path
               className="blade"
+              fill="#ffffff"
               d="M -4 0 C -32 -47 -55 -98 -46 -151 C -39 -198 -57 -240 -74 -278 C -32 -254 -10 -207 -16 -157 C -22 -104 -3 -53 6 0 Z"
             />
             <path className="vein" d="M -5 -5 C -28 -57 -34 -113 -37 -161 C -41 -209 -55 -247 -68 -269" />
@@ -127,6 +136,7 @@ export default function KelpFrame() {
           <g id="kelp-h-c" transform="scale(.18)">
             <path
               className="blade"
+              fill="#ffffff"
               d="M 0 0 C -10 -46 2 -91 -8 -137 C -17 -177 -2 -207 -7 -239 C 17 -218 24 -179 14 -142 C 4 -100 16 -49 8 0 Z"
             />
             <path className="vein" d="M 3 -5 C 2 -61 7 -110 3 -156 C 0 -187 5 -213 4 -230" />
@@ -138,6 +148,7 @@ export default function KelpFrame() {
           <g id="kelp-i-a" transform="scale(.18)">
             <path
               className="blade"
+              fill="#ffffff"
               d="M -2 0 C -21 -35 -41 -68 -37 -110 C -34 -143 -48 -170 -64 -193 C -30 -181 -10 -149 -14 -111 C -18 -69 1 -36 7 0 Z"
             />
             <path className="vein" d="M -3 -4 C -21 -48 -26 -93 -31 -130 C -36 -160 -47 -180 -57 -189" />
@@ -145,6 +156,7 @@ export default function KelpFrame() {
           <g id="kelp-i-c" transform="scale(.18)">
             <path
               className="blade"
+              fill="#ffffff"
               d="M 3 0 C 20 -49 42 -90 37 -141 C 32 -190 53 -235 72 -272 C 77 -231 63 -193 57 -153 C 50 -98 30 -45 12 0 Z"
             />
             <path className="vein" d="M 6 -6 C 27 -59 36 -117 45 -165 C 53 -207 62 -241 68 -265" />

@@ -293,6 +293,7 @@ export default function Header() {
   // На переходе завязана прямо на pending, поэтому уходит вверх вместе со
   // шторой, а не ждёт, пока та поднимется.
   const submerged = scrolled || isOpen || !!pending;
+  const isDarkHeader = pathname === "/contacts" && !submerged;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -529,8 +530,8 @@ export default function Header() {
             onNavigate={startTransition("/")}
             className="group flex items-center gap-2"
           >
-            <span className="text-3xl font-extrabold tracking-tighter text-foreground group-hover:scale-105 transition-transform duration-200">
-              maetti<span className="text-blue-600">.</span>
+            <span className={`text-3xl font-extrabold tracking-tighter ${isDarkHeader ? "text-white" : "text-foreground"} group-hover:scale-105 transition-colors duration-200`}>
+              maetti<span className="text-blue-500">.</span>
             </span>
           </Link>
 
@@ -543,13 +544,17 @@ export default function Header() {
                   key={link.href}
                   href={link.href}
                   onNavigate={startTransition(link.href)}
-                  className="relative text-sm font-semibold tracking-wide text-foreground/80 hover:text-foreground transition-colors py-2"
+                  className={`relative text-sm font-semibold tracking-wide ${
+                    isDarkHeader
+                      ? "text-neutral-300 hover:text-white"
+                      : "text-foreground/80 hover:text-foreground"
+                  } transition-colors py-2`}
                 >
                   {link.label}
                   {isActive && (
                     <motion.span
                       layoutId="activeNav"
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground"
+                      className={`absolute bottom-0 left-0 right-0 h-0.5 ${isDarkHeader ? "bg-white" : "bg-foreground"}`}
                       transition={{ type: "spring", stiffness: 300, damping: 30 }}
                     />
                   )}
@@ -564,7 +569,11 @@ export default function Header() {
               href="https://t.me/maetti_agency_stub"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-foreground text-background font-bold px-5 py-2.5 rounded-full hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg text-sm"
+              className={`inline-flex items-center gap-2 ${
+                isDarkHeader
+                  ? "bg-white text-neutral-950 hover:bg-neutral-200"
+                  : "bg-foreground text-background"
+              } font-bold px-5 py-2.5 rounded-full hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg text-sm`}
             >
               <Send className="w-4 h-4" />
               <span>Написать в Telegram</span>
@@ -574,7 +583,7 @@ export default function Header() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden relative z-50 -mr-2 flex h-10 w-10 flex-col items-center justify-center gap-1.5 text-foreground focus:outline-none active:scale-90 transition-transform"
+            className={`md:hidden relative z-50 -mr-2 flex h-10 w-10 flex-col items-center justify-center gap-1.5 ${isDarkHeader ? "text-white" : "text-foreground"} focus:outline-none active:scale-90 transition-colors`}
             aria-label={isOpen ? "Закрыть меню" : "Открыть меню"}
             aria-expanded={isOpen}
           >
