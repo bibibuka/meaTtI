@@ -81,6 +81,11 @@ const SITE: Record<string, string> = Object.fromEntries(
   ICONS.filter((it) => it.href).map((it) => [it.id, it.href!]),
 );
 
+/* На GitHub Pages сайт лежит в подпапке /meaTtI (basePath в next.config).
+   next/link подставляет её сам, но адресная строка окна и src айфрейма — это
+   сырые строки, им подпапку дописываем руками. Локально значение пустое. */
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 /* На айфоне те же две сломанные иконки зовутся и ругаются по-своему. */
 const IOS: Record<string, { label: string; head: string; body: string }> = {
   bin: {
@@ -260,6 +265,7 @@ function Site({ id }: { id: string }) {
         <Globe className="h-3.5 w-3.5 shrink-0 text-neutral-500" />
         <span className="min-w-0 flex-1 truncate rounded border border-neutral-300 bg-white px-2 py-0.5 text-[12px] text-neutral-600">
           {host}
+          {BASE}
           {SITE[id]}
         </span>
         <Link
@@ -271,7 +277,7 @@ function Site({ id }: { id: string }) {
           <ArrowUpRight className="h-3.5 w-3.5" />
         </Link>
       </div>
-      <iframe src={SITE[id]} title={TITLES[id]} className="min-h-0 w-full flex-1 border-0" />
+      <iframe src={BASE + SITE[id]} title={TITLES[id]} className="min-h-0 w-full flex-1 border-0" />
     </div>
   );
 }
