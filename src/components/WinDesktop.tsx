@@ -8,6 +8,7 @@ import {
   Briefcase,
   FolderOpen,
   Gamepad2,
+  Globe,
   Mail,
   Minus,
   Rocket,
@@ -23,8 +24,8 @@ import {
 /* Экран «чужого устройства» в самом низу главной. Первые четыре ярлыка ведут
    туда же, куда вели капли ртутного куба; остальные открывают окна прямо здесь.
    Широкий экран получает рабочий стол винды, узкий — домашний экран айфона:
-   иллюзия должна совпадать с тем, с чего человек смотрит. Общего у оболочек
-   всё, кроме хрома, — ярлыки, тексты ошибок и сама змейка.
+    иллюзия должна совпадать с тем, с чего человек смотрит. Общего у оболочек
+    всё, кроме хрома, — ярлыки, тексты ошибок и сами игры.
    Пока секция занимает экран целиком, шапка и водолаз уезжают — за это отвечает
    класс .desk-on на <html> (правила в globals.css). */
 
@@ -32,9 +33,26 @@ type Item = {
   id: string;
   label: string;
   href?: string;
-  Icon: typeof Briefcase;
+  Icon: React.ComponentType<{ className?: string }>;
   tint: string;
 };
+
+/* В lucide этой версии нет дракона, поэтому силуэт рисуем сами — тот же
+   интерфейс (className), что у lucide-иконок, чтобы жить в общем списке. */
+function DragonIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <polygon points="5.5,13.5 0.8,13.2 2,17.4 5.5,15.5" />
+      <polygon points="8,11 10.5,3.5 13.5,10.5" />
+      <polygon points="7.5,10.2 8.5,8.2 9.8,10" />
+      <polygon points="10,10 11.3,8.4 12.5,10.4" />
+      <ellipse cx="10" cy="14" rx="5.5" ry="4.2" />
+      <circle cx="15.5" cy="9.5" r="3.2" />
+      <rect x="17.5" y="8.4" width="4.2" height="2.6" rx="1" />
+      <polygon points="14.2,7.6 16,4.4 16.8,7.8" />
+    </svg>
+  );
+}
 
 const ICONS: Item[] = [
   { id: "uslugi", label: "Услуги", href: "/uslugi", Icon: Briefcase, tint: "from-sky-400 to-blue-600" },
@@ -44,13 +62,24 @@ const ICONS: Item[] = [
   { id: "bin", label: "Корзина", Icon: Trash2, tint: "from-neutral-300 to-neutral-500" },
   { id: "explorer", label: "Проводник", Icon: FolderOpen, tint: "from-yellow-300 to-amber-500" },
   { id: "snake", label: "Змейка", Icon: Gamepad2, tint: "from-lime-400 to-green-600" },
+  { id: "dragon", label: "Дракончик", Icon: DragonIcon, tint: "from-orange-400 to-red-600" },
 ];
 
 const TITLES: Record<string, string> = {
   bin: "Корзина",
   explorer: "explorer.exe",
   snake: "Змейка",
+  dragon: "Дракончик",
+  uslugi: "Услуги",
+  keysy: "Кейсы",
+  team: "Команда",
+  contacts: "Контакты",
 };
+
+/* Страницы сайта открываются не переходом, а окном прямо на столе. */
+const SITE: Record<string, string> = Object.fromEntries(
+  ICONS.filter((it) => it.href).map((it) => [it.id, it.href!]),
+);
 
 /* На айфоне те же две сломанные иконки зовутся и ругаются по-своему. */
 const IOS: Record<string, { label: string; head: string; body: string }> = {
@@ -132,6 +161,7 @@ function TBtn({
 function Win({
   title,
   dialog,
+  size,
   offset,
   z,
   onFocus,
@@ -141,6 +171,8 @@ function Win({
 }: {
   title: string;
   dialog?: boolean;
+  /* окну со страницей размер задаём мы: iframe сам по себе высоты не имеет */
+  size?: [number, number];
   offset: number;
   z: number;
   onFocus: () => void;
@@ -175,6 +207,8 @@ function Win({
               left: "50%",
               top: "50%",
               transform: `translate(calc(-50% + ${p.x}px), calc(-50% + ${p.y}px))`,
+              width: size?.[0],
+              height: size?.[1],
               // на низком экране окно не должно вылезать за стол — тело прокрутится само
               maxWidth: "calc(100% - 1rem)",
               maxHeight: "calc(100% - 4rem)",
@@ -210,6 +244,38 @@ function Win({
   );
 }
 
+/* ----------------------------- страница сайта ----------------------------- */
+
+/* Настоящая страница сайта внутри окна: адресная строка сверху, под ней iframe.
+   Обвязку сайта в нём прячет класс .embed (скрипт в layout.tsx), так что в окне
+   остаётся только контент и скроллит его сам iframe. Одна на стол и айфон. */
+function Site({ id }: { id: string }) {
+  // Домен показываем настоящий: на проде свой, локально — localhost. Компонент
+  // живёт только внутри стола (dynamic ssr:false), так что location уже есть.
+  const host = location.host;
+
+  return (
+    <div className="flex h-full w-full flex-col bg-white">
+      <div className="flex shrink-0 items-center gap-2 border-b border-black/15 bg-neutral-100 px-2 py-1.5">
+        <Globe className="h-3.5 w-3.5 shrink-0 text-neutral-500" />
+        <span className="min-w-0 flex-1 truncate rounded border border-neutral-300 bg-white px-2 py-0.5 text-[12px] text-neutral-600">
+          {host}
+          {SITE[id]}
+        </span>
+        <Link
+          href={SITE[id]}
+          title="Открыть по-настоящему"
+          aria-label="Открыть по-настоящему"
+          className="grid h-6 w-6 shrink-0 place-items-center rounded border border-neutral-300 bg-white text-neutral-600 hover:bg-neutral-50"
+        >
+          <ArrowUpRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+      <iframe src={SITE[id]} title={TITLES[id]} className="min-h-0 w-full flex-1 border-0" />
+    </div>
+  );
+}
+
 /* --------------------------------- змейка --------------------------------- */
 
 const N = 20;
@@ -232,12 +298,14 @@ const KEYS: Record<string, [number, number]> = {
 };
 
 // «Заново» — это ремонт партии с нуля, поэтому просто перемонтируем доску по key.
-function Snake() {
+// full — карта тянется на весь экран (айфон); без него — фиксированный
+// размер для плавающего окна на столе.
+function Snake({ full }: { full?: boolean }) {
   const [run, setRun] = useState(0);
-  return <Board key={run} restart={() => setRun((r) => r + 1)} />;
+  return <Board key={run} restart={() => setRun((r) => r + 1)} full={full} />;
 }
 
-function Board({ restart }: { restart: () => void }) {
+function Board({ restart, full }: { restart: () => void; full?: boolean }) {
   const cv = useRef<HTMLCanvasElement>(null);
   const turn = useRef<(x: number, y: number) => void>(() => {});
   const [score, setScore] = useState(0);
@@ -333,7 +401,7 @@ function Board({ restart }: { restart: () => void }) {
   );
 
   return (
-    <div className="p-3">
+    <div className={full ? "flex h-full flex-col p-3" : "p-3"}>
       <div className="mb-2 flex items-center justify-between text-[12px] font-bold text-neutral-700">
         <span>Счёт: {score}</span>
         <button
@@ -345,8 +413,15 @@ function Board({ restart }: { restart: () => void }) {
         </button>
       </div>
 
-      <div className="relative" style={{ width: SIZE, height: SIZE }}>
-        <canvas ref={cv} style={{ width: SIZE, height: SIZE }} className="block rounded border border-neutral-500" />
+      <div
+        className={full ? "relative mx-auto aspect-square w-full min-h-0 flex-1" : "relative"}
+        style={full ? undefined : { width: SIZE, height: SIZE }}
+      >
+        <canvas
+          ref={cv}
+          style={full ? { width: "100%", height: "100%", imageRendering: "pixelated" } : { width: SIZE, height: SIZE }}
+          className="block rounded border border-neutral-500"
+        />
         {over && (
           <div className="absolute inset-0 grid place-items-center rounded bg-black/70 text-center text-white">
             <div>
@@ -372,9 +447,305 @@ function Board({ restart }: { restart: () => void }) {
         {pad(0, -1, "Вверх", "▲")}
         <span />
         {pad(-1, 0, "Влево", "◀")}
-        {pad(0, 1, "Вниз", "▼")}
+        <span />
         {pad(1, 0, "Вправо", "▶")}
+        <span />
+        {pad(0, 1, "Вниз", "▼")}
+        <span />
       </div>
+    </div>
+  );
+}
+
+/* -------------------------------- дракончик -------------------------------- */
+
+// Flappy на канве в той же стилистике, что змейка: тёмная вода, пиксельная
+// рисовка. Дракончик летит между колоннами ламинаций — в тему сайта.
+// Управление: пробел/стрелка вверх/клик на столе, тап — на айфоне.
+const DW = 288;
+const DH = 384;
+const GROUND = 16;
+const GRAV = 1400;
+const JUMP = -360;
+const PIPE_W = 46;
+const GAP = 128;
+const SPEED = 130;
+const SPACING = 178;
+const DX = 66; // x дракончика
+const R = 9; // радиус для столкновений
+
+type Pipe = { x: number; gap: number; scored: boolean };
+
+// Схема та же, что у змейки: «Заново» перемонтирует небо по key.
+function Dragon({ full }: { full?: boolean }) {
+  const [run, setRun] = useState(0);
+  return <Sky key={run} restart={() => setRun((r) => r + 1)} full={full} />;
+}
+
+function Sky({ restart, full }: { restart: () => void; full?: boolean }) {
+  const cv = useRef<HTMLCanvasElement>(null);
+  const flap = useRef<() => void>(() => {});
+  const [score, setScore] = useState(0);
+  const [over, setOver] = useState(false);
+  const [ready, setReady] = useState(true);
+
+  useEffect(() => {
+    const c = cv.current!;
+    const ctx = c.getContext("2d")!;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    c.width = DW * dpr;
+    c.height = DH * dpr;
+    ctx.scale(dpr, dpr);
+
+    let y = DH * 0.42;
+    let vy = 0;
+    let run = false;
+    let dead = false;
+    let pts = 0;
+    let pipes: Pipe[] = [];
+    const bubbles = Array.from({ length: 9 }, () => ({
+      x: Math.random() * DW,
+      y: Math.random() * DH,
+      r: 1 + Math.random() * 2.4,
+      s: 10 + Math.random() * 24,
+    }));
+
+    const spawn = () => {
+      const top = GAP / 2 + 26;
+      const bot = DH - GROUND - GAP / 2 - 26;
+      pipes.push({ x: DW + 20, gap: top + Math.random() * (bot - top), scored: false });
+    };
+
+    const die = () => {
+      dead = true;
+      setOver(true);
+    };
+
+    // Круг дракончика против прямоугольника ламинарии.
+    const hits = (px: number, py: number, w: number, h: number) => {
+      const nx = Math.max(px, Math.min(DX, px + w));
+      const ny = Math.max(py, Math.min(y, py + h));
+      return (DX - nx) ** 2 + (y - ny) ** 2 < R * R;
+    };
+
+    const drawKelp = (p: Pipe) => {
+      const top = p.gap - GAP / 2;
+      const bot = p.gap + GAP / 2;
+      ctx.fillStyle = "#166534";
+      ctx.fillRect(p.x, 0, PIPE_W, top);
+      ctx.fillRect(p.x, bot, PIPE_W, DH - GROUND - bot);
+      ctx.fillStyle = "#22c55e";
+      ctx.fillRect(p.x + 5, 0, PIPE_W - 14, Math.max(0, top - 6));
+      ctx.fillRect(p.x + 5, bot + 6, PIPE_W - 14, DH - GROUND - bot - 6);
+      // шапочки-концы и листики по бокам
+      ctx.fillRect(p.x + 2, top - 7, PIPE_W - 4, 7);
+      ctx.fillRect(p.x + 2, bot, PIPE_W - 4, 7);
+      for (let yy = 10; yy < top - 12; yy += 18) {
+        ctx.fillRect(p.x - 4, yy, 6, 4);
+        ctx.fillRect(p.x + PIPE_W - 2, yy + 9, 6, 4);
+      }
+      for (let yy = bot + 12; yy < DH - GROUND - 10; yy += 18) {
+        ctx.fillRect(p.x + PIPE_W - 2, yy, 6, 4);
+        ctx.fillRect(p.x - 4, yy + 9, 6, 4);
+      }
+    };
+
+    const drawDragon = (wingUp: boolean) => {
+      const x = DX;
+      ctx.fillStyle = "#ea580c";
+      ctx.fillRect(x - 16, y - 2, 5, 4); // кончик хвоста
+      ctx.fillStyle = "#fb923c";
+      ctx.fillRect(x - 12, y - 4, 5, 8); // основание хвоста
+      ctx.fillRect(x - 8, y - 6, 14, 12); // тело
+      ctx.fillRect(x + 5, y - 8, 9, 9); // голова
+      ctx.fillRect(x + 14, y - 4, 4, 4); // морда
+      ctx.fillStyle = "#fde68a";
+      ctx.fillRect(x - 6, y + 2, 10, 3); // брюшко
+      ctx.fillRect(x + 7, y - 12, 3, 5); // рожка
+      ctx.fillStyle = "#ea580c";
+      if (wingUp) ctx.fillRect(x - 3, y - 14, 7, 9);
+      else ctx.fillRect(x - 4, y - 8, 8, 5);
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(x + 10, y - 6, 3, 3); // глаз
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(x + 11, y - 5, 2, 2); // зрачок
+    };
+
+    const draw = (t: number) => {
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(0, 0, DW, DH);
+      ctx.fillStyle = "rgba(125,211,252,.14)";
+      for (const b of bubbles) {
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      for (const p of pipes) drawKelp(p);
+      ctx.fillStyle = "#1e293b";
+      ctx.fillRect(0, DH - GROUND, DW, GROUND);
+      ctx.fillStyle = "#334155";
+      ctx.fillRect(0, DH - GROUND, DW, 2);
+      drawDragon(!dead && (run ? vy < 40 : Math.sin(t / 300) > 0));
+    };
+
+    let raf = 0;
+    let last = performance.now();
+    const step = (now: number) => {
+      const dt = Math.min((now - last) / 1000, 0.033);
+      last = now;
+      for (const b of bubbles) {
+        b.y -= b.s * dt;
+        if (b.y < -4) {
+          b.y = DH + 4;
+          b.x = Math.random() * DW;
+        }
+      }
+      if (dead) {
+        // после столкновения дракончик падает на дно и замирает
+        if (y + R < DH - GROUND) {
+          vy = Math.min(vy + GRAV * dt, 520);
+          y = Math.min(y + vy * dt, DH - GROUND - R);
+        }
+      } else if (run) {
+        vy = Math.min(vy + GRAV * dt, 480);
+        y += vy * dt;
+        if (y < R + 2) {
+          y = R + 2;
+          vy = 0;
+        }
+        for (const p of pipes) p.x -= SPEED * dt;
+        if (!pipes.length || pipes[pipes.length - 1].x < DW + 20 - SPACING) spawn();
+        pipes = pipes.filter((p) => p.x > -PIPE_W - 8);
+        for (const p of pipes) {
+          if (!p.scored && p.x + PIPE_W < DX) {
+            p.scored = true;
+            setScore(++pts);
+          }
+          if (
+            hits(p.x, 0, PIPE_W, p.gap - GAP / 2) ||
+            hits(p.x, p.gap + GAP / 2, PIPE_W, DH - GROUND - p.gap - GAP / 2)
+          )
+            die();
+        }
+        if (y + R >= DH - GROUND) die();
+      } else {
+        y = DH * 0.42 + Math.sin((now / 1000) * 2.6) * 7;
+      }
+      draw(now);
+      raf = requestAnimationFrame(step);
+    };
+
+    flap.current = () => {
+      if (dead) return;
+      if (!run) {
+        run = true;
+        spawn();
+        setReady(false);
+      }
+      vy = JUMP;
+    };
+
+    const onKey = (e: KeyboardEvent) => {
+      // Как у змейки: клавиши ловим только пока стол на экране.
+      if (!document.documentElement.classList.contains("desk-on")) return;
+      const k = e.key;
+      if (k !== " " && k !== "ArrowUp" && k.toLowerCase() !== "w" && k.toLowerCase() !== "ц") return;
+      e.preventDefault();
+      if (!e.repeat) flap.current();
+    };
+    window.addEventListener("keydown", onKey);
+
+    raf = requestAnimationFrame(step);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, []);
+
+  return (
+    <div className={full ? "flex h-full flex-col p-3" : "p-3"}>
+      <div className="mb-2 flex items-center justify-between text-[12px] font-bold text-neutral-700">
+        <span>Счёт: {score}</span>
+        <button
+          type="button"
+          onClick={restart}
+          className="rounded border border-neutral-400 bg-neutral-200 px-2 py-0.5 hover:bg-neutral-100"
+        >
+          Заново
+        </button>
+      </div>
+
+      <div
+        className={full ? "relative mx-auto aspect-[3/4] w-full min-h-0 flex-1" : "relative"}
+        style={full ? undefined : { width: DW, height: DH }}
+      >
+        <canvas
+          ref={cv}
+          onPointerDown={() => flap.current()}
+          style={full ? { width: "100%", height: "100%", imageRendering: "pixelated" } : { width: DW, height: DH }}
+          className="block cursor-pointer touch-none rounded border border-neutral-500"
+        />
+        {ready && (
+          <div className="pointer-events-none absolute inset-0 grid place-items-center rounded bg-black/55 text-center text-white">
+            <div>
+              <p className="text-base font-bold">Дракончик</p>
+              <p className="mt-1 text-xs text-white/75">Тапни или нажми пробел</p>
+            </div>
+          </div>
+        )}
+        {over && (
+          <div className="absolute inset-0 grid place-items-center rounded bg-black/70 text-center text-white">
+            <div>
+              <p className="text-base font-bold">Игра окончена</p>
+              <p className="mt-1 text-xs text-white/70">Счёт: {score}</p>
+              <button
+                type="button"
+                onClick={restart}
+                className="mt-3 rounded bg-white px-3 py-1 text-xs font-bold text-neutral-900"
+              >
+                Ещё раз
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <p className="mt-2 text-center text-[11px] text-neutral-500 max-md:hidden [@media(pointer:coarse)]:hidden">
+        Пробел или клик
+      </p>
+    </div>
+  );
+}
+
+const GAMES: Record<string, React.ComponentType<{ full?: boolean }>> = {
+  snake: Snake,
+  dragon: Dragon,
+};
+
+// Открытое «приложение» на айфоне: шапка с названием, содержимое на весь экран
+// и полоска «домой». Одно на все — и на игры, и на страницы сайта.
+function PhoneApp({ id, onClose }: { id: string; onClose: () => void }) {
+  const G = GAMES[id];
+  return (
+    <div className="ios-open absolute inset-0 z-30 flex flex-col bg-[#f2f2f7]">
+      <div className="flex items-center justify-between border-b border-black/10 px-4 py-3">
+        <span className="text-[15px] font-semibold text-neutral-900">{TITLES[id]}</span>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Закрыть"
+          className="grid h-7 w-7 place-items-center rounded-full bg-red-500/10 text-red-500 active:bg-red-500/20"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+      <div className="flex flex-1 flex-col overflow-hidden">{G ? <G full /> : <Site id={id} />}</div>
+      <button
+        type="button"
+        aria-label="На главный экран"
+        onClick={onClose}
+        className="mx-auto my-2 h-1 w-32 shrink-0 rounded-full bg-neutral-900/30"
+      />
     </div>
   );
 }
@@ -386,6 +757,8 @@ type WinState = { id: string; min: boolean };
 export default function WinDesktop() {
   const secRef = useRef<HTMLElement>(null);
   const coarse = useRef(false);
+  // Стол внутри окна стола не нужен: если главную открыли в iframe — молчим.
+  const embed = window.self !== window.top;
   const [sel, setSel] = useState<string | null>(null);
   const [wins, setWins] = useState<WinState[]>([]);
   const [start, setStart] = useState(false);
@@ -403,6 +776,7 @@ export default function WinDesktop() {
 
   // Пока стол занимает экран целиком — прячем шапку и водолаза.
   useEffect(() => {
+    if (embed) return;
     coarse.current = matchMedia("(pointer: coarse)").matches;
     const root = document.documentElement;
     const io = new IntersectionObserver(
@@ -414,7 +788,7 @@ export default function WinDesktop() {
       io.disconnect();
       root.classList.remove("desk-on");
     };
-  }, []);
+  }, [embed]);
 
   useEffect(() => {
     const tick = () =>
@@ -427,6 +801,12 @@ export default function WinDesktop() {
   const open = (id: string) => {
     setStart(false);
     setWins((w) => [...w.filter((x) => x.id !== id), { id, min: false }]);
+    // Окно живёт внутри секции: если стол виден лишь наполовину, окно срежет
+    // краем экрана. Поэтому на открытии доводим стол до полного кадра —
+    // руками, а не scrollIntoView: у html есть scroll-padding под шапку, и
+    // из-за него стол вставал на 100px ниже, теряя низ окна.
+    const el = secRef.current;
+    if (el) scrollTo({ top: el.getBoundingClientRect().top + scrollY });
   };
   const close = (id: string) => setWins((w) => w.filter((x) => x.id !== id));
   const focus = (id: string) =>
@@ -443,6 +823,14 @@ export default function WinDesktop() {
         : [...w.filter((x) => x.id !== id), { id, min: false }];
     });
 
+  // Ярлык страницы никуда не уводит: страница открывается окном здесь же.
+  // Ctrl/⌘/Shift оставляем браузеру — ссылка настоящая, пусть откроет вкладку.
+  const nav = (e: React.MouseEvent, id: string) => {
+    if (SITE[id] && (e.metaKey || e.ctrlKey || e.shiftKey)) return;
+    e.preventDefault();
+    open(id);
+  };
+
   // Мышью как в винде: первый клик выделяет, открывает второй. На айфоне и
   // вообще на тач-экране двойного тапа никто не ждёт — там открываем сразу.
   const hit = (e: React.MouseEvent, it: Item) => {
@@ -451,7 +839,7 @@ export default function WinDesktop() {
       e.preventDefault();
       return;
     }
-    if (!it.href) open(it.id);
+    nav(e, it.id);
   };
 
   const label = (it: Item) => IOS[it.id]?.label ?? it.label;
@@ -466,7 +854,7 @@ export default function WinDesktop() {
   // ------------------------------- айфон -------------------------------
   const top = wins[wins.length - 1];
   const iphone = (
-    <div className="ios-ui absolute inset-0 flex flex-col overflow-hidden bg-gradient-to-b from-[#16307a] via-[#3f6fd8] to-[#9ec6f2]">
+    <div className="ios-ui desk-shell absolute inset-0 flex flex-col bg-gradient-to-b from-[#16307a] via-[#3f6fd8] to-[#9ec6f2]">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -left-16 top-[18%] h-56 w-56 rounded-full bg-fuchsia-400/30 blur-3xl" />
         <div className="absolute -right-12 top-1/2 h-56 w-56 rounded-full bg-cyan-300/35 blur-3xl" />
@@ -516,30 +904,10 @@ export default function WinDesktop() {
         <div className="mx-auto mt-3 h-1 w-32 rounded-full bg-white/80" />
       </div>
 
-      {/* открытое «приложение»: змейка на весь экран, остальное — алерт */}
+      {/* открытое «приложение»: игры и страницы на весь экран, остальное — алерт */}
       {top &&
-        (top.id === "snake" ? (
-          <div className="ios-open absolute inset-0 z-30 flex flex-col bg-[#f2f2f7]">
-            <div className="flex items-center justify-between border-b border-black/10 px-4 py-3">
-              <span className="text-[15px] font-semibold text-neutral-900">Змейка</span>
-              <button
-                type="button"
-                onClick={() => close(top.id)}
-                className="text-[15px] font-semibold text-blue-600"
-              >
-                Готово
-              </button>
-            </div>
-            <div className="flex flex-1 items-center justify-center overflow-auto">
-              <Snake />
-            </div>
-            <button
-              type="button"
-              aria-label="На главный экран"
-              onClick={() => close(top.id)}
-              className="mx-auto my-2 h-1 w-32 shrink-0 rounded-full bg-neutral-900/30"
-            />
-          </div>
+        (GAMES[top.id] || SITE[top.id] ? (
+          <PhoneApp id={top.id} onClose={() => close(top.id)} />
         ) : (
           <div
             onClick={() => close(top.id)}
@@ -567,11 +935,13 @@ export default function WinDesktop() {
     </div>
   );
 
+  if (embed) return null;
+
   return (
     <section
       ref={secRef}
       aria-label={phone ? "Домашний экран" : "Рабочий стол"}
-      className="relative h-[100svh] w-full shrink-0 select-none overflow-hidden"
+      className="desk-shell relative h-[100svh] w-full shrink-0 select-none"
     >
       {phone ? (
         iphone
@@ -618,20 +988,31 @@ export default function WinDesktop() {
           </div>
 
           {/* окна */}
-          {wins.map((w, i) =>
-            w.min ? null : (
+          {wins.map((w, i) => {
+            const G = GAMES[w.id];
+            const site = SITE[w.id];
+            return w.min ? null : (
               <Win
                 key={w.id}
-                title={w.id === "explorer" ? "explorer.exe — Ошибка приложения" : TITLES[w.id]}
-                dialog={w.id !== "snake"}
+                title={
+                  site
+                    ? `maeTtI — ${TITLES[w.id]}`
+                    : w.id === "explorer"
+                      ? "explorer.exe — Ошибка приложения"
+                      : TITLES[w.id]
+                }
+                dialog={!G && !site}
+                size={site ? [820, 580] : undefined}
                 offset={i}
                 z={20 + i}
                 onFocus={() => focus(w.id)}
                 onClose={() => close(w.id)}
                 onMin={() => minimize(w.id)}
               >
-                {w.id === "snake" ? (
-                  <Snake />
+                {site ? (
+                  <Site id={w.id} />
+                ) : G ? (
+                  <G />
                 ) : (
                   <div className="w-[min(380px,calc(100vw-32px))]">
                     <div className="flex gap-3 p-4">
@@ -653,8 +1034,8 @@ export default function WinDesktop() {
                   </div>
                 )}
               </Win>
-            ),
-          )}
+            );
+          })}
 
           {/* меню «Пуск» */}
           {start && (
@@ -668,7 +1049,7 @@ export default function WinDesktop() {
                     <Hit
                       href={it.href}
                       label={it.label}
-                      onClick={() => (it.href ? setStart(false) : open(it.id))}
+                      onClick={(e) => nav(e, it.id)}
                       className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[13px] text-neutral-800 hover:bg-blue-600 hover:text-white"
                     >
                       <it.Icon className="h-4 w-4" />
@@ -680,37 +1061,55 @@ export default function WinDesktop() {
             </div>
           )}
 
-          {/* панель задач */}
-          <div className="absolute inset-x-0 bottom-0 z-40 flex h-11 items-center gap-1.5 border-t border-white/30 bg-gradient-to-b from-[#3a7be0] to-[#1941a5] px-1.5">
-            <button
-              type="button"
-              onClick={() => setStart((s) => !s)}
-              className="flex items-center gap-1.5 rounded-md bg-gradient-to-b from-[#6bc257] to-[#2f7c1f] px-3 py-1.5 text-[13px] font-bold italic text-white shadow ring-1 ring-white/40"
-            >
-              <span className="grid h-3.5 w-3.5 grid-cols-2 gap-px">
-                {[0, 1, 2, 3].map((i) => (
-                  <i key={i} className="rounded-[1px] bg-white/90" />
-                ))}
-              </span>
-              пуск
-            </button>
+          {/* панель задач: пуск с окнами слева, быстрый запуск строго по центру
+              (крайние колонки по 1fr), часы справа */}
+          <div className="absolute inset-x-0 bottom-0 z-40 grid h-11 grid-cols-[1fr_auto_1fr] items-center gap-1.5 border-t border-white/30 bg-gradient-to-b from-[#3a7be0] to-[#1941a5] px-1.5">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setStart((s) => !s)}
+                className="flex shrink-0 items-center gap-1.5 rounded-md bg-gradient-to-b from-[#6bc257] to-[#2f7c1f] px-3 py-1.5 text-[13px] font-bold italic text-white shadow ring-1 ring-white/40"
+              >
+                <span className="grid h-3.5 w-3.5 grid-cols-2 gap-px">
+                  {[0, 1, 2, 3].map((i) => (
+                    <i key={i} className="rounded-[1px] bg-white/90" />
+                  ))}
+                </span>
+                пуск
+              </button>
 
-            <div className="flex min-w-0 flex-1 gap-1 overflow-hidden">
-              {wins.map((w) => (
-                <button
-                  key={w.id}
-                  type="button"
-                  onClick={() => task(w.id)}
-                  className={`max-w-[150px] truncate rounded px-2 py-1 text-[12px] text-white ring-1 ring-white/25 ${
-                    w.min ? "bg-white/10" : "bg-white/25"
-                  }`}
+              <div className="flex min-w-0 gap-1 overflow-hidden">
+                {wins.map((w) => (
+                  <button
+                    key={w.id}
+                    type="button"
+                    onClick={() => task(w.id)}
+                    className={`max-w-[150px] truncate rounded px-2 py-1 text-[12px] text-white ring-1 ring-white/25 ${
+                      w.min ? "bg-white/10" : "bg-white/25"
+                    }`}
+                  >
+                    {TITLES[w.id]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 rounded bg-black/15 px-1.5 py-1">
+              {ICONS.filter((it) => it.href).map((it) => (
+                <Link
+                  key={it.id}
+                  href={it.href!}
+                  onClick={(e) => nav(e, it.id)}
+                  aria-label={it.label}
+                  title={it.label}
+                  className={`grid h-7 w-7 place-items-center rounded bg-gradient-to-br ${it.tint} shadow ring-1 ring-white/40 outline-none transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-white`}
                 >
-                  {TITLES[w.id]}
-                </button>
+                  <it.Icon className="h-4 w-4 text-white drop-shadow" />
+                </Link>
               ))}
             </div>
 
-            <div className="shrink-0 rounded bg-black/15 px-2 py-1 text-[12px] tabular-nums text-white">
+            <div className="justify-self-end rounded bg-black/15 px-2 py-1 text-[12px] tabular-nums text-white">
               {clock}
             </div>
           </div>

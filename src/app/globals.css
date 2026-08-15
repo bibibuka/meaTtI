@@ -5,6 +5,18 @@
    dark:*-классы просто никогда не срабатывают, править их не нужно. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* На тачскрине наведения нет, и все group-hover-эффекты там просто не живут.
+   Роль курсора играет невидимая горизонтальная линия посреди экрана: карточка,
+   которая её пересекла, получает класс .at-line — его вешает HoverLine.tsx.
+   Первая ветка — штатный group-hover тейлвинда, её @media (hover: hover)
+   оставляем: иначе после тапа на телефоне hover залипал бы. */
+@custom-variant group-hover {
+  @media (hover: hover) {
+    &:is(:where(.group):hover *) { @slot; }
+  }
+  &:is(:where(.group).at-line *) { @slot; }
+}
+
 :root {
   color-scheme: light;
   --background: #ffffff;
@@ -157,6 +169,7 @@ html::-webkit-scrollbar {
   overflow: hidden;
   color: #155dfc;
   pointer-events: none;
+  transition: opacity 240ms ease;
 }
 
 .released-bubble {
@@ -446,11 +459,244 @@ html {
 }
 
 /* =========================================================
+   ЛАМИНАРИИ над футером. Дословный перенос прототипа из
+   public/kelp-frame/ (там же тесты и заметки по дизайну);
+   разметка — в <KelpFrame/>. Имена вроде .blade и .leaf слишком
+   общие для глобального файла, поэтому всё живёт под .kelp-scene.
+   ========================================================= */
+.kelp-strip {
+  --kelp-blue: #155dfc;
+  --kelp-pale: #b6d7ff;
+  /* Высота полосы — единственная ручка размера. Сцена прижата низом и режется
+     сверху (xMidYMax slice), поэтому масштаб куста = max(ширина/1440, высота/430).
+     На широком экране выигрывает ширина, и полоса обязана поспевать за ней,
+     иначе верхушки срежет. На узком выигрывает высота: сцена кадрируется вбок,
+     кустов видно меньше, зато они остаются читаемыми, а не превращаются в пыль. */
+  --kelp-h: max(6rem, 5vw);
+  position: relative;
+  width: 100%;
+  height: var(--kelp-h);
+  /* Ложимся поверх низа страницы, а не отдельной полосой под ней: у каждой
+     страницы свой фон (контакты почти чёрные, команда кремовая), и блок в
+     потоке вставлял между ними чужой прямоугольник. Отрицательный отступ
+     ровно в свою высоту — вклад в поток нулевой, кусты растут на фоне самой
+     страницы. Клики не ловим, так что перекрытый низ остаётся рабочим. */
+  margin-top: calc(-1 * var(--kelp-h));
+  overflow: hidden;
+  pointer-events: none;
+  contain: layout paint;
+}
+
+@media (max-width: 48rem) {
+  .kelp-strip {
+    --kelp-h: 12rem;
+  }
+}
+
+.kelp-scene {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Цвет кустов отдаётся наследованием от слоя, а не currentColor внутри <defs>.
+   <use> клонирует уже вычисленный стиль оригинала, а currentColor там разрешён
+   по цвету самого <defs> — то есть по тексту страницы. В прототипе цвет текста
+   не задан вовсе, поэтому там это не всплыло, а на сайте body красится в
+   --foreground, и кусты вылезли чёрными. Наследуемый stroke, в отличие от
+   вычисленного currentColor, доезжает до клона от самого <use>. */
+.kelp-scene .kelp-layer--rear {
+  color: var(--kelp-pale);
+  stroke: var(--kelp-pale);
+  opacity: 0.78;
+}
+
+.kelp-scene .kelp-layer--front {
+  color: var(--kelp-blue);
+  stroke: var(--kelp-blue);
+}
+
+.kelp-scene .blade,
+.kelp-scene .leaf,
+.kelp-scene .grass,
+.kelp-scene .stem,
+.kelp-scene .vein,
+.kelp-scene .holdfast,
+.kelp-scene .kelp-bubble,
+.kelp-scene .seabed-line {
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.kelp-scene .blade,
+.kelp-scene .leaf {
+  fill: #ffffff;
+  stroke-width: 2.15;
+}
+
+.kelp-scene .grass,
+.kelp-scene .stem {
+  fill: none;
+  stroke-width: 2.15;
+}
+
+.kelp-scene .vein {
+  fill: none;
+  stroke-width: 1.15;
+  opacity: 0.62;
+}
+
+.kelp-scene .holdfast {
+  fill: none;
+  stroke-width: 2.15;
+}
+
+.kelp-scene .kelp-anchor {
+  fill: currentColor;
+}
+
+.kelp-scene .seabed-line {
+  fill: none;
+}
+
+/* Линии дна лежат прямо в <svg>, а не в слое, поэтому цвет им ставим явно. */
+.kelp-scene .seabed-line--rear {
+  stroke: var(--kelp-pale);
+  stroke-width: 1.4;
+  opacity: 0.7;
+}
+
+.kelp-scene .seabed-line--front {
+  stroke: var(--kelp-blue);
+  stroke-width: 1.8;
+}
+
+/* Куст качается целиком, каждая лопасть — ещё и сама по себе, в своей фазе. */
+.kelp-scene .kelp-motion {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  will-change: transform;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+  animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+}
+
+.kelp-scene .motion--a { animation-name: kelp-sway-a; animation-duration: 7.4s; }
+.kelp-scene .motion--b { animation-name: kelp-sway-b; animation-duration: 8.6s; animation-delay: -2.7s; }
+.kelp-scene .motion--c { animation-name: kelp-sway-c; animation-duration: 9.2s; animation-delay: -5.1s; }
+.kelp-scene .motion--d { animation-name: kelp-sway-d; animation-duration: 7.9s; animation-delay: -3.8s; }
+
+.kelp-scene .frond {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation-direction: alternate;
+  animation-iteration-count: infinite;
+  animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+}
+
+.kelp-scene .frond--a { animation-name: frond-sway-a; animation-duration: 4.4s; animation-delay: -1.1s; }
+.kelp-scene .frond--b { animation-name: frond-sway-b; animation-duration: 4.8s; animation-delay: -3.4s; }
+.kelp-scene .frond--c { animation-name: frond-sway-c; animation-duration: 5s; animation-delay: -5.7s; }
+.kelp-scene .frond--d { animation-name: frond-sway-d; animation-duration: 4.5s; animation-delay: -2.3s; }
+.kelp-scene .frond--e { animation-name: frond-sway-e; animation-duration: 5.1s; animation-delay: -4.6s; }
+.kelp-scene .frond--branch-left { animation-name: branch-sway-left; animation-duration: 4.2s; }
+.kelp-scene .frond--branch-right { animation-name: branch-sway-right; animation-duration: 4.6s; }
+
+.kelp-scene .kelp-bubble {
+  --bubble-drift: 4px;
+  --bubble-drift-end: 6px;
+  fill: #ffffff;
+  stroke-width: 1.45;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: kelp-bubble-rise 5.8s linear infinite;
+  animation-delay: calc(var(--bubble-start, 0s) + var(--bubble-step, 0s));
+}
+
+.kelp-scene .bubble-stream--a { --bubble-start: -0.35s; }
+.kelp-scene .bubble-stream--b { --bubble-start: -1.32s; }
+.kelp-scene .bubble-stream--c { --bubble-start: -2.29s; }
+.kelp-scene .bubble-stream--d { --bubble-start: -3.26s; }
+.kelp-scene .bubble-stream--e { --bubble-start: -4.23s; }
+.kelp-scene .bubble-stream--f { --bubble-start: -5.2s; }
+
+.kelp-scene .bubble--1 { --bubble-step: 0s; }
+.kelp-scene .bubble--2 { --bubble-step: 0.18s; --bubble-drift: -3px; --bubble-drift-end: -5px; }
+.kelp-scene .bubble--3 { --bubble-step: 0.36s; --bubble-drift: 2px; --bubble-drift-end: 4px; }
+.kelp-scene .bubble--4 { --bubble-step: 0.54s; --bubble-drift: -2px; --bubble-drift-end: -4px; }
+
+@keyframes kelp-sway-a {
+  from { transform: translateX(-1.5px) rotate(-1.8deg); }
+  to   { transform: translateX(2px) rotate(2.4deg); }
+}
+@keyframes kelp-sway-b {
+  from { transform: translateX(1.5px) rotate(2deg); }
+  to   { transform: translateX(-2px) rotate(-2.7deg); }
+}
+@keyframes kelp-sway-c {
+  from { transform: translateX(-1px) rotate(-1.3deg); }
+  to   { transform: translateX(2.5px) rotate(2.1deg); }
+}
+@keyframes kelp-sway-d {
+  from { transform: translateX(1.2px) rotate(1.6deg); }
+  to   { transform: translateX(-2.2px) rotate(-2.2deg); }
+}
+
+@keyframes frond-sway-a { from { transform: rotate(-9deg); }    to { transform: rotate(10deg); } }
+@keyframes frond-sway-b { from { transform: rotate(9.5deg); }   to { transform: rotate(-10deg); } }
+@keyframes frond-sway-c { from { transform: rotate(-8.5deg); }  to { transform: rotate(10.5deg); } }
+@keyframes frond-sway-d { from { transform: rotate(9.2deg); }   to { transform: rotate(-9.8deg); } }
+@keyframes frond-sway-e { from { transform: rotate(-10.2deg); } to { transform: rotate(8.8deg); } }
+@keyframes branch-sway-left  { from { transform: rotate(-14deg); }   to { transform: rotate(15deg); } }
+@keyframes branch-sway-right { from { transform: rotate(14.5deg); }  to { transform: rotate(-14.5deg); } }
+
+@keyframes kelp-bubble-rise {
+  0%, 6% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.72);
+  }
+  10% { opacity: 0.82; }
+  30% {
+    opacity: 0.66;
+    transform: translate3d(var(--bubble-drift), -21px, 0) scale(0.96);
+  }
+  46%, 100% {
+    opacity: 0;
+    transform: translate3d(var(--bubble-drift-end), -38px, 0) scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kelp-scene .kelp-motion,
+  .kelp-scene .frond {
+    animation: none;
+    transform: none;
+  }
+  .kelp-scene .kelp-bubble {
+    animation: none;
+    opacity: 0;
+    transform: none;
+  }
+}
+
+/* =========================================================
    РАБОЧИЙ СТОЛ — секция <WinDesktop/> в самом низу главной.
    Пока она занимает экран целиком, на <html> висит .desk-on:
    шапка уезжает вверх, водолаз гаснет — чтобы кадр был как
    на настоящем ПК.
    ========================================================= */
+/* Оболочки стола обрезаем через clip, а не hidden: hidden оставляет бокс
+   прокручиваемым, и браузер уводил весь экран вбок, докрутив карусель внутри
+   окна до края (за край торчат декоративные пятна). clip прокрутку исключает
+   вовсе; hidden оставлен запасным путём для старых браузеров. */
+.desk-shell {
+  overflow: hidden;
+  overflow: clip;
+}
+
 .win-ui {
   font-family: Tahoma, "Segoe UI", Verdana, sans-serif;
 }
@@ -469,15 +715,39 @@ html {
   }
 }
 
+/* Страница, открытая окном на самом столе (в iframe): в маленьком окне нужен
+   только контент, вся обвязка сайта — шапка, подвал, водолаз — лишняя. */
+.embed header,
+.embed footer,
+.embed .dive-controller,
+.embed .bubble-trail {
+  display: none;
+}
+.embed #page-content {
+  padding-top: 0;
+}
+/* Докрутив страницу в окне до края, прокрутка перекидывалась на главную —
+   и стол уезжал из кадра прямо под курсором. Замыкаем её внутри окна. */
+.embed {
+  overscroll-behavior: contain;
+}
+/* Липкие панели на страницах отмеряют себе место под шапку сайта; шапки в
+   окне нет, поэтому они висели посреди экрана — прижимаем их к верху. */
+.embed .sticky {
+  top: 0;
+}
+
 header {
   transition: transform 350ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 .desk-on header {
   transform: translateY(-100%);
 }
-/* Водолаз гаснет своим же переходом (см. .dive-controller выше);
-   ползунку отдельно снимаем клики, иначе он ловит их невидимым. */
-.desk-on .dive-controller {
+/* Водолаз и его пузырьки гаснут своим же переходом (см. .dive-controller
+   и .bubble-trail выше); ползунку отдельно снимаем клики, иначе он ловит
+   их невидимым. */
+.desk-on .dive-controller,
+.desk-on .bubble-trail {
   opacity: 0;
 }
 .desk-on .diver-thumb {
