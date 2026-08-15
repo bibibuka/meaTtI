@@ -102,7 +102,7 @@ export default function HomePage() {
 
         <div className="relative max-w-7xl mx-auto w-full z-10">
           {/* Kinetic Offer */}
-          <h1 className="text-5xl md:text-8xl font-black tracking-tight leading-none mb-8 select-none">
+          <h1 className="text-4xl sm:text-6xl md:text-8xl font-black tracking-tight leading-none mb-8 select-none break-words">
             МЫ СТРОИМ <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600">
               ЧИСТЫЙ КОД

@@ -20,7 +20,7 @@ export default function PolicyPage() {
         <header className="mb-12 border-b border-neutral-200 dark:border-neutral-800 pb-8">
           <div className="w-fit">
             <WaveRule className="mb-4" />
-            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-neutral-950 dark:text-white">
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-neutral-950 dark:text-white break-words">
               Политика Конфиденциальности
             </h1>
           </div>

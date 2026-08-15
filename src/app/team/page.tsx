@@ -58,23 +58,23 @@ export default function TeamPage() {
     <div className="relative bg-[#FFFDF0] dark:bg-neutral-950 min-h-screen text-black dark:text-neutral-200 pb-20 md:pb-24 font-sans bg-[radial-gradient(#e0e0d0_1px,transparent_1px)] [background-size:20px_20px] dark:bg-[radial-gradient(#202020_1px,transparent_1px)]">
       
       {/* Hero Header */}
-      <section className="max-w-7xl mx-auto px-6 pt-16 pb-20">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-12 sm:pt-16 pb-16 sm:pb-20">
         <div className="max-w-3xl">
-          <div className="w-fit mb-8">
-            <WaveRule className="mb-6" />
-            <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tight text-black dark:text-white leading-none">
+          <div className="w-fit mb-6 sm:mb-8">
+            <WaveRule className="mb-5 sm:mb-6" />
+            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black uppercase tracking-tight text-black dark:text-white leading-none break-words">
               НАША КОМАНДА
             </h1>
           </div>
-          <p className="text-lg md:text-xl text-neutral-700 dark:text-neutral-400 font-medium max-w-2xl leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-neutral-700 dark:text-neutral-400 font-medium max-w-2xl leading-relaxed">
             Мы не просто фрилансеры-одиночки. Мы сплоченная студия инженеров и дизайнеров, любящих свое дело и готовых создавать продукты высшего пилотажа.
           </p>
         </div>
       </section>
 
       {/* Team Grid */}
-      <section className="max-w-7xl mx-auto px-6 mb-24">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-16 sm:mb-24">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           {TEAM.map((member, idx) => (
             <motion.div
               key={idx}
@@ -82,18 +82,18 @@ export default function TeamPage() {
                 y: -10,
                 boxShadow: "10px 10px 0px 0px rgba(0,0,0,1)"
               }}
-              className="group relative border-4 border-black dark:border-white bg-white dark:bg-neutral-900 p-6 flex flex-col justify-between transition-all duration-200 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.8)]"
+              className="group relative border-4 border-black dark:border-white bg-white dark:bg-neutral-900 p-5 sm:p-6 flex flex-col justify-between transition-all duration-200 shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] sm:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[5px_5px_0px_0px_rgba(255,255,255,0.8)] sm:dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.8)]"
             >
               {/* Memphis avatar badge */}
-              <div className={`w-16 h-16 border-4 border-black dark:border-white flex items-center justify-center text-4xl mb-6 ${member.color} shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]`}>
+              <div className={`w-14 h-14 sm:w-16 sm:h-16 border-4 border-black dark:border-white flex items-center justify-center text-3xl sm:text-4xl mb-5 sm:mb-6 ${member.color} shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]`}>
                 {member.avatar}
               </div>
 
               <div>
-                <h2 className="text-2xl font-black uppercase tracking-tight text-black dark:text-white mb-1">
+                <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-black dark:text-white mb-1 break-words">
                   {member.name}
                 </h2>
-                <div className="text-xs font-mono font-bold text-neutral-500 uppercase mb-4">
+                <div className="text-xs font-mono font-bold text-neutral-500 uppercase mb-3 sm:mb-4">
                   // {member.role}
                 </div>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed mb-6 font-medium">
@@ -102,7 +102,7 @@ export default function TeamPage() {
               </div>
 
               {/* Tags */}
-              <div className="flex flex-wrap gap-2 pt-4 border-t-2 border-black dark:border-neutral-800">
+              <div className="flex flex-wrap gap-1.5 sm:gap-2 pt-4 border-t-2 border-black dark:border-neutral-800">
                 {member.tags.map((tag, tIdx) => (
                   <span
                     key={tIdx}
@@ -118,17 +118,17 @@ export default function TeamPage() {
       </section>
 
       {/* Trust / Requisites Block */}
-      <section className="max-w-4xl mx-auto px-6">
-        <div className="border-4 border-black dark:border-white bg-[#38b6ff]/20 dark:bg-neutral-900 p-8 md:p-12 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.8)]">
-          <h2 className="text-3xl font-black uppercase tracking-tight text-black dark:text-white mb-6 flex items-center gap-3">
-            <FileText className="w-8 h-8" />
-            <span>ОФИЦИАЛЬНОСТЬ И ДОВЕРИЕ</span>
+      <section className="max-w-4xl mx-auto px-4 sm:px-6">
+        <div className="border-4 border-black dark:border-white bg-[#38b6ff]/20 dark:bg-neutral-900 p-5 sm:p-8 md:p-12 shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[5px_5px_0px_0px_rgba(255,255,255,0.8)] sm:dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.8)]">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight text-black dark:text-white mb-4 sm:mb-6 flex items-center gap-2.5 sm:gap-3 flex-wrap sm:flex-nowrap">
+            <FileText className="w-6 h-6 sm:w-8 sm:h-8 shrink-0" />
+            <span className="break-words">ОФИЦИАЛЬНОСТЬ И ДОВЕРИЕ</span>
           </h2>
-          <p className="text-sm md:text-base text-neutral-800 dark:text-neutral-300 font-medium leading-relaxed mb-8">
+          <p className="text-sm sm:text-base text-neutral-800 dark:text-neutral-300 font-medium leading-relaxed mb-6 sm:mb-8">
             Мы дорожим репутацией и работаем исключительно прозрачно. Для каждого проекта заключается официальный двусторонний договор, предоставляются закрывающие документы, а оплата принимается на расчетный счет.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t-2 border-dashed border-black dark:border-neutral-800 text-xs font-mono">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 pt-5 sm:pt-6 border-t-2 border-dashed border-black dark:border-neutral-800 text-xs font-mono">
             <div className="space-y-2">
               <div className="font-bold text-neutral-500 uppercase">// РЕКВИЗИТЫ СТУДИИ:</div>
               <div><strong>Название:</strong> Студия цифровых решений maeTtI</div>
@@ -139,10 +139,10 @@ export default function TeamPage() {
             <div className="space-y-2">
               <div className="font-bold text-neutral-500 uppercase">// КОНТАКТЫ ДЛЯ ДОГОВОРОВ:</div>
               <div><strong>Банк:</strong> АО «ТБанк»</div>
-              <div><strong>Расчетный счет:</strong> 40802810123456789012</div>
+              <div className="break-all"><strong>Расчетный счет:</strong> 40802810123456789012</div>
               <div><strong>Email:</strong> legal@maetti.ru</div>
-              <div className="flex items-center gap-1 text-red-500 font-bold dark:text-red-400">
-                <Heart className="w-4 h-4 fill-current" />
+              <div className="flex items-center gap-1 text-red-500 font-bold dark:text-red-400 pt-1">
+                <Heart className="w-4 h-4 fill-current shrink-0" />
                 <span>Сделано с любовью к коду</span>
               </div>
             </div>
