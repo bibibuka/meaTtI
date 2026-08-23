@@ -55,9 +55,39 @@ const CASES = [
 
 type Case = (typeof CASES)[number];
 
+/* 1 тик колеса ≈ 100px. На каждый кейс — 5 тиков, потом открепление. */
+const TICK_PX = 100;
+const TICKS_PER_SLIDE = 5;
+const SLIDE_PX = TICK_PX * TICKS_PER_SLIDE;
+const PIN_EXTRA_PX = SLIDE_PX * CASES.length;
+
+function pinProgressPx(track: HTMLElement): number {
+  const sticky = track.firstElementChild as HTMLElement | null;
+  if (!sticky || track.offsetHeight === 0) return 0;
+  const extra = Math.max(0, track.offsetHeight - sticky.offsetHeight);
+  if (extra === 0) return 0;
+  const stickyTop = parseFloat(getComputedStyle(sticky).top) || 0;
+  const scrolled = stickyTop - track.getBoundingClientRect().top;
+  return Math.min(extra, Math.max(0, scrolled));
+}
+
+function slideIndexFromProgress(progress: number): number {
+  if (progress >= PIN_EXTRA_PX) return CASES.length - 1;
+  return Math.min(CASES.length - 1, Math.max(0, Math.floor(progress / SLIDE_PX)));
+}
+
+function scrollTrackToProgress(track: HTMLElement, progress: number) {
+  const sticky = track.firstElementChild as HTMLElement | null;
+  if (!sticky) return;
+  const stickyTop = parseFloat(getComputedStyle(sticky).top) || 0;
+  const targetTrackTop = stickyTop - progress;
+  const delta = track.getBoundingClientRect().top - targetTrackTop;
+  window.scrollTo({ top: window.scrollY + delta, behavior: "smooth" });
+}
+
 function CaseDetail({ c }: { c: Case }) {
   return (
-    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col justify-between p-5 sm:p-6 md:p-7 h-full min-h-[460px] max-h-[580px]">
+    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col justify-between p-5 sm:p-6 md:p-7 h-full min-h-[28.75rem] max-h-[36.25rem]">
       {/* Header */}
       <div className="border-b border-neutral-100 dark:border-neutral-800 pb-4 mb-4">
         <div className="flex items-center justify-between gap-4 mb-2">
@@ -137,26 +167,19 @@ export default function CasesPage() {
   const desktopTrackRef = useRef<HTMLDivElement>(null);
   const railRef = useRef<HTMLDivElement>(null);
   const chipsRef = useRef<HTMLDivElement>(null);
+  const ignoreScrollRef = useRef(false);
+  const unlockTimerRef = useRef<number>(0);
+  const clickGenRef = useRef(0);
 
   const activeCase = CASES[active];
 
-  // Калибровка: 1 тик колеса мыши ~ 100px.
-  // Первая смена (01 -> 02) на 2 тика позже: 500px (5 тиков от верха)
-  // Вторая смена (02 -> 03): 800px (3 тика)
-  // Третья (03 -> открепление к футеру): 1100px (3 тика)
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY || document.documentElement.scrollTop;
-      let nextIdx = 0;
+    const track = desktopTrackRef.current;
+    if (!track) return;
 
-      if (scrollY >= 800) {
-        nextIdx = 2;
-      } else if (scrollY >= 500) {
-        nextIdx = 1;
-      } else {
-        nextIdx = 0;
-      }
-
+    const sync = () => {
+      if (ignoreScrollRef.current || track.offsetHeight === 0) return;
+      const nextIdx = slideIndexFromProgress(pinProgressPx(track));
       if (nextIdx !== prevActiveRef.current) {
         setDirection(nextIdx > prevActiveRef.current ? 1 : -1);
         prevActiveRef.current = nextIdx;
@@ -164,25 +187,48 @@ export default function CasesPage() {
       }
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", sync, { passive: true });
+    window.addEventListener("resize", sync);
+    sync();
+    return () => {
+      window.removeEventListener("scroll", sync);
+      window.removeEventListener("resize", sync);
+      clickGenRef.current += 1;
+      ignoreScrollRef.current = false;
+      window.clearTimeout(unlockTimerRef.current);
+    };
   }, []);
 
   const handleDesktopClick = (targetIndex: number) => {
-    // Точки привязки для кликов по меню:
-    // 0 -> 0px, 1 -> 620px (середина 2-го кейса), 2 -> 920px (середина 3-го кейса)
-    const targetScrolls = [0, 620, 920];
-    const targetY = targetScrolls[targetIndex] ?? 0;
+    const track = desktopTrackRef.current;
+    if (!track) return;
 
-    setDirection(targetIndex > active ? 1 : -1);
+    if (targetIndex !== active) {
+      setDirection(targetIndex > active ? 1 : -1);
+      setActive(targetIndex);
+    }
     prevActiveRef.current = targetIndex;
-    setActive(targetIndex);
 
-    window.scrollTo({
-      top: targetY,
-      behavior: "smooth",
-    });
+    const targetProgress = targetIndex * SLIDE_PX + 8;
+    const gen = ++clickGenRef.current;
+    ignoreScrollRef.current = true;
+    window.clearTimeout(unlockTimerRef.current);
+
+    const unlock = () => {
+      window.removeEventListener("scrollend", unlock);
+      window.clearTimeout(unlockTimerRef.current);
+      if (gen !== clickGenRef.current) return;
+      ignoreScrollRef.current = false;
+    };
+
+    if (Math.abs(pinProgressPx(track) - targetProgress) < 2) {
+      ignoreScrollRef.current = false;
+      return;
+    }
+
+    window.addEventListener("scrollend", unlock);
+    unlockTimerRef.current = window.setTimeout(unlock, 1500);
+    scrollTrackToProgress(track, targetProgress);
   };
 
   // Mobile rail swipe sync
@@ -194,6 +240,7 @@ export default function CasesPage() {
   };
 
   useEffect(() => {
+    if (window.matchMedia("(min-width: 1024px)").matches) return;
     chipsRef.current?.children[active]?.scrollIntoView({
       behavior: "smooth",
       inline: "center",
@@ -228,8 +275,12 @@ export default function CasesPage() {
           </div>
         </section>
 
-        {/* ===== Desktop: Pinned Scroll Track (5 тиков первый, по 3 тика остальные) ===== */}
-        <div ref={desktopTrackRef} className="hidden lg:block relative h-[calc(100vh-5rem+920px)]">
+        {/* ===== Desktop: Pinned Scroll Track (по 5 тиков на каждый кейс) ===== */}
+        <div
+          ref={desktopTrackRef}
+          className="hidden lg:block relative"
+          style={{ height: `calc(100vh - 5rem + ${PIN_EXTRA_PX}px)` }}
+        >
           <div className="sticky top-20 h-[calc(100vh-5rem)] flex items-center justify-center">
             <div className="max-w-7xl w-full mx-auto px-6">
               <div className="grid grid-cols-12 gap-8 items-center">

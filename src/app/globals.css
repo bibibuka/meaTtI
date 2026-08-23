@@ -42,6 +42,25 @@ body {
   color: var(--foreground);
 }
 
+/* На мониторах шире 14″ ноутбука (~1440px) увеличиваем корневой rem.
+   Почти все отступы, шрифты и блоки в Tailwind — rem, поэтому на 27″
+   сохраняется та же композиция: буквы и карточки просто крупнее,
+   а не узкая колонка посреди пустого экрана. 90rem в media query
+   считается от начальных 16px браузера (= 1440px), без циклов. */
+html {
+  font-size: 16px;
+}
+@media (min-width: 90rem) {
+  html {
+    font-size: min(32px, calc(100vw / 90));
+  }
+}
+@media print {
+  html {
+    font-size: 16px;
+  }
+}
+
 /* Custom marquee animation */
 @keyframes marquee {
   0% {
@@ -436,7 +455,7 @@ html::-webkit-scrollbar {
 /* Enable smooth scrolling */
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 100px;
+  scroll-padding-top: 6.25rem;
 }
 
 /* Reduced motion overrides */
@@ -775,7 +794,7 @@ header {
 .mc-card {
   position: absolute;
   z-index: 10;
-  width: clamp(170px, 23.5vw, 265px);
+  width: clamp(10.625rem, 23.5vw, 16.5625rem);
   aspect-ratio: 1 / 0.92;
   border: 0;
   background: none;
@@ -914,13 +933,13 @@ header {
   100% { opacity: 1; transform: translateY(0);     filter: blur(0); }
 }
 .mc-k {
-  font-size: clamp(15px, 1.7vw, 21px);
+  font-size: clamp(0.9375rem, 1.7vw, 1.3125rem);
   font-weight: 700;
   letter-spacing: .14em;
   color: #1b1e24;
 }
 .mc-s {
-  font-size: 11px;
+  font-size: 0.6875rem;
   letter-spacing: .24em;
   text-transform: uppercase;
   color: #5c626c;

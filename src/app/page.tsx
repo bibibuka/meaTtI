@@ -97,7 +97,7 @@ export default function HomePage() {
         {/* Colorful blob backgrounds */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-purple-500/40 blur-[100px] animate-pulse" />
-          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-blue-500/30 blur-[120px]" />
+          <div className="absolute bottom-1/4 right-1/4 w-[25rem] h-[25rem] rounded-full bg-blue-500/30 blur-[120px]" />
         </div>
 
         <div className="relative max-w-7xl mx-auto w-full z-10">
