@@ -81,9 +81,10 @@ export default function DiverScroll() {
       bubble.className = "released-bubble";
       bubble.style.left = `${(origin.right - 1).toFixed(2)}px`;
       bubble.style.top = `${(origin.top + origin.height * 0.55).toFixed(2)}px`;
-      bubble.style.width = `${shape.size}px`;
-      bubble.style.setProperty("--bubble-drift", `${shape.drift}px`);
-      bubble.style.setProperty("--bubble-rise", `${rise.toFixed(2)}px`);
+      // Размеры в rem, чтобы на 27″ пузырьки росли вместе с водолазом.
+      bubble.style.width = `${shape.size / 16}rem`;
+      bubble.style.setProperty("--bubble-drift", `${shape.drift / 16}rem`);
+      bubble.style.setProperty("--bubble-rise", `${rise / 16}rem`);
       bubble.addEventListener("animationend", () => bubble.remove(), {
         once: true,
       });
