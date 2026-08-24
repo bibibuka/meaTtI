@@ -212,8 +212,8 @@ function Win({
               left: "50%",
               top: "50%",
               transform: `translate(calc(-50% + ${p.x}px), calc(-50% + ${p.y}px))`,
-              width: size?.[0],
-              height: size?.[1],
+              width: size ? `${size[0] / 16}rem` : undefined,
+              height: size ? `${size[1] / 16}rem` : undefined,
               // на низком экране окно не должно вылезать за стол — тело прокрутится само
               maxWidth: "calc(100% - 1rem)",
               maxHeight: "calc(100% - 4rem)",
@@ -225,7 +225,7 @@ function Win({
         onPointerDown={grab}
         className="flex cursor-grab touch-none items-center gap-2 bg-gradient-to-b from-[#4a90e2] to-[#1a56c4] px-2 py-1.5 active:cursor-grabbing"
       >
-        <span className="truncate text-[13px] font-bold text-white [text-shadow:0_1px_1px_rgba(0,0,0,.45)]">
+        <span className="truncate text-[0.8125rem] font-bold text-white [text-shadow:0_1px_1px_rgba(0,0,0,.45)]">
           {title}
         </span>
         <span className="ml-auto flex shrink-0 gap-1">
@@ -263,7 +263,7 @@ function Site({ id }: { id: string }) {
     <div className="flex h-full w-full flex-col bg-white">
       <div className="flex shrink-0 items-center gap-2 border-b border-black/15 bg-neutral-100 px-2 py-1.5">
         <Globe className="h-3.5 w-3.5 shrink-0 text-neutral-500" />
-        <span className="min-w-0 flex-1 truncate rounded border border-neutral-300 bg-white px-2 py-0.5 text-[12px] text-neutral-600">
+        <span className="min-w-0 flex-1 truncate rounded border border-neutral-300 bg-white px-2 py-0.5 text-[0.75rem] text-neutral-600">
           {host}
           {BASE}
           {SITE[id]}
@@ -408,7 +408,7 @@ function Board({ restart, full }: { restart: () => void; full?: boolean }) {
 
   return (
     <div className={full ? "flex h-full flex-col p-3" : "p-3"}>
-      <div className="mb-2 flex items-center justify-between text-[12px] font-bold text-neutral-700">
+      <div className="mb-2 flex items-center justify-between text-[0.75rem] font-bold text-neutral-700">
         <span>Счёт: {score}</span>
         <button
           type="button"
@@ -445,7 +445,7 @@ function Board({ restart, full }: { restart: () => void; full?: boolean }) {
         )}
       </div>
 
-      <p className="mt-2 text-center text-[11px] text-neutral-500 max-md:hidden [@media(pointer:coarse)]:hidden">
+      <p className="mt-2 text-center text-[0.6875rem] text-neutral-500 max-md:hidden [@media(pointer:coarse)]:hidden">
         Стрелки или WASD
       </p>
       <div className="mt-2 hidden grid-cols-3 gap-1 max-md:grid [@media(pointer:coarse)]:grid">
@@ -670,7 +670,7 @@ function Sky({ restart, full }: { restart: () => void; full?: boolean }) {
 
   return (
     <div className={full ? "flex h-full flex-col p-3" : "p-3"}>
-      <div className="mb-2 flex items-center justify-between text-[12px] font-bold text-neutral-700">
+      <div className="mb-2 flex items-center justify-between text-[0.75rem] font-bold text-neutral-700">
         <span>Счёт: {score}</span>
         <button
           type="button"
@@ -716,7 +716,7 @@ function Sky({ restart, full }: { restart: () => void; full?: boolean }) {
         )}
       </div>
 
-      <p className="mt-2 text-center text-[11px] text-neutral-500 max-md:hidden [@media(pointer:coarse)]:hidden">
+      <p className="mt-2 text-center text-[0.6875rem] text-neutral-500 max-md:hidden [@media(pointer:coarse)]:hidden">
         Пробел или клик
       </p>
     </div>
@@ -735,7 +735,7 @@ function PhoneApp({ id, onClose }: { id: string; onClose: () => void }) {
   return (
     <div className="ios-open absolute inset-0 z-30 flex flex-col bg-[#f2f2f7]">
       <div className="flex items-center justify-between border-b border-black/10 px-4 py-3">
-        <span className="text-[15px] font-semibold text-neutral-900">{TITLES[id]}</span>
+        <span className="text-[0.9375rem] font-semibold text-neutral-900">{TITLES[id]}</span>
         <button
           type="button"
           onClick={onClose}
@@ -867,7 +867,7 @@ export default function WinDesktop() {
       </div>
 
       {/* строка состояния */}
-      <div className="relative flex items-center justify-between px-6 pt-3 text-[13px] font-semibold text-white">
+      <div className="relative flex items-center justify-between px-6 pt-3 text-[0.8125rem] font-semibold text-white">
         <span className="tabular-nums">{clock}</span>
         <span className="flex items-center gap-1.5">
           <SignalHigh className="h-4 w-4" />
@@ -887,7 +887,7 @@ export default function WinDesktop() {
             className="flex flex-col items-center gap-1.5 outline-none"
           >
             {app(it)}
-            <span className="text-[11px] leading-tight text-white [text-shadow:0_1px_2px_rgba(0,0,0,.6)]">
+            <span className="text-[0.6875rem] leading-tight text-white [text-shadow:0_1px_2px_rgba(0,0,0,.6)]">
               {label(it)}
             </span>
           </Hit>
@@ -919,19 +919,19 @@ export default function WinDesktop() {
             onClick={() => close(top.id)}
             className="absolute inset-0 z-30 grid place-items-center bg-black/40 px-8 backdrop-blur-[2px]"
           >
-            <div className="ios-open w-[270px] overflow-hidden rounded-2xl bg-white/85 text-center backdrop-blur-xl">
+            <div className="ios-open w-[16.875rem] overflow-hidden rounded-2xl bg-white/85 text-center backdrop-blur-xl">
               <div className="px-5 py-4">
-                <p className="text-[17px] font-semibold text-neutral-900">
+                <p className="text-[1.0625rem] font-semibold text-neutral-900">
                   {(IOS[top.id] ?? ERRORS[top.id]).head}
                 </p>
-                <p className="mt-1 text-[13px] leading-snug text-neutral-700">
+                <p className="mt-1 text-[0.8125rem] leading-snug text-neutral-700">
                   {(IOS[top.id] ?? ERRORS[top.id]).body}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => close(top.id)}
-                className="w-full border-t border-black/10 py-2.5 text-[17px] font-semibold text-blue-600"
+                className="w-full border-t border-black/10 py-2.5 text-[1.0625rem] font-semibold text-blue-600"
               >
                 OK
               </button>
@@ -972,7 +972,7 @@ export default function WinDesktop() {
                 href={it.href}
                 label={it.label}
                 onClick={(e) => hit(e, it)}
-                className={`flex w-[86px] flex-col items-center gap-1 rounded p-1.5 text-center outline-none focus-visible:ring-2 focus-visible:ring-white ${
+                className={`flex w-[5.375rem] flex-col items-center gap-1 rounded p-1.5 text-center outline-none focus-visible:ring-2 focus-visible:ring-white ${
                   sel === it.id ? "bg-white/25 ring-1 ring-white/70" : "hover:bg-white/15"
                 }`}
               >
@@ -986,7 +986,7 @@ export default function WinDesktop() {
                     </span>
                   )}
                 </span>
-                <span className="text-[11px] leading-tight text-white [text-shadow:0_1px_2px_rgba(0,0,0,.85)]">
+                <span className="text-[0.6875rem] leading-tight text-white [text-shadow:0_1px_2px_rgba(0,0,0,.85)]">
                   {it.label}
                 </span>
               </Hit>
@@ -1020,19 +1020,19 @@ export default function WinDesktop() {
                 ) : G ? (
                   <G />
                 ) : (
-                  <div className="w-[min(380px,calc(100vw-32px))]">
+                  <div className="w-[min(23.75rem,calc(100vw-2rem))]">
                     <div className="flex gap-3 p-4">
                       <TriangleAlert className="h-8 w-8 shrink-0 text-amber-500" />
                       <div>
-                        <p className="text-[13px] font-bold text-neutral-900">{ERRORS[w.id].head}</p>
-                        <p className="mt-1 text-[12px] leading-snug text-neutral-700">{ERRORS[w.id].body}</p>
+                        <p className="text-[0.8125rem] font-bold text-neutral-900">{ERRORS[w.id].head}</p>
+                        <p className="mt-1 text-[0.75rem] leading-snug text-neutral-700">{ERRORS[w.id].body}</p>
                       </div>
                     </div>
                     <div className="flex justify-end border-t border-black/10 bg-black/5 px-4 py-2.5">
                       <button
                         type="button"
                         onClick={() => close(w.id)}
-                        className="min-w-[76px] rounded border border-neutral-400 bg-neutral-200 px-3 py-1 text-[12px] font-bold text-neutral-800 hover:bg-neutral-100"
+                        className="min-w-[4.75rem] rounded border border-neutral-400 bg-neutral-200 px-3 py-1 text-[0.75rem] font-bold text-neutral-800 hover:bg-neutral-100"
                       >
                         ОК
                       </button>
@@ -1056,7 +1056,7 @@ export default function WinDesktop() {
                       href={it.href}
                       label={it.label}
                       onClick={(e) => nav(e, it.id)}
-                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[13px] text-neutral-800 hover:bg-blue-600 hover:text-white"
+                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[0.8125rem] text-neutral-800 hover:bg-blue-600 hover:text-white"
                     >
                       <it.Icon className="h-4 w-4" />
                       {it.label}
@@ -1074,7 +1074,7 @@ export default function WinDesktop() {
               <button
                 type="button"
                 onClick={() => setStart((s) => !s)}
-                className="flex shrink-0 items-center gap-1.5 rounded-md bg-gradient-to-b from-[#6bc257] to-[#2f7c1f] px-3 py-1.5 text-[13px] font-bold italic text-white shadow ring-1 ring-white/40"
+                className="flex shrink-0 items-center gap-1.5 rounded-md bg-gradient-to-b from-[#6bc257] to-[#2f7c1f] px-3 py-1.5 text-[0.8125rem] font-bold italic text-white shadow ring-1 ring-white/40"
               >
                 <span className="grid h-3.5 w-3.5 grid-cols-2 gap-px">
                   {[0, 1, 2, 3].map((i) => (
@@ -1090,7 +1090,7 @@ export default function WinDesktop() {
                     key={w.id}
                     type="button"
                     onClick={() => task(w.id)}
-                    className={`max-w-[150px] truncate rounded px-2 py-1 text-[12px] text-white ring-1 ring-white/25 ${
+                    className={`max-w-[9.375rem] truncate rounded px-2 py-1 text-[0.75rem] text-white ring-1 ring-white/25 ${
                       w.min ? "bg-white/10" : "bg-white/25"
                     }`}
                   >
@@ -1115,7 +1115,7 @@ export default function WinDesktop() {
               ))}
             </div>
 
-            <div className="justify-self-end rounded bg-black/15 px-2 py-1 text-[12px] tabular-nums text-white">
+            <div className="justify-self-end rounded bg-black/15 px-2 py-1 text-[0.75rem] tabular-nums text-white">
               {clock}
             </div>
           </div>
