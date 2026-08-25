@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Check, Send, Code, Bot, Cpu, Workflow, TrendingUp, Search } from "lucide-react";
 import { SECTIONS } from "../data";
 import VariantSwitcher from "../VariantSwitcher";
+import WaveRule from "@/components/WaveRule";
 
 const ICON_MAP = {
   code: Code,
@@ -23,12 +24,12 @@ export default function Variant2Page() {
       {/* Hero */}
       <section className="max-w-7xl mx-auto px-6 pt-12 pb-16 border-b border-neutral-200 dark:border-neutral-800">
         <div className="max-w-3xl">
-          <span className="text-xs font-mono font-semibold uppercase tracking-widest text-blue-600 dark:text-blue-400">
-            Вариант 2 — Сетка Премиум-Карточек
-          </span>
-          <h1 className="text-4xl md:text-6xl font-light tracking-tight mt-3 mb-6">
-            Наши Услуги
-          </h1>
+          <div className="w-fit mb-6">
+            <WaveRule className="mb-5" />
+            <h1 className="text-4xl md:text-6xl font-light tracking-tight">
+              Наши Услуги
+            </h1>
+          </div>
           <p className="text-base md:text-lg text-neutral-500 dark:text-neutral-400 font-light leading-relaxed">
             Наглядный каталог решений в виде карточек с иконками, ключевыми опциями и фиксированными тарифами.
           </p>

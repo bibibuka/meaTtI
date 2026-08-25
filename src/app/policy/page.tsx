@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
-import { ArrowLeft, Shield } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import WaveRule from "@/components/WaveRule";
 
 export default function PolicyPage() {
   return (
@@ -17,13 +18,12 @@ export default function PolicyPage() {
 
         {/* Title */}
         <header className="mb-12 border-b border-neutral-200 dark:border-neutral-800 pb-8">
-          <div className="flex items-center gap-2 text-emerald-500 mb-2">
-            <Shield className="w-6 h-6" />
-            <span className="text-sm font-bold uppercase tracking-wider">Документ ФЗ-152</span>
+          <div className="w-fit">
+            <WaveRule className="mb-4" />
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-neutral-950 dark:text-white break-words">
+              Политика Конфиденциальности
+            </h1>
           </div>
-          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-neutral-950 dark:text-white">
-            Политика Конфиденциальности
-          </h1>
           <p className="text-sm text-neutral-400 mt-2">
             Редакция от {new Date().toLocaleDateString("ru-RU")}
           </p>

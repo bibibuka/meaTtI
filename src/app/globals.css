@@ -1,14 +1,32 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #0a0a0a;
+/* Сайт всегда светлый. Вариант dark: переведён с системной темы на класс
+   .dark, который нигде не выставляется — поэтому все существующие
+   dark:*-классы просто никогда не срабатывают, править их не нужно. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* На тачскрине наведения нет, и все group-hover-эффекты там просто не живут.
+   Роль курсора играет невидимая горизонтальная линия посреди экрана: карточка,
+   которая её пересекла, получает класс .at-line — его вешает HoverLine.tsx.
+   Первая ветка — штатный group-hover тейлвинда, её @media (hover: hover)
+   оставляем: иначе после тапа на телефоне hover залипал бы. */
+@custom-variant group-hover {
+  @media (hover: hover) {
+    &:is(:where(.group):hover *) { @slot; }
+  }
+  &:is(:where(.group).at-line *) { @slot; }
 }
 
-@media (prefers-color-scheme: dark) {
+:root {
+  color-scheme: light;
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+  --kelp-h: max(6rem, 5vw);
+}
+
+@media (max-width: 48rem) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #f5f5f5;
+    --kelp-h: 12rem;
   }
 }
 
@@ -22,6 +40,25 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
+}
+
+/* На мониторах шире 14″ ноутбука (~1440px) увеличиваем корневой rem.
+   Почти все отступы, шрифты и блоки в Tailwind — rem, поэтому на 27″
+   сохраняется та же композиция: буквы и карточки просто крупнее,
+   а не узкая колонка посреди пустого экрана. 90rem в media query
+   считается от начальных 16px браузера (= 1440px), без циклов. */
+html {
+  font-size: 16px;
+}
+@media (min-width: 90rem) {
+  html {
+    font-size: min(32px, calc(100vw / 90));
+  }
+}
+@media print {
+  html {
+    font-size: 16px;
+  }
 }
 
 /* Custom marquee animation */
@@ -40,10 +77,385 @@ body {
   animation: marquee 25s linear infinite;
 }
 
+/* Волна-линейка над заголовками: путь длиной в два периода уезжает влево
+   ровно на один за 6s linear — тот же такт, что у волны в шапке. */
+.wave-rule {
+  transform-box: view-box;
+  animation: wave-rule 6s linear infinite;
+}
+
+@keyframes wave-rule {
+  to {
+    transform: translateX(-200px);
+  }
+}
+
+/* Каракули на шторе перехода. Позиция и наклон заданы отдельными свойствами
+   translate/rotate — transform остаётся свободен под анимацию. Периоды, размах
+   и фаза приходят из инлайновых --dur/--reach/--sway/--phase. */
+.doodle {
+  position: absolute;
+  translate: -50% -50%;
+}
+
+/* Обёртка везёт фигурку по горизонтали: alternate вместо перемотки, чтобы
+   ход разворачивался плавно, а не прыгал в начало. */
+.doodle-sail {
+  animation: doodle-sail var(--dur) ease-in-out var(--phase) infinite alternate;
+}
+@keyframes doodle-sail {
+  from {
+    transform: translateX(calc(var(--reach) * -1));
+  }
+  to {
+    transform: translateX(var(--reach));
+  }
+}
+
+/* Качка на волне: вверх-вниз с завалом на борт. */
+.doodle-bob {
+  animation: doodle-bob var(--sway) ease-in-out var(--phase) infinite;
+}
+@keyframes doodle-bob {
+  0%,
+  100% {
+    transform: translateY(-2.5px) rotate(-2.5deg);
+  }
+  50% {
+    transform: translateY(2.5px) rotate(2.5deg);
+  }
+}
+
+/* Рябь: сама линия внутри viewBox уезжает на один период. */
+.doodle-ripple {
+  transform-box: view-box;
+  animation: doodle-ripple var(--sway) linear infinite;
+}
+@keyframes doodle-ripple {
+  to {
+    transform: translateX(-30px);
+  }
+}
+
+/* Порыв ветра: пролетает вбок и тает, но не исчезает совсем. */
+.doodle-gust {
+  animation: doodle-gust var(--dur) ease-in-out var(--phase) infinite;
+}
+@keyframes doodle-gust {
+  0% {
+    transform: translateX(-16px);
+    opacity: 0.15;
+  }
+  30%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(22px);
+    opacity: 0.15;
+  }
+}
+
+.doodle-spin {
+  animation: doodle-spin var(--dur) linear var(--phase) infinite;
+}
+@keyframes doodle-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Отступ под фиксированную шапку отдан прозрачной верхней рамке корня
+   страницы, а отрицательный margin возвращает всё на прежнее место. Фон
+   рамкой закрашивается — поэтому под прозрачной шапкой виден фон именно этой
+   страницы, а не белый body. Паддинги самих страниц при этом не трогаем.
+   Цепочка: main > обёртка из template.tsx > корень страницы. */
+main > * > * {
+  margin-top: -6rem;
+  border-top: 6rem solid transparent;
+}
+
+/* =========================================================
+   DIVER SCROLL — водолаз вместо ползунка прокрутки.
+   Разметка и логика в <DiverScroll/>, прототип в public/diver-scroll/.
+   ========================================================= */
+
+/* Нативный ползунок убран: его роль играет водолаз. */
+html {
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar {
+  display: none;
+}
+
+.bubble-trail {
+  position: fixed;
+  z-index: 39;
+  inset: 0;
+  overflow: hidden;
+  color: #155dfc;
+  pointer-events: none;
+  transition: opacity 240ms ease;
+}
+
+.released-bubble {
+  --bubble-drift: 0rem;
+  --bubble-rise: 0.875rem;
+  position: absolute;
+  aspect-ratio: 1;
+  border: 0.09375rem solid currentColor;
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.78);
+  animation: released-bubble 1.5s linear forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes released-bubble {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.68);
+  }
+  8% {
+    opacity: 0.78;
+  }
+  34% {
+    opacity: 0.62;
+    transform: translate(
+        calc(-50% + var(--bubble-drift)),
+        calc(-50% - var(--bubble-rise) + 0.375rem)
+      )
+      scale(1);
+  }
+  72% {
+    opacity: 0.34;
+    transform: translate(
+        calc(-50% + var(--bubble-drift)),
+        calc(-50% - var(--bubble-rise) + 0.125rem)
+      )
+      scale(1.04);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(
+        calc(-50% + var(--bubble-drift)),
+        calc(-50% - var(--bubble-rise))
+      )
+      scale(1.08);
+  }
+}
+
+/* Панель прокликивается насквозь — ловит указатель только сам водолаз.
+   Нижний предел трека заканчивается на уровне ламинарий (чуть выше кустов),
+   чтобы водолаз останавливался прямо над верхушками растений в нижнем состоянии. */
+.dive-controller {
+  position: fixed;
+  z-index: 40;
+  top: 7rem;
+  right: -0.3rem;
+  bottom: calc(var(--kelp-h) + 3.8rem - 20px);
+  width: clamp(4.5rem, 6vw, 6rem);
+  color: #155dfc;
+  opacity: 0.72;
+  pointer-events: none;
+  transition: opacity 240ms ease;
+}
+
+/* Телефоны: полосы прокрутки там и так нет, а колонка контента
+   на всю ширину — водолазу негде встать, не перекрыв текст. */
+@media (max-width: 639px) {
+  .dive-controller,
+  .bubble-trail {
+    display: none;
+  }
+}
+
+.dive-controller[data-active="true"],
+.dive-controller[data-dragging="true"],
+.dive-controller:hover,
+.dive-controller:focus-within {
+  opacity: 1;
+}
+
+.dive-track,
+.rope-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.rope-svg {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.rope {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.remaining-rope {
+  stroke: #bfdbfe;
+  stroke-width: 1.4;
+  stroke-dasharray: 2 8;
+}
+
+.completed-rope {
+  stroke: currentColor;
+  stroke-width: 2;
+  clip-path: inset(0 0 100% 0);
+  will-change: clip-path;
+}
+
+.surface-knot {
+  fill: #ffffff;
+  stroke: currentColor;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.diver-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 72%;
+  aspect-ratio: 104 / 108;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 2px solid transparent;
+  outline-offset: 6px;
+  border-radius: 50%;
+  background: transparent;
+  color: currentColor;
+  cursor: grab;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  will-change: transform;
+}
+
+.diver-thumb:focus {
+  outline-color: #155dfc;
+}
+
+.dive-controller[data-dragging="true"] .diver-thumb {
+  cursor: grabbing;
+}
+
+.diver-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.diver-float {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: diver-float 3.4s ease-in-out infinite;
+}
+
+@keyframes diver-float {
+  0%,
+  100% {
+    transform: translateY(-2px) rotate(-1.5deg);
+  }
+  50% {
+    transform: translateY(2px) rotate(1.5deg);
+  }
+}
+
+.rear-fin,
+.front-fin {
+  transform-box: fill-box;
+  transform-origin: top center;
+}
+
+.rear-fin {
+  animation: rear-fin 2.2s ease-in-out infinite;
+}
+
+.front-fin {
+  animation: front-fin 2.2s ease-in-out -1.1s infinite;
+}
+
+@keyframes rear-fin {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+}
+
+@keyframes front-fin {
+  0%,
+  100% {
+    transform: rotate(5deg);
+  }
+  50% {
+    transform: rotate(-4deg);
+  }
+}
+
+/* Быстрее сучит ластами и наклоняется по ходу движения. */
+.dive-controller[data-moving="true"] .rear-fin,
+.dive-controller[data-moving="true"] .front-fin {
+  animation-duration: 0.42s;
+}
+
+.dive-controller[data-direction="down"][data-moving="true"] .diver-art {
+  transform: translateY(2px) rotate(1.5deg);
+}
+
+.dive-controller[data-direction="up"][data-moving="true"] .diver-art {
+  transform: translateY(-2px) rotate(-1.5deg);
+}
+
+.dive-controller[data-dragging="true"] .diver-art {
+  transform: scale(1.035);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .diver-thumb:hover .diver-art {
+    transform: scale(1.025);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble-trail {
+    display: none;
+  }
+
+  .diver-art,
+  .diver-float,
+  .rear-fin,
+  .front-fin {
+    transform: none !important;
+  }
+}
+
+/* Горизонтальные ленты: прокрутка есть, полосы прокрутки нет */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Enable smooth scrolling */
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 100px;
+  scroll-padding-top: 6.25rem;
 }
 
 /* Reduced motion overrides */
@@ -60,4 +472,475 @@ html {
     transition-duration: 0s !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* =========================================================
+   ЛАМИНАРИИ над футером. Дословный перенос прототипа из
+   public/kelp-frame/ (там же тесты и заметки по дизайну);
+   разметка — в <KelpFrame/>. Имена вроде .blade и .leaf слишком
+   общие для глобального файла, поэтому всё живёт под .kelp-scene.
+   ========================================================= */
+.kelp-strip {
+  --kelp-blue: #155dfc;
+  --kelp-pale: #b6d7ff;
+  position: relative;
+  width: 100%;
+  height: var(--kelp-h);
+  overflow: hidden;
+  pointer-events: none;
+  contain: layout paint;
+}
+
+.kelp-strip--invert {
+  --kelp-blue: #38b6ff;
+  --kelp-pale: #60a5fa;
+}
+
+.kelp-strip--invert .kelp-scene .blade,
+.kelp-strip--invert .kelp-scene .leaf {
+  fill: #ffffff !important;
+}
+
+.kelp-strip--invert .kelp-layer--rear {
+  color: #60a5fa;
+  stroke: #60a5fa;
+  opacity: 0.85;
+}
+
+.kelp-strip--invert .kelp-layer--front {
+  color: #38b6ff;
+  stroke: #38b6ff;
+}
+
+.kelp-strip--invert .seabed-line--rear {
+  stroke: #3b82f6;
+  stroke-width: 1.6;
+}
+
+.kelp-strip--invert .seabed-line--front {
+  stroke: #38b6ff;
+  stroke-width: 2;
+}
+
+.kelp-scene {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Цвет кустов отдаётся наследованием от слоя, а не currentColor внутри <defs>.
+   <use> клонирует уже вычисленный стиль оригинала, а currentColor там разрешён
+   по цвету самого <defs> — то есть по тексту страницы. В прототипе цвет текста
+   не задан вовсе, поэтому там это не всплыло, а на сайте body красится в
+   --foreground, и кусты вылезли чёрными. Наследуемый stroke, в отличие от
+   вычисленного currentColor, доезжает до клона от самого <use>. */
+.kelp-scene .kelp-layer--rear {
+  color: var(--kelp-pale);
+  stroke: var(--kelp-pale);
+  opacity: 0.78;
+}
+
+.kelp-scene .kelp-layer--front {
+  color: var(--kelp-blue);
+  stroke: var(--kelp-blue);
+}
+
+.kelp-scene .blade,
+.kelp-scene .leaf,
+.kelp-scene .grass,
+.kelp-scene .stem,
+.kelp-scene .vein,
+.kelp-scene .holdfast,
+.kelp-scene .kelp-bubble,
+.kelp-scene .seabed-line {
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.kelp-scene .blade,
+.kelp-scene .leaf {
+  fill: #ffffff;
+  stroke-width: 2.15;
+}
+
+.kelp-scene .grass,
+.kelp-scene .stem {
+  fill: none;
+  stroke-width: 2.15;
+}
+
+.kelp-scene .vein {
+  fill: none;
+  stroke-width: 1.15;
+  opacity: 0.62;
+}
+
+.kelp-scene .holdfast {
+  fill: none;
+  stroke-width: 2.15;
+}
+
+.kelp-scene .kelp-anchor {
+  fill: currentColor;
+}
+
+.kelp-scene .seabed-line {
+  fill: none;
+}
+
+/* Линии дна лежат прямо в <svg>, а не в слое, поэтому цвет им ставим явно. */
+.kelp-scene .seabed-line--rear {
+  stroke: var(--kelp-pale);
+  stroke-width: 1.4;
+  opacity: 0.7;
+}
+
+.kelp-scene .seabed-line--front {
+  stroke: var(--kelp-blue);
+  stroke-width: 1.8;
+}
+
+/* Куст качается целиком, каждая лопасть — ещё и сама по себе, в своей фазе. */
+.kelp-scene .kelp-motion {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  will-change: transform;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+  animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+}
+
+.kelp-scene .motion--a { animation-name: kelp-sway-a; animation-duration: 7.4s; }
+.kelp-scene .motion--b { animation-name: kelp-sway-b; animation-duration: 8.6s; animation-delay: -2.7s; }
+.kelp-scene .motion--c { animation-name: kelp-sway-c; animation-duration: 9.2s; animation-delay: -5.1s; }
+.kelp-scene .motion--d { animation-name: kelp-sway-d; animation-duration: 7.9s; animation-delay: -3.8s; }
+
+.kelp-scene .frond {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation-direction: alternate;
+  animation-iteration-count: infinite;
+  animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+}
+
+.kelp-scene .frond--a { animation-name: frond-sway-a; animation-duration: 4.4s; animation-delay: -1.1s; }
+.kelp-scene .frond--b { animation-name: frond-sway-b; animation-duration: 4.8s; animation-delay: -3.4s; }
+.kelp-scene .frond--c { animation-name: frond-sway-c; animation-duration: 5s; animation-delay: -5.7s; }
+.kelp-scene .frond--d { animation-name: frond-sway-d; animation-duration: 4.5s; animation-delay: -2.3s; }
+.kelp-scene .frond--e { animation-name: frond-sway-e; animation-duration: 5.1s; animation-delay: -4.6s; }
+.kelp-scene .frond--branch-left { animation-name: branch-sway-left; animation-duration: 4.2s; }
+.kelp-scene .frond--branch-right { animation-name: branch-sway-right; animation-duration: 4.6s; }
+
+.kelp-scene .kelp-bubble {
+  --bubble-drift: 4px;
+  --bubble-drift-end: 6px;
+  fill: #ffffff;
+  stroke-width: 1.45;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: kelp-bubble-rise 5.8s linear infinite;
+  animation-delay: calc(var(--bubble-start, 0s) + var(--bubble-step, 0s));
+}
+
+.kelp-scene .bubble-stream--a { --bubble-start: -0.35s; }
+.kelp-scene .bubble-stream--b { --bubble-start: -1.32s; }
+.kelp-scene .bubble-stream--c { --bubble-start: -2.29s; }
+.kelp-scene .bubble-stream--d { --bubble-start: -3.26s; }
+.kelp-scene .bubble-stream--e { --bubble-start: -4.23s; }
+.kelp-scene .bubble-stream--f { --bubble-start: -5.2s; }
+
+.kelp-scene .bubble--1 { --bubble-step: 0s; }
+.kelp-scene .bubble--2 { --bubble-step: 0.18s; --bubble-drift: -3px; --bubble-drift-end: -5px; }
+.kelp-scene .bubble--3 { --bubble-step: 0.36s; --bubble-drift: 2px; --bubble-drift-end: 4px; }
+.kelp-scene .bubble--4 { --bubble-step: 0.54s; --bubble-drift: -2px; --bubble-drift-end: -4px; }
+
+@keyframes kelp-sway-a {
+  from { transform: translateX(-1.5px) rotate(-1.8deg); }
+  to   { transform: translateX(2px) rotate(2.4deg); }
+}
+@keyframes kelp-sway-b {
+  from { transform: translateX(1.5px) rotate(2deg); }
+  to   { transform: translateX(-2px) rotate(-2.7deg); }
+}
+@keyframes kelp-sway-c {
+  from { transform: translateX(-1px) rotate(-1.3deg); }
+  to   { transform: translateX(2.5px) rotate(2.1deg); }
+}
+@keyframes kelp-sway-d {
+  from { transform: translateX(1.2px) rotate(1.6deg); }
+  to   { transform: translateX(-2.2px) rotate(-2.2deg); }
+}
+
+@keyframes frond-sway-a { from { transform: rotate(-9deg); }    to { transform: rotate(10deg); } }
+@keyframes frond-sway-b { from { transform: rotate(9.5deg); }   to { transform: rotate(-10deg); } }
+@keyframes frond-sway-c { from { transform: rotate(-8.5deg); }  to { transform: rotate(10.5deg); } }
+@keyframes frond-sway-d { from { transform: rotate(9.2deg); }   to { transform: rotate(-9.8deg); } }
+@keyframes frond-sway-e { from { transform: rotate(-10.2deg); } to { transform: rotate(8.8deg); } }
+@keyframes branch-sway-left  { from { transform: rotate(-14deg); }   to { transform: rotate(15deg); } }
+@keyframes branch-sway-right { from { transform: rotate(14.5deg); }  to { transform: rotate(-14.5deg); } }
+
+@keyframes kelp-bubble-rise {
+  0%, 6% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.72);
+  }
+  10% { opacity: 0.82; }
+  30% {
+    opacity: 0.66;
+    transform: translate3d(var(--bubble-drift), -21px, 0) scale(0.96);
+  }
+  46%, 100% {
+    opacity: 0;
+    transform: translate3d(var(--bubble-drift-end), -38px, 0) scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kelp-scene .kelp-motion,
+  .kelp-scene .frond {
+    animation: none;
+    transform: none;
+  }
+  .kelp-scene .kelp-bubble {
+    animation: none;
+    opacity: 0;
+    transform: none;
+  }
+}
+
+/* =========================================================
+   РАБОЧИЙ СТОЛ — секция <WinDesktop/> в самом низу главной.
+   Пока она занимает экран целиком, на <html> висит .desk-on:
+   шапка уезжает вверх, водолаз гаснет — чтобы кадр был как
+   на настоящем ПК.
+   ========================================================= */
+/* Оболочки стола обрезаем через clip, а не hidden: hidden оставляет бокс
+   прокручиваемым, и браузер уводил весь экран вбок, докрутив карусель внутри
+   окна до края (за край торчат декоративные пятна). clip прокрутку исключает
+   вовсе; hidden оставлен запасным путём для старых браузеров. */
+.desk-shell {
+  overflow: hidden;
+  overflow: clip;
+}
+
+.win-ui {
+  font-family: Tahoma, "Segoe UI", Verdana, sans-serif;
+}
+.ios-ui {
+  font-family: -apple-system, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+}
+
+/* Открытие «приложения» на айфоне: рывок из точки касания. */
+.ios-open {
+  animation: ios-open 260ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+@keyframes ios-open {
+  from {
+    opacity: 0;
+    transform: scale(0.88);
+  }
+}
+
+/* Страница, открытая окном на самом столе (в iframe): в маленьком окне нужен
+   только контент, вся обвязка сайта — шапка, подвал, водолаз — лишняя. */
+.embed header,
+.embed footer,
+.embed .dive-controller,
+.embed .bubble-trail {
+  display: none;
+}
+.embed #page-content {
+  padding-top: 0;
+}
+/* Докрутив страницу в окне до края, прокрутка перекидывалась на главную —
+   и стол уезжал из кадра прямо под курсором. Замыкаем её внутри окна. */
+.embed {
+  overscroll-behavior: contain;
+}
+/* Липкие панели на страницах отмеряют себе место под шапку сайта; шапки в
+   окне нет, поэтому они висели посреди экрана — прижимаем их к верху. */
+.embed .sticky {
+  top: 0;
+}
+
+header {
+  transition: transform 350ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.desk-on header {
+  transform: translateY(-100%);
+}
+/* Водолаз и его пузырьки гаснут своим же переходом (см. .dive-controller
+   и .bubble-trail выше); ползунку отдельно снимаем клики, иначе он ловит
+   их невидимым. */
+.desk-on .dive-controller,
+.desk-on .bubble-trail {
+  opacity: 0;
+}
+.desk-on .diver-thumb {
+  pointer-events: none;
+}
+
+/* =========================================================
+   MERCURY CUBE — drop cards (liquid splat blobs with photos)
+   Lives inside the sticky pin container of <MercuryCube/>.
+   ========================================================= */
+:root {
+  --mc-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.mc-card {
+  position: absolute;
+  z-index: 10;
+  width: clamp(10.625rem, 23.5vw, 16.5625rem);
+  aspect-ratio: 1 / 0.92;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  transition: opacity 300ms var(--mc-ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+.mc-card.mc-tl { left: 20%; top: 19%; }
+.mc-card.mc-tr { left: 80%; top: 19%; }
+.mc-card.mc-br { left: 80%; top: 80%; }
+.mc-card.mc-bl { left: 20%; top: 80%; }
+.mc-card.shown { opacity: 1; pointer-events: auto; }
+
+/* impact ripple */
+.mc-card::after {
+  content: "";
+  position: absolute;
+  inset: 4%;
+  border-radius: 50%;
+  border: 1.5px solid rgba(90, 98, 110, .45);
+  opacity: 0;
+  pointer-events: none;
+}
+.mc-card.shown::after { animation: mc-ripple 950ms var(--mc-ease-out) 40ms; }
+@keyframes mc-ripple {
+  0%   { opacity: .5; transform: scale(.4); }
+  100% { opacity: 0;  transform: scale(1.55); }
+}
+
+.mc-card-inner {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transition: transform 260ms var(--mc-ease-out);
+  will-change: transform;
+}
+.mc-card.mc-tl .mc-card-inner { transform-origin: 82% 88%; }
+.mc-card.mc-tr .mc-card-inner { transform-origin: 18% 88%; }
+.mc-card.mc-br .mc-card-inner { transform-origin: 18% 12%; }
+.mc-card.mc-bl .mc-card-inner { transform-origin: 82% 12%; }
+.mc-card.shown .mc-card-inner { animation: mc-splat 780ms var(--mc-ease-out) backwards; }
+@keyframes mc-splat {
+  0%   { opacity: 0; transform: scale(.22); }
+  45%  { opacity: 1; transform: scale(1.11); }
+  70%  { transform: scale(.955); }
+  100% { transform: scale(1); }
+}
+@media (hover: hover) and (pointer: fine) {
+  .mc-card:hover .mc-card-inner { transform: scale(1.045); }
+}
+
+/* soft puddle shadow under the splat */
+.mc-card-inner::before {
+  content: "";
+  position: absolute;
+  inset: 14% 6% 2% 6%;
+  border-radius: 50%;
+  background: radial-gradient(50% 44% at 50% 62%, rgba(40,46,56,.33), rgba(40,46,56,0) 72%);
+  filter: blur(4px);
+}
+
+.mc-splat {
+  position: absolute;
+  inset: -24%;
+  filter: url(#mc-goo);
+  z-index: 1;
+}
+.mc-card.mc-tr .mc-splat { scale: -1 1; }
+.mc-card.mc-br .mc-splat { scale: -1 -1; }
+.mc-card.mc-bl .mc-splat { scale: 1 -1; }
+.mc-grow { position: absolute; inset: 18%; }
+
+.mc-grow i {
+  position: absolute;
+  border-radius: 50%;
+  --gx: 32%; --gy: 28%;
+  background: radial-gradient(circle at var(--gx) var(--gy),
+    #ffffff, #eef0f4 18%, #ccd2da 46%, #a9b0bb 72%, #868e9a 100%);
+}
+.mc-card.mc-tr .mc-grow i { --gx: 68%; }
+.mc-card.mc-br .mc-grow i { --gx: 68%; --gy: 72%; }
+.mc-card.mc-bl .mc-grow i { --gy: 72%; }
+
+.mc-m {
+  inset: 3% 5% 7% 3%;
+  border-radius: 46% 54% 48% 52% / 52% 46% 56% 44%;
+  --hs: 3px; --ds: -12px;
+  box-shadow: inset 0 var(--hs) 7px rgba(255,255,255,.95),
+              inset 0 var(--ds) 20px rgba(60,66,76,.32);
+}
+.mc-card.mc-br .mc-m, .mc-card.mc-bl .mc-m { --hs: -3px; --ds: 12px; }
+/* counter-reflect: the photo inside must not be mirrored */
+.mc-card.mc-tr .mc-m { scale: -1 1; }
+.mc-card.mc-br .mc-m { scale: -1 -1; }
+.mc-card.mc-bl .mc-m { scale: 1 -1; }
+.mc-card.shown .mc-m {
+  animation: mc-wobble 900ms var(--mc-ease-out) both,
+             mc-morph var(--md, 9s) ease-in-out 900ms infinite;
+}
+@keyframes mc-wobble {
+  0%   { border-radius: 50% 50% 50% 50% / 50% 50% 50% 50%; }
+  30%  { border-radius: 34% 66% 58% 42% / 62% 36% 64% 38%; }
+  62%  { border-radius: 58% 42% 38% 62% / 40% 62% 42% 60%; }
+  100% { border-radius: 46% 54% 48% 52% / 52% 46% 56% 44%; }
+}
+@keyframes mc-morph {
+  0%, 100% { border-radius: 46% 54% 48% 52% / 52% 46% 56% 44%; }
+  25% { border-radius: var(--r1, 56% 44% 40% 60% / 54% 40% 60% 46%); }
+  50% { border-radius: var(--r2, 40% 60% 54% 46% / 58% 50% 46% 42%); }
+  75% { border-radius: var(--r3, 60% 40% 58% 42% / 42% 62% 38% 58%); }
+}
+
+.mc-txt {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+  padding: 0 16%;
+}
+.mc-card.shown .mc-k { animation: mc-fall 620ms var(--mc-ease-out) 200ms backwards; }
+.mc-card.shown .mc-s { animation: mc-fall 620ms var(--mc-ease-out) 270ms backwards; }
+@keyframes mc-fall {
+  0%   { opacity: 0; transform: translateY(-26px); filter: blur(4px); }
+  62%  { opacity: 1; transform: translateY(3px);   filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0);     filter: blur(0); }
+}
+.mc-k {
+  font-size: clamp(0.9375rem, 1.7vw, 1.3125rem);
+  font-weight: 700;
+  letter-spacing: .14em;
+  color: #1b1e24;
+}
+.mc-s {
+  font-size: 0.6875rem;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  color: #5c626c;
 }
