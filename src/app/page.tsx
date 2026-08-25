@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useRef } from "react";
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
-import { ArrowUpRight, CheckCircle2, ChevronRight, Send, Terminal, Sparkles, Layers, Cpu, Award } from "lucide-react";
-import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+import { useReducedMotion } from "framer-motion";
+import { ArrowUpRight, ChevronRight, Layers, Cpu, Award } from "lucide-react";
+import WaveRule from "@/components/WaveRule";
+
+const WinDesktop = dynamic(() => import("@/components/WinDesktop"), { ssr: false });
 
 const SERVICES = [
   {
@@ -81,21 +83,8 @@ const ADVANTAGES = [
   },
 ];
 
-const STAGES = [
-  { number: "01", title: "Исследование", desc: "Анализируем бизнес-процессы, пишем ТЗ, утверждаем интерфейсы." },
-  { number: "02", title: "Дизайн и Прототип", desc: "Создаем дизайн-систему, строим архитектуру, готовим мокапы." },
-  { number: "03", title: "Разработка", desc: "Пишем чистый типизированный код, интегрируем базы данных." },
-  { number: "04", title: "Тестирование и Запуск", desc: "Покрываем тестами, проверяем нагрузки, деплоим на надежные сервера." }
-];
-
 export default function HomePage() {
-  const router = useRouter();
   const shouldReduceMotion = useReducedMotion();
-
-  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    router.push("/spasibo");
-  };
 
   // Split text for kinetic typography dance
   const word = "АБСОЛЮТНОЕ.ЦЕННОЕ.ЦИФРОВОЕ.";
@@ -104,34 +93,28 @@ export default function HomePage() {
   return (
     <div className="flex flex-col w-full">
       {/* 1. HERO SECTION */}
-      <section className="relative min-h-[85vh] flex flex-col justify-center overflow-hidden px-6 py-20 bg-neutral-950 text-white">
+      <section className="relative min-h-[calc(85vh-6rem)] flex flex-col justify-center overflow-hidden px-6 pb-32 sm:pb-36 bg-white text-neutral-950">
         {/* Colorful blob backgrounds */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-purple-600/40 blur-[100px] animate-pulse" />
-          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-blue-600/30 blur-[120px]" />
+        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-purple-500/40 blur-[100px] animate-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 w-[25rem] h-[25rem] rounded-full bg-blue-500/30 blur-[120px]" />
         </div>
 
         <div className="relative max-w-7xl mx-auto w-full z-10">
-          {/* Tag */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/20 text-xs font-semibold uppercase tracking-wider text-blue-400 mb-8">
-            <Sparkles className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: "3s" }} />
-            <span>Digital Engineering Studio</span>
-          </div>
-
           {/* Kinetic Offer */}
-          <h1 className="text-5xl md:text-8xl font-black tracking-tight leading-none mb-8 select-none">
+          <h1 className="text-4xl sm:text-6xl md:text-8xl font-black tracking-tight leading-none mb-8 select-none break-words">
             МЫ СТРОИМ <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-indigo-500">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600">
               ЧИСТЫЙ КОД
             </span> <br />
             И СМЕЛЫЙ ДИЗАЙН.
           </h1>
 
-          <p className="text-lg md:text-2xl text-neutral-400 max-w-2xl font-light mb-12">
+          <p className="text-lg md:text-2xl text-neutral-600 max-w-2xl font-light mb-12">
             Создаем технологичные решения, которые выведут ваш продукт в топ. Разрабатываем сайты, настраиваем рекламу, автоматизируем процессы и строим экосистемы.
           </p>
 
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-wrap gap-4 mb-6">
             <Link
               href="/contacts"
               className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-8 py-4 rounded-full text-base transition-all duration-200 hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(37,99,235,0.3)]"
@@ -140,7 +123,7 @@ export default function HomePage() {
             </Link>
             <a
               href="#services"
-              className="bg-neutral-900 hover:bg-neutral-800 text-white border border-neutral-800 font-bold px-8 py-4 rounded-full text-base transition-all duration-200 flex items-center gap-2"
+              className="bg-neutral-900 hover:bg-neutral-800 text-white font-bold px-8 py-4 rounded-full text-base transition-all duration-200 flex items-center gap-2"
             >
               <span>Наши услуги</span>
               <ChevronRight className="w-4 h-4" />
@@ -150,10 +133,10 @@ export default function HomePage() {
 
         {/* Endless scrolling kinetic typography */}
         {!shouldReduceMotion ? (
-          <div className="absolute bottom-6 left-0 right-0 w-full overflow-hidden py-4 border-y border-white/5 select-none bg-black/40 backdrop-blur-sm pointer-events-none">
+          <div className="absolute bottom-2 left-0 right-0 w-full overflow-hidden py-3 border-y border-neutral-200 select-none bg-white/40 backdrop-blur-sm pointer-events-none z-0">
             <div className="flex whitespace-nowrap animate-marquee">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex gap-8 text-2xl md:text-4xl font-extrabold text-neutral-800/80 uppercase tracking-widest px-4">
+                <div key={i} className="flex gap-8 text-2xl md:text-4xl font-extrabold text-neutral-200 uppercase tracking-widest px-4">
                   {chars.map((char, index) => (
                     <span
                       key={index}
@@ -167,7 +150,7 @@ export default function HomePage() {
             </div>
           </div>
         ) : (
-          <div className="absolute bottom-6 left-0 right-0 w-full py-4 border-y border-white/5 bg-black/40 text-center text-neutral-600 text-sm tracking-widest uppercase">
+          <div className="absolute bottom-2 left-0 right-0 w-full py-3 border-y border-neutral-200 bg-white/40 text-center text-neutral-400 text-sm tracking-widest uppercase z-0">
             АБСОЛЮТНОЕ • ЦЕННОЕ • ЦИФРОВОЕ
           </div>
         )}
@@ -176,9 +159,9 @@ export default function HomePage() {
       {/* 2. SERVICES GRID SECTION */}
       <section id="services" className="py-24 px-6 max-w-7xl mx-auto w-full">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
-          <div>
-            <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">Услуги студии</span>
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight mt-2 text-foreground">
+          <div className="w-fit">
+            <WaveRule className="mb-4" />
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight text-foreground">
               ЧЕМ МЫ МОЖЕМ ПОМОЧЬ
             </h2>
           </div>
@@ -223,10 +206,12 @@ export default function HomePage() {
       <section className="py-24 px-6 bg-neutral-50 dark:bg-neutral-950 border-y border-neutral-200 dark:border-neutral-900">
         <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-5">
-            <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">Почему мы</span>
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight mt-2 mb-6 text-foreground">
-              ПОЧЕМУ ВЫБИРАЮТ MAETTI
-            </h2>
+            <div className="w-fit mb-6">
+              <WaveRule className="mb-4" />
+              <h2 className="text-3xl md:text-5xl font-black tracking-tight text-foreground">
+                ПОЧЕМУ ВЫБИРАЮТ MAETTI
+              </h2>
+            </div>
             <p className="text-neutral-500 leading-relaxed mb-8">
               Мы ценим ваше время и ресурсы. Наша команда создает гибкие программные продукты, ориентируясь на конечные бизнес-показатели, а не только на красивый код.
             </p>
@@ -260,67 +245,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 4. WORK STAGES */}
-      <section className="py-24 px-6 max-w-7xl mx-auto w-full">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">Процесс</span>
-          <h2 className="text-3xl md:text-5xl font-black tracking-tight mt-2 text-foreground">
-            КАК МЫ РАБОТАЕМ
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {STAGES.map((stage, idx) => (
-            <div key={idx} className="relative group">
-              <div className="absolute top-0 left-0 text-7xl font-black text-neutral-200/50 dark:text-neutral-800/30 group-hover:text-blue-600/20 transition-colors pointer-events-none">
-                {stage.number}
-              </div>
-              <div className="relative pt-12">
-                <h3 className="text-xl font-bold text-foreground mb-3">{stage.title}</h3>
-                <p className="text-sm text-neutral-500 leading-relaxed">{stage.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 5. QUICK ACTION / FORM */}
-      <section className="py-24 px-6 bg-blue-600 text-white">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-6xl font-black tracking-tight mb-8">
-            ОБСУДИМ ВАШ ПРОЕКТ?
-          </h2>
-          <p className="text-lg md:text-xl font-medium mb-12 max-w-xl mx-auto opacity-80">
-            Оставьте свои контакты, и мы свяжемся с вами в течение 30 минут, чтобы составить первичное техническое задание.
-          </p>
-
-          <form onSubmit={handleFormSubmit} className="flex flex-col md:flex-row gap-4 max-w-2xl mx-auto">
-            <input
-              type="text"
-              placeholder="Ваше имя"
-              required
-              className="flex-1 bg-white border-2 border-transparent focus:border-black rounded-full px-6 py-4 text-black placeholder-neutral-500 outline-none font-semibold"
-            />
-            <input
-              type="text"
-              placeholder="Телефон или Telegram"
-              required
-              className="flex-1 bg-white border-2 border-transparent focus:border-black rounded-full px-6 py-4 text-black placeholder-neutral-500 outline-none font-semibold"
-            />
-            <button
-              type="submit"
-              className="bg-white hover:bg-neutral-100 text-blue-600 font-extrabold px-8 py-4 rounded-full transition-transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer shadow-lg"
-            >
-              <span>Отправить</span>
-              <Send className="w-4 h-4" />
-            </button>
-          </form>
-
-          <p className="text-xs opacity-60 mt-6">
-            Нажимая кнопку, вы соглашаетесь с нашей Политикой конфиденциальности.
-          </p>
-        </div>
-      </section>
+      {/* 3.5. РАБОЧИЙ СТОЛ — навигация ярлыками, шапка на нём прячется */}
+      <WinDesktop />
     </div>
   );
 }
