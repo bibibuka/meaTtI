@@ -310,7 +310,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col w-full">
       {/* 1. HERO SECTION */}
-      <section className="relative min-h-[85vh] flex flex-col justify-center overflow-hidden px-6 -mt-24 pt-24 pb-32 sm:pb-36 bg-white text-neutral-950">
+      <section className="relative min-h-[85vh] flex flex-col justify-center overflow-hidden px-6 -mt-24 pt-24 pb-28 sm:pb-32 bg-white text-neutral-950">
         {/* Colorful blob backgrounds. Центр круга не ниже линии на 20px выше CTA. */}
         <HeroBlobs ctaEl={ctaEl} reduceMotion={shouldReduceMotion} />
 
@@ -331,7 +331,7 @@ export default function HomePage() {
             Создаем технологичные решения, которые выведут ваш продукт в&nbsp;топ. Разрабатываем сайты, автоматизируем процессы и&nbsp;строим экосистемы.
           </p>
 
-          <div ref={setCtaEl} className="flex flex-wrap gap-4 mb-6">
+          <div ref={setCtaEl} className="flex flex-wrap gap-4">
             <TransitionLink
               href="/contacts"
               className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-8 py-4 rounded-full text-base transition-all duration-200 hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(37,99,235,0.3)]"
@@ -350,7 +350,7 @@ export default function HomePage() {
 
         {/* Endless scrolling kinetic typography */}
         {!shouldReduceMotion ? (
-          <div className="absolute bottom-2 left-0 right-0 w-full overflow-hidden py-3 border-y border-neutral-200 select-none bg-white/50 backdrop-blur-xs pointer-events-none z-0">
+          <div className="absolute bottom-6 left-0 right-0 w-full overflow-hidden py-4 border-y border-neutral-200 select-none bg-white/50 backdrop-blur-xs pointer-events-none">
             <div className="flex whitespace-nowrap animate-marquee">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div
@@ -370,7 +370,7 @@ export default function HomePage() {
             </div>
           </div>
         ) : (
-          <div className="absolute bottom-2 left-0 right-0 w-full py-3 border-y border-neutral-200 bg-white/40 text-center text-neutral-400 text-sm font-bold tracking-widest uppercase z-0">
+          <div className="absolute bottom-6 left-0 right-0 w-full py-4 border-y border-neutral-200 bg-white/40 text-center text-neutral-400 text-sm font-bold tracking-widest uppercase">
             {MARQUEE_ITEMS.join(" • ")}
           </div>
         )}
