@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -10,6 +10,7 @@ import {
   useReducedMotion,
 } from "framer-motion";
 import { Send } from "lucide-react";
+import { usePageTransition } from "@/context/TransitionContext";
 
 const NAV_LINKS = [
   { href: "/", label: "Главная" },
@@ -279,13 +280,24 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const [pending, setPending] = useState<{ href: string; from: string } | null>(
-    null,
-  );
-  // Раскладка каракулей — своя на каждый переход. Стартовая фиксирована,
-  // иначе SSR и клиент разойдутся на гидратации.
-  const [layout, setLayout] = useState(0);
+  const [scrolled, setScrolled] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.scrollY > 10;
+    }
+    return false;
+  });
+  
+  const transition = usePageTransition();
+  const pending = transition?.pending ?? null;
+  const layout = transition?.layout ?? 0;
+  const startTransition = (href: string) => (e?: { preventDefault?: () => void }) => {
+    transition?.startTransition(href, e);
+  };
+
+  const currentPath = pending
+    ? pending.href.split("?")[0].split("#")[0] || "/"
+    : pathname;
+
   const reduce = useReducedMotion();
   const state = isOpen ? "open" : "closed";
   // Вода в шапке. Наверху страницы её нет — шапка пропускает фон насквозь;
@@ -293,33 +305,59 @@ export default function Header() {
   // На переходе завязана прямо на pending, поэтому уходит вверх вместе со
   // шторой, а не ждёт, пока та поднимется.
   const submerged = scrolled || isOpen || !!pending;
-  const isDarkHeader = pathname === "/contacts" && !submerged;
+  const isDarkHeader = currentPath === "/contacts" && !submerged;
+
+  const navRef = useRef<HTMLElement>(null);
+  const [indicatorStyle, setIndicatorStyle] = useState<{
+    left: number;
+    width: number;
+    opacity: number;
+  }>({ left: 0, width: 0, opacity: 0 });
+
+  const activeIndex = NAV_LINKS.findIndex(
+    (link) =>
+      currentPath === link.href ||
+      (link.href !== "/" && currentPath.startsWith(link.href))
+  );
+
+  useEffect(() => {
+    const updateIndicator = () => {
+      if (!navRef.current) return;
+      const links = navRef.current.querySelectorAll("a");
+      const activeLink = links[activeIndex];
+      if (activeLink) {
+        const navRect = navRef.current.getBoundingClientRect();
+        const linkRect = activeLink.getBoundingClientRect();
+        setIndicatorStyle({
+          left: linkRect.left - navRect.left,
+          width: linkRect.width,
+          opacity: 1,
+        });
+      } else {
+        setIndicatorStyle((prev) => (prev.opacity === 0 ? prev : { ...prev, opacity: 0 }));
+      }
+    };
+
+    updateIndicator();
+    const raf = requestAnimationFrame(updateIndicator);
+    window.addEventListener("resize", updateIndicator);
+    if (typeof document !== "undefined" && document.fonts?.ready) {
+      document.fonts.ready.then(updateIndicator);
+    }
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", updateIndicator);
+    };
+  }, [activeIndex, currentPath]);
 
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
     };
-    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  // Путь сменился — даём новой странице смонтироваться за шторой (на главной
-  // three.js-куб грузит главный поток и дёргает подъём), потом поднимаем.
-  useEffect(() => {
-    if (!pending || pending.from === pathname) return;
-    const t = setTimeout(() => setPending(null), 400);
-    return () => clearTimeout(t);
-  }, [pending, pathname]);
-
-  // Перехватываем SPA-переход: сначала опускаем штору, push уже после неё.
-  const startTransition = (href: string) => (e: { preventDefault(): void }) => {
-    if (href === pathname) return;
-    e.preventDefault();
-    if (!pending) {
-      setPending({ href, from: pathname });
-      setLayout(Math.floor(Math.random() * LAYOUTS.length));
-    }
-  };
 
   return (
     <MotionConfig reducedMotion="user">
@@ -481,13 +519,17 @@ export default function Header() {
                 >
                   <nav className="flex flex-col gap-4">
                     {NAV_LINKS.map((link) => {
-                      const isActive = pathname === link.href;
+                      const isActive =
+                        currentPath === link.href ||
+                        (link.href !== "/" && currentPath.startsWith(link.href));
                       return (
                         <motion.div key={link.href} variants={itemVariants}>
                           <Link
                             href={link.href}
-                            onClick={() => setIsOpen(false)}
-                            onNavigate={startTransition(link.href)}
+                            onClick={(e) => {
+                              setIsOpen(false);
+                              startTransition(link.href)(e);
+                            }}
                             className={`block text-lg font-bold ${
                               isActive
                                 ? "text-blue-600 dark:text-blue-400"
@@ -527,7 +569,7 @@ export default function Header() {
           {/* Logo */}
           <Link
             href="/"
-            onNavigate={startTransition("/")}
+            onClick={startTransition("/")}
             className="group flex items-center gap-2"
           >
             <span className={`text-3xl font-extrabold tracking-tighter ${isDarkHeader ? "text-white" : "text-foreground"} group-hover:scale-105 transition-colors duration-200`}>
@@ -536,31 +578,40 @@ export default function Header() {
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-8">
-            {NAV_LINKS.map((link) => {
-              const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onNavigate={startTransition(link.href)}
-                  className={`relative text-sm font-semibold tracking-wide ${
-                    isDarkHeader
-                      ? "text-neutral-300 hover:text-white"
-                      : "text-foreground/80 hover:text-foreground"
-                  } transition-colors py-2`}
-                >
-                  {link.label}
-                  {isActive && (
-                    <motion.span
-                      layoutId="activeNav"
-                      className={`absolute bottom-0 left-0 right-0 h-0.5 ${isDarkHeader ? "bg-white" : "bg-foreground"}`}
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    />
-                  )}
-                </Link>
-              );
-            })}
+          <nav ref={navRef} className="relative hidden md:flex items-center gap-8">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={startTransition(link.href)}
+                className={`text-sm font-semibold tracking-wide ${
+                  isDarkHeader
+                    ? "text-neutral-300 hover:text-white"
+                    : "text-foreground/80 hover:text-foreground"
+                } transition-colors py-2`}
+              >
+                {link.label}
+              </Link>
+            ))}
+
+            {/* Persistent sliding underline */}
+            <motion.span
+              className={`absolute bottom-0 h-0.5 pointer-events-none ${
+                isDarkHeader ? "bg-white" : "bg-foreground"
+              }`}
+              style={{ left: 0 }}
+              initial={false}
+              animate={{
+                x: indicatorStyle.left,
+                width: indicatorStyle.width,
+                opacity: indicatorStyle.opacity,
+              }}
+              transition={{
+                type: "spring",
+                stiffness: 380,
+                damping: 32,
+              }}
+            />
           </nav>
 
           {/* Right Action Button */}

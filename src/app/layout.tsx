@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import DiverScroll from "@/components/DiverScroll";
 import HoverLine from "@/components/HoverLine";
+import { TransitionProvider } from "@/context/TransitionContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "maeTtI — IT Студия Разработки",
+  title: "maeTtI - IT Студия Разработки",
   description: "Разработка высококлассных веб-сайтов, Telegram-ботов, макросов, интеграций, рекламы и SEO.",
 };
 
@@ -45,13 +46,15 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground overflow-x-hidden selection:bg-emerald-500 selection:text-white">
-        <Header />
-        <main id="page-content" className="flex-1 flex flex-col pt-24">
-          {children}
-        </main>
-        <Footer />
-        <DiverScroll />
-        <HoverLine />
+        <TransitionProvider>
+          <Header />
+          <main id="page-content" className="flex-1 flex flex-col pt-24">
+            {children}
+          </main>
+          <Footer />
+          <DiverScroll />
+          <HoverLine />
+        </TransitionProvider>
       </body>
     </html>
   );

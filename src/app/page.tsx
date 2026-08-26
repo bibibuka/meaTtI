@@ -1,10 +1,181 @@
 "use client";
 
-import Link from "next/link";
+import {
+  Fragment,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import dynamic from "next/dynamic";
-import { useReducedMotion } from "framer-motion";
-import { ArrowUpRight, ChevronRight, Layers, Cpu, Award } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import { ArrowUpRight, ChevronRight, Layers, Cpu, Award, MousePointerClick } from "lucide-react";
 import WaveRule from "@/components/WaveRule";
+import { TransitionLink } from "@/context/TransitionContext";
+
+const BLOB_FLOOR_LIFT = 20;
+
+function rand(min: number, max: number) {
+  return min + Math.random() * (max - min);
+}
+
+function easeInOut(t: number) {
+  return t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2;
+}
+
+const BLOBS = [
+  {
+    className: "w-96 h-96 bg-purple-500/40 blur-[100px]",
+    start: [0.28, 0.32] as const,
+  },
+  {
+    className: "w-[25rem] h-[25rem] bg-blue-500/30 blur-[120px]",
+    start: [0.72, 0.48] as const,
+  },
+];
+
+function HeroBlob({
+  spec,
+  stageRef,
+  ctaEl,
+  reduceMotion,
+}: {
+  spec: (typeof BLOBS)[number];
+  stageRef: RefObject<HTMLDivElement | null>;
+  ctaEl: HTMLDivElement | null;
+  reduceMotion: boolean;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    const stage = stageRef.current;
+    if (!el || !stage) return;
+
+    const box = () => {
+      const w = stage.clientWidth;
+      const h = stage.clientHeight;
+      const floor = ctaEl
+        ? ctaEl.getBoundingClientRect().top -
+          stage.getBoundingClientRect().top -
+          BLOB_FLOOR_LIFT
+        : h * 0.35;
+      return {
+        minX: w * 0.06,
+        maxX: w * 0.94,
+        minY: 0,
+        maxY: Math.max(0, floor),
+      };
+    };
+
+    const b0 = box();
+    let x = b0.minX + spec.start[0] * (b0.maxX - b0.minX);
+    let y = Math.min(b0.maxY, b0.minY + spec.start[1] * (b0.maxY - b0.minY));
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
+
+    if (reduceMotion) return;
+
+    let fromX = x;
+    let fromY = y;
+    let cX = x;
+    let cY = y;
+    let toX = x;
+    let toY = y;
+    let start = performance.now();
+    let dur = 1;
+    let raf = 0;
+    const wobblePhase = Math.random() * Math.PI * 2;
+    const wobbleA = rand(22, 48);
+    const wobbleB = rand(14, 32);
+    const wobbleSpeedA = rand(0.55, 1.15);
+    const wobbleSpeedB = rand(0.9, 1.7);
+
+    const retarget = (now: number) => {
+      const b = box();
+      fromX = x;
+      fromY = y;
+      let tries = 0;
+      do {
+        toX = rand(b.minX, b.maxX);
+        toY = rand(b.minY, b.maxY);
+        tries += 1;
+      } while (Math.hypot(toX - fromX, toY - fromY) < 90 && tries < 8);
+      const mx = (fromX + toX) / 2;
+      const my = (fromY + toY) / 2;
+      const dx = toX - fromX;
+      const dy = toY - fromY;
+      const len = Math.hypot(dx, dy) || 1;
+      const side = Math.random() < 0.5 ? 1 : -1;
+      const bend = rand(0.3, 0.95) * len;
+      cX = Math.min(b.maxX, Math.max(b.minX, mx + (-dy / len) * bend * side));
+      cY = Math.min(b.maxY, Math.max(b.minY, my + (dx / len) * bend * side));
+      start = now;
+      dur = rand(3200, 9000);
+    };
+
+    retarget(performance.now());
+
+    const tick = (now: number) => {
+      const b = box();
+      let t = (now - start) / dur;
+      if (t >= 1) {
+        retarget(now);
+        t = 0;
+      }
+      const e = easeInOut(Math.min(1, t));
+      const omt = 1 - e;
+      x = omt * omt * fromX + 2 * omt * e * cX + e * e * toX;
+      y = omt * omt * fromY + 2 * omt * e * cY + e * e * toY;
+      const n = now * 0.001;
+      x += wobbleA * Math.sin(n * wobbleSpeedA + wobblePhase);
+      y += wobbleB * Math.cos(n * wobbleSpeedB + wobblePhase * 1.3);
+      x = Math.min(b.maxX, Math.max(b.minX, x));
+      y = Math.min(b.maxY, Math.max(b.minY, y));
+      el.style.left = `${x}px`;
+      el.style.top = `${y}px`;
+      raf = requestAnimationFrame(tick);
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [ctaEl, reduceMotion, spec, stageRef]);
+
+  return (
+    <div
+      ref={ref}
+      className={`absolute rounded-full -translate-x-1/2 -translate-y-1/2 ${spec.className}`}
+    />
+  );
+}
+
+function HeroBlobs({
+  ctaEl,
+  reduceMotion,
+}: {
+  ctaEl: HTMLDivElement | null;
+  reduceMotion: boolean | null;
+}) {
+  const stageRef = useRef<HTMLDivElement>(null);
+
+  return (
+    <div
+      ref={stageRef}
+      className="absolute inset-0 overflow-hidden pointer-events-none opacity-30"
+      aria-hidden
+    >
+      {BLOBS.map((spec) => (
+        <HeroBlob
+          key={spec.className}
+          spec={spec}
+          stageRef={stageRef}
+          ctaEl={ctaEl}
+          reduceMotion={!!reduceMotion}
+        />
+      ))}
+    </div>
+  );
+}
 
 const WinDesktop = dynamic(() => import("@/components/WinDesktop"), { ssr: false });
 
@@ -12,63 +183,39 @@ const SERVICES = [
   {
     id: "sajty",
     title: "Веб-сайты",
-    desc: "Промо-страницы, интернет-магазины, порталы и SPA. Креативный дизайн и безупречная производительность.",
+    desc: "Сайты под любую задачу и любое пожелание: от одной страницы до большого сервиса. Витрина, продажи, заявки, нестандартный функционал - без шаблона «как у всех». Если сами не знаете, какой именно сайт нужен, подскажем формат.",
     color: "from-purple-600 to-indigo-600",
     bg: "bg-purple-500/10",
     border: "group-hover:border-purple-500",
-    badge: "WEB"
+    badge: "WEB",
+    price: "от 40 000 ₽"
   },
   {
     id: "boty",
-    title: "Telegram-боты",
-    desc: "Сложные диалоговые интерфейсы, CRM-боты, мини-аппы (Mini Apps) и боты с интеграцией искусственного интеллекта.",
+    title: "Чат-боты и\nМини‑приложения",
+    desc: "Любые боты и мини-приложения: консультации, запись, продажи, оплата, рассылки - в Telegram, ВКонтакте и MAX. От простого автоответа до умного ассистента и приложения внутри мессенджера. Опишете, как должно отвечать и что уметь - сделаем.",
     color: "from-blue-600 to-cyan-600",
     bg: "bg-blue-500/10",
     border: "group-hover:border-blue-500",
-    badge: "BOT"
+    badge: "BOT",
+    price: "от 50 000 ₽"
   },
   {
-    id: "makrosy",
-    title: "Макросы и Скрипты",
-    desc: "Автоматизация Excel, Google Таблиц, веб-парсеры и оптимизация рутинных задач вашего офиса.",
-    color: "from-green-600 to-emerald-600",
-    bg: "bg-green-500/10",
-    border: "group-hover:border-green-500",
-    badge: "SCRIPT"
-  },
-  {
-    id: "integracii",
-    title: "Интеграции систем",
-    desc: "Связывание CRM, систем лояльности, платежных шлюзов, почтовых сервисов и любых API.",
-    color: "from-amber-600 to-orange-600",
-    bg: "bg-amber-500/10",
-    border: "group-hover:border-amber-500",
-    badge: "API"
-  },
-  {
-    id: "reklama",
-    title: "Реклама и Трафик",
-    desc: "Запуск таргетированной и контекстной рекламы, лидогенерация, сквозная аналитика и воронки продаж.",
-    color: "from-rose-600 to-red-600",
-    bg: "bg-rose-500/10",
-    border: "group-hover:border-rose-500",
-    badge: "ADS"
-  },
-  {
-    id: "seo",
-    title: "SEO-продвижение",
-    desc: "Вывод сайтов в топ поисковых систем Яндекс и Google, аудит кода, семантика и ссылочная стратегия.",
-    color: "from-teal-600 to-cyan-600",
+    id: "avtomatizacija",
+    title: "Автоматизация и Интеграции",
+    desc: "Избавляем от рутины и связываем ваши сервисы в единую систему. Разрабатываем скрипты для парсинга данных, настраиваем сквозные API-интеграции между CRM, складом и мессенджерами, автоматизируем отчеты в Excel и Google Таблицах и многое другое.",
+    color: "from-teal-600 to-emerald-600",
     bg: "bg-teal-500/10",
     border: "group-hover:border-teal-500",
-    badge: "SEO"
+    badge: "AUTO",
+    price: "от 25 000 ₽"
   }
 ];
 
 const ADVANTAGES = [
   {
     title: "Фокус на окупаемости",
-    desc: "Мы не просто пишем код — мы создаем инструменты для масштабирования вашего бизнеса.",
+    desc: "Мы не просто пишем код - мы создаем инструменты для масштабирования вашего бизнеса.",
     icon: Award,
   },
   {
@@ -78,71 +225,144 @@ const ADVANTAGES = [
   },
   {
     title: "Современный стек",
-    desc: "Используем передовые фреймворки. Никакого легаси-кода — всё летает и легко масштабируется.",
+    desc: "Используем передовые фреймворки. Никакого легаси-кода - всё летает и легко масштабируется.",
     icon: Cpu,
   },
 ];
 
+// Слово-перевертыш: MAETTI, прочитанное наоборот, - это IT TEAM.
+// Каждая буква - отдельный элемент с layout-анимацией, поэтому при смене
+// порядка они физически разъезжаются на новые места, а не подменяются.
+// Живет прямо внутри заголовка «КТО ТАКИЕ ...?» - клик по слову
+// превращает вопрос в ответ.
+const FLIP_LETTERS = ["M", "A", "E", "T", "T", "I"];
+
+function MaettiWord() {
+  const [flipped, setFlipped] = useState(false);
+  const reduce = useReducedMotion();
+
+  const order = flipped ? [5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5];
+  // Пробел после второй буквы в разобранном виде: IT | TEAM
+  const gapAfter = new Set(flipped ? [4] : []);
+
+  return (
+    <span className="relative inline-flex flex-col items-center group">
+      <button
+        type="button"
+        onClick={() => setFlipped((v) => !v)}
+        aria-pressed={flipped}
+        aria-label="Перевернуть слово MAETTI"
+        title={flipped ? "Вернуть MAETTI" : "Нажмите: MAETTI наоборот"}
+        className="inline-flex items-baseline cursor-pointer select-none focus:outline-none"
+      >
+        {order.map((i) => (
+          <Fragment key={i}>
+            <motion.span
+              layout={!reduce}
+              transition={{ type: "spring", stiffness: 260, damping: 26 }}
+              className={`inline-block transition-colors duration-500 ${
+                flipped && (i === 5 || i === 4) ? "text-blue-600" : ""
+              }`}
+            >
+              {FLIP_LETTERS[i]}
+            </motion.span>
+            {gapAfter.has(i) && (
+              <motion.span
+                initial={false}
+                animate={{ width: flipped ? "0.15em" : "0em" }}
+                transition={reduce ? { duration: 0 } : { duration: 0.4 }}
+                className="inline-block"
+              />
+            )}
+          </Fragment>
+        ))}
+      </button>
+      {/* Подсказка абсолютом: занимает место под словом, не влияя на строку
+          заголовка и поток секции. Ловит hover со слова через group. */}
+      <span
+        aria-hidden="true"
+        className="absolute top-full left-0 -translate-x-1/0 sm:left-1/2 sm:-translate-x-1/2 mt-1 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-neutral-400/60 dark:text-neutral-500/60 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors duration-300 whitespace-nowrap"
+      >
+        {flipped ? (
+          "↑ мы — it-команда"
+        ) : (
+          <>
+            ↑ нажми
+            <MousePointerClick className="inline ml-1 -mt-0.5 w-3.5 h-3.5" />
+          </>
+        )}
+      </span>
+    </span>
+  );
+}
+
 export default function HomePage() {
   const shouldReduceMotion = useReducedMotion();
+  const [ctaEl, setCtaEl] = useState<HTMLDivElement | null>(null);
 
-  // Split text for kinetic typography dance
-  const word = "АБСОЛЮТНОЕ.ЦЕННОЕ.ЦИФРОВОЕ.";
-  const chars = Array.from(word);
+  const MARQUEE_ITEMS = [
+    "ВЕБ-САЙТЫ",
+    "TELEGRAM-БОТЫ",
+    "АВТОМАТИЗАЦИЯ",
+    "СЛОЖНЫЕ ИНТЕГРАЦИИ",
+  ];
 
   return (
     <div className="flex flex-col w-full">
       {/* 1. HERO SECTION */}
-      <section className="relative min-h-[calc(85vh-6rem)] flex flex-col justify-center overflow-hidden px-6 pb-32 sm:pb-36 bg-white text-neutral-950">
-        {/* Colorful blob backgrounds */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-purple-500/40 blur-[100px] animate-pulse" />
-          <div className="absolute bottom-1/4 right-1/4 w-[25rem] h-[25rem] rounded-full bg-blue-500/30 blur-[120px]" />
-        </div>
+      <section className="relative min-h-[85vh] flex flex-col justify-center overflow-hidden px-6 -mt-24 pt-24 pb-32 sm:pb-36 bg-white text-neutral-950">
+        {/* Colorful blob backgrounds. Центр круга не ниже линии на 20px выше CTA. */}
+        <HeroBlobs ctaEl={ctaEl} reduceMotion={shouldReduceMotion} />
 
         <div className="relative max-w-7xl mx-auto w-full z-10">
           {/* Kinetic Offer */}
-          <h1 className="text-4xl sm:text-6xl md:text-8xl font-black tracking-tight leading-none mb-8 select-none break-words">
-            МЫ СТРОИМ <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600">
-              ЧИСТЫЙ КОД
+          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08] mb-6 select-none break-words">
+            ПОКОРЯЙТЕ <br />
+            <span className="animate-gradient-flow">
+              ЦИФРОВУЮ СТИХИЮ.
             </span> <br />
-            И СМЕЛЫЙ ДИЗАЙН.
+            <span className="text-neutral-900">
+              РАЗРАБОТКА НА ЛЮБОЙ <br />
+              <span className="animate-gradient-flow">ГЛУБИНЕ</span> СЛОЖНОСТИ.
+            </span>
           </h1>
 
-          <p className="text-lg md:text-2xl text-neutral-600 max-w-2xl font-light mb-12">
-            Создаем технологичные решения, которые выведут ваш продукт в топ. Разрабатываем сайты, настраиваем рекламу, автоматизируем процессы и строим экосистемы.
+          <p className="max-w-2xl text-lg sm:text-xl text-neutral-500 leading-relaxed mb-6">
+            Создаем технологичные решения, которые выведут ваш продукт в&nbsp;топ. Разрабатываем сайты, автоматизируем процессы и&nbsp;строим экосистемы.
           </p>
 
-          <div className="flex flex-wrap gap-4 mb-6">
-            <Link
+          <div ref={setCtaEl} className="flex flex-wrap gap-4 mb-6">
+            <TransitionLink
               href="/contacts"
               className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-8 py-4 rounded-full text-base transition-all duration-200 hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(37,99,235,0.3)]"
             >
-              Начать проект
-            </Link>
-            <a
-              href="#services"
-              className="bg-neutral-900 hover:bg-neutral-800 text-white font-bold px-8 py-4 rounded-full text-base transition-all duration-200 flex items-center gap-2"
+              Связаться с нами
+            </TransitionLink>
+            <TransitionLink
+              href="/uslugi"
+              className="bg-neutral-900 hover:bg-neutral-800 text-white font-bold px-8 py-4 rounded-full text-base transition-all duration-200 flex items-center gap-2 hover:scale-105 active:scale-95"
             >
               <span>Наши услуги</span>
               <ChevronRight className="w-4 h-4" />
-            </a>
+            </TransitionLink>
           </div>
         </div>
 
         {/* Endless scrolling kinetic typography */}
         {!shouldReduceMotion ? (
-          <div className="absolute bottom-2 left-0 right-0 w-full overflow-hidden py-3 border-y border-neutral-200 select-none bg-white/40 backdrop-blur-sm pointer-events-none z-0">
+          <div className="absolute bottom-2 left-0 right-0 w-full overflow-hidden py-3 border-y border-neutral-200 select-none bg-white/50 backdrop-blur-xs pointer-events-none z-0">
             <div className="flex whitespace-nowrap animate-marquee">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex gap-8 text-2xl md:text-4xl font-extrabold text-neutral-200 uppercase tracking-widest px-4">
-                  {chars.map((char, index) => (
-                    <span
-                      key={index}
-                      className="inline-block transition-transform duration-200 hover:text-blue-500 hover:scale-125"
-                    >
-                      {char}
+                <div
+                  key={i}
+                  className="flex items-center gap-6 md:gap-10 text-lg sm:text-2xl md:text-3xl font-extrabold text-neutral-300 uppercase tracking-widest px-4 md:px-6"
+                >
+                  {MARQUEE_ITEMS.map((item, idx) => (
+                    <span key={idx} className="flex items-center gap-6 md:gap-10">
+                      <span className="hover:text-blue-600 transition-colors">
+                        {item}
+                      </span>
+                      <span className="text-blue-500 font-black">•</span>
                     </span>
                   ))}
                 </div>
@@ -150,8 +370,8 @@ export default function HomePage() {
             </div>
           </div>
         ) : (
-          <div className="absolute bottom-2 left-0 right-0 w-full py-3 border-y border-neutral-200 bg-white/40 text-center text-neutral-400 text-sm tracking-widest uppercase z-0">
-            АБСОЛЮТНОЕ • ЦЕННОЕ • ЦИФРОВОЕ
+          <div className="absolute bottom-2 left-0 right-0 w-full py-3 border-y border-neutral-200 bg-white/40 text-center text-neutral-400 text-sm font-bold tracking-widest uppercase z-0">
+            {MARQUEE_ITEMS.join(" • ")}
           </div>
         )}
       </section>
@@ -166,62 +386,73 @@ export default function HomePage() {
             </h2>
           </div>
           <p className="text-neutral-500 max-w-md text-sm md:text-base">
-            Полный спектр IT-услуг от разработки сайтов до сложного продвижения и создания умных Telegram-интерфейсов.
+            Полный спектр IT-услуг от разработки сайтов до сложного продвижения и создания умных <br />
+            Telegram-интерфейсов.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {SERVICES.map((s, idx) => (
-            <Link key={s.id} href={`/uslugi#${s.id}`} className="group relative">
+          {SERVICES.map((s) => (
+            <TransitionLink key={s.id} href={`/uslugi#${s.id}`} className="group relative">
               <div
                 className={`h-full border border-neutral-200 dark:border-neutral-800 rounded-3xl p-8 flex flex-col justify-between overflow-hidden bg-white dark:bg-neutral-900 transition-all duration-300 group-hover:shadow-2xl ${s.border}`}
               >
                 <div>
                   <div className="flex items-center justify-between mb-6">
-                    <span className="text-xs font-bold px-3 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 rounded-full tracking-wider">
+                    <span className="text-xs font-bold px-3 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 group-hover:bg-foreground group-hover:text-background rounded-full tracking-wider transition-all duration-300">
                       {s.badge}
                     </span>
                     <span className="w-10 h-10 rounded-full bg-neutral-100 dark:bg-neutral-800 group-hover:bg-foreground group-hover:text-background flex items-center justify-center transition-all duration-300">
                       <ArrowUpRight className="w-5 h-5" />
                     </span>
                   </div>
-                  <h3 className="text-2xl font-black text-foreground mb-4">
+                  <h3 className="text-2xl font-black text-foreground mb-4 md:min-h-[4rem] whitespace-pre-line">
                     {s.title}
                   </h3>
                   <p className="text-sm text-neutral-500 leading-relaxed mb-8">
                     {s.desc}
                   </p>
                 </div>
-                <div className="pt-4 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
-                  <span className="text-xs text-neutral-400">Узнать подробнее</span>
-                  <span className="text-sm font-bold text-foreground">от 25 000 ₽</span>
+                <div className="pt-4 border-t border-neutral-100 dark:border-neutral-800 group-hover:border-neutral-200 dark:group-hover:border-neutral-700 flex items-center justify-between transition-colors duration-300">
+                  <span className="text-xs font-medium px-3 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 group-hover:bg-foreground group-hover:text-background transition-all duration-300">
+                    Узнать подробнее
+                  </span>
+                  <span className="text-sm font-bold px-3 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 group-hover:bg-foreground group-hover:text-background transition-all duration-300">
+                    {s.price}
+                  </span>
                 </div>
               </div>
-            </Link>
+            </TransitionLink>
           ))}
         </div>
       </section>
 
-      {/* 3. WHY MAETTI */}
+      {/* 3. WHO IS MAETTI */}
       <section className="py-24 px-6 bg-neutral-50 dark:bg-neutral-950 border-y border-neutral-200 dark:border-neutral-900">
         <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-5">
             <div className="w-fit mb-6">
               <WaveRule className="mb-4" />
               <h2 className="text-3xl md:text-5xl font-black tracking-tight text-foreground">
-                ПОЧЕМУ ВЫБИРАЮТ MAETTI
+                КТО ТАКИЕ <MaettiWord />?
               </h2>
             </div>
-            <p className="text-neutral-500 leading-relaxed mb-8">
-              Мы ценим ваше время и ресурсы. Наша команда создает гибкие программные продукты, ориентируясь на конечные бизнес-показатели, а не только на красивый код.
+            <p className="text-neutral-500 leading-relaxed mb-4">
+              Название говорит о&nbsp;нас больше, чем кажется на&nbsp;первый взгляд. Иногда просто стоит посмотреть на&nbsp;него под другим углом.
             </p>
-            <div className="flex items-center gap-4">
-              <div className="text-4xl font-extrabold text-foreground">98%</div>
-              <div className="text-xs text-neutral-500 leading-tight">
-                довольных клиентов<br />
-                и повторных обращений
-              </div>
-            </div>
+            <p className="text-neutral-500 leading-relaxed mb-4">
+              Всё началось с&nbsp;университетских лабораторий и&nbsp;ночных хакатонов. Каждый из&nbsp;нас строил свою карьеру - фриланс, стартапы, продуктовые компании - пока не&nbsp;стало ясно: лучшие проекты рождаются не&nbsp;в&nbsp;одиночку.
+            </p>
+            <p className="text-neutral-500 leading-relaxed mb-8">
+              MAETTI - это точка сборки: общие стандарты качества, прозрачный процесс и&nbsp;ответственность за&nbsp;каждый этап. Мы&nbsp;берёмся за&nbsp;проекты, которым нужна не&nbsp;просто «разработка», а&nbsp;продуманная инженерная команда.
+            </p>
+            <TransitionLink
+              href="/team"
+              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-full text-sm transition-all duration-200 hover:scale-105 active:scale-95"
+            >
+              <span>Познакомиться с командой</span>
+              <ChevronRight className="w-4 h-4" />
+            </TransitionLink>
           </div>
           <div className="lg:col-span-7 grid grid-cols-1 md:grid-cols-1 gap-6">
             {ADVANTAGES.map((adv, idx) => {

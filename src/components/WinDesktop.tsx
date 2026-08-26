@@ -1002,9 +1002,9 @@ export default function WinDesktop() {
                 key={w.id}
                 title={
                   site
-                    ? `maeTtI — ${TITLES[w.id]}`
+                    ? `maeTtI - ${TITLES[w.id]}`
                     : w.id === "explorer"
-                      ? "explorer.exe — Ошибка приложения"
+                      ? "explorer.exe - Ошибка приложения"
                       : TITLES[w.id]
                 }
                 dialog={!G && !site}

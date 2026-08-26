@@ -94,7 +94,7 @@ export default function TeamPage() {
                   {member.name}
                 </h2>
                 <div className="text-xs font-mono font-bold text-neutral-500 uppercase mb-3 sm:mb-4">
-                  // {member.role}
+                  {"//"} {member.role}
                 </div>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed mb-6 font-medium">
                   {member.desc}
@@ -130,14 +130,14 @@ export default function TeamPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 pt-5 sm:pt-6 border-t-2 border-dashed border-black dark:border-neutral-800 text-xs font-mono">
             <div className="space-y-2">
-              <div className="font-bold text-neutral-500 uppercase">// РЕКВИЗИТЫ СТУДИИ:</div>
+              <div className="font-bold text-neutral-500 uppercase">{"// РЕКВИЗИТЫ СТУДИИ:"}</div>
               <div><strong>Название:</strong> Студия цифровых решений maeTtI</div>
               <div><strong>ИП:</strong> Маетный Дмитрий Александрович</div>
               <div><strong>ИНН:</strong> 772412345678</div>
               <div><strong>ОГРНИП:</strong> 321774600123456</div>
             </div>
             <div className="space-y-2">
-              <div className="font-bold text-neutral-500 uppercase">// КОНТАКТЫ ДЛЯ ДОГОВОРОВ:</div>
+              <div className="font-bold text-neutral-500 uppercase">{"// КОНТАКТЫ ДЛЯ ДОГОВОРОВ:"}</div>
               <div><strong>Банк:</strong> АО «ТБанк»</div>
               <div className="break-all"><strong>Расчетный счет:</strong> 40802810123456789012</div>
               <div><strong>Email:</strong> legal@maetti.ru</div>

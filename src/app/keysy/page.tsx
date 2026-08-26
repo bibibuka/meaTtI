@@ -421,7 +421,7 @@ export default function CasesPage() {
 
           <p className="px-6 pb-12 md:pb-16 text-xs font-mono text-neutral-400 flex items-center gap-2">
             <ArrowRight className="w-3.5 h-3.5" />
-            Листайте вбок — следующий кейс
+            Листайте вбок - следующий кейс
           </p>
         </div>
       </div>
