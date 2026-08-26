@@ -187,7 +187,7 @@ function CaseDetail({ c, onOpenGallery }: { c: Case; onOpenGallery: (c: Case, ph
           </div>
         </div>
 
-        <div className="relative aspect-[16/7] sm:aspect-[16/6] overflow-hidden bg-neutral-900">
+        <div className="relative h-36 sm:h-44 w-full overflow-hidden bg-neutral-900">
           <img
             src={mainPhoto.url}
             alt={c.title}
