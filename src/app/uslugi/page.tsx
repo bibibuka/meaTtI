@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, Send, Plus, Minus } from "lucide-react";
 import { SECTIONS } from "./data";
 import WaveRule from "@/components/WaveRule";
+import { usePageTransition } from "@/context/TransitionContext";
 
 // 1. Анимированная иконка кода: кавычки разъезжаются, пишется 'code', удаляется, кавычки сужаются
 function AnimatedCodeIcon({
@@ -148,10 +149,10 @@ function AnimatedBotIcon({
       animate={
         animating
           ? {
-              scale: [1, 1.35, 1.35, 1],
-              y: [0, -3, -2.5, 0],
-              rotate: [0, -5, 3, 0],
-            }
+            scale: [1, 1.35, 1.35, 1],
+            y: [0, -3, -2.5, 0],
+            rotate: [0, -5, 3, 0],
+          }
           : { scale: 1, y: 0, rotate: 0 }
       }
       transition={{ duration: 0.8, ease: [0.34, 1.56, 0.64, 1] }}
@@ -290,24 +291,80 @@ const ICON_MAP = {
 
 const subscribeHash = (cb: () => void) => {
   window.addEventListener("hashchange", cb);
-  return () => window.removeEventListener("hashchange", cb);
+  window.addEventListener("popstate", cb);
+  return () => {
+    window.removeEventListener("hashchange", cb);
+    window.removeEventListener("popstate", cb);
+  };
 };
 
 export default function ServicesPage() {
+  const transition = usePageTransition();
+  const isPending = !!transition?.pending;
+
   // Ссылки с главной ведут на /uslugi#id — эта позиция раскрыта по умолчанию
   const hash = useSyncExternalStore(
     subscribeHash,
-    () => window.location.hash.slice(1),
+    () => (typeof window !== "undefined" ? window.location.hash.slice(1) : ""),
     () => ""
   );
 
-  const [activeId, setActiveId] = useState<string | null>(() => {
-    if (typeof window !== "undefined" && window.location.hash) {
-      const h = window.location.hash.slice(1);
-      if (SECTIONS.some((s) => s.id === h)) return h;
-    }
-    return SECTIONS[0].id;
-  });
+  const [clientHash, setClientHash] = useState("");
+
+  useEffect(() => {
+    const update = () => {
+      if (typeof window !== "undefined") {
+        setClientHash(window.location.hash.slice(1));
+      }
+    };
+    update();
+    window.addEventListener("hashchange", update);
+    window.addEventListener("popstate", update);
+    return () => {
+      window.removeEventListener("hashchange", update);
+      window.removeEventListener("popstate", update);
+    };
+  }, []);
+
+  const pendingHash = transition?.pending?.href?.includes("#")
+    ? transition.pending.href.split("#")[1]
+    : "";
+
+  const effectiveHash = pendingHash || clientHash || hash;
+
+  const [prevHash, setPrevHash] = useState(effectiveHash);
+  const [manualSelectedId, setManualSelectedId] = useState<string | null>(null);
+  const [autoOpenedId, setAutoOpenedId] = useState<string | null>(null);
+
+  if (prevHash !== effectiveHash) {
+    setPrevHash(effectiveHash);
+    setManualSelectedId(null);
+    setAutoOpenedId(null);
+  }
+
+  // Целевая плашка: если есть хэш в переходе — берем её, иначе первую
+  const targetId =
+    effectiveHash && SECTIONS.some((s) => s.id === effectiveHash)
+      ? effectiveHash
+      : SECTIONS[0].id;
+
+  // Отложенное раскрытие: сначала переходим на закрытую плашку,
+  // даём пользователю прибыть на страницу (400мс пауза) и плавно раскрываем нужный блок
+  useEffect(() => {
+    if (isPending || !targetId) return;
+    if (manualSelectedId !== null) return;
+
+    const timer = setTimeout(() => {
+      setAutoOpenedId(targetId);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [targetId, isPending, manualSelectedId]);
+
+  const activeId =
+    manualSelectedId === "none"
+      ? null
+      : manualSelectedId ?? autoOpenedId;
 
   const [animTrigger, setAnimTrigger] = useState<Record<string, number>>({});
 
@@ -322,30 +379,54 @@ export default function ServicesPage() {
     return () => clearTimeout(timer);
   }, [activeId]);
 
-  // Центрирование один раз при переходе по ссылке/хэшу с главной страницы
+  // Центрирование при переходе по ссылке/хэшу с главной страницы
   useEffect(() => {
-    if (!hash || !SECTIONS.some((s) => s.id === hash)) return;
+    if (!targetId || !SECTIONS.some((s) => s.id === targetId)) return;
 
-    // Единичный плавный скролл в центр экрана после открытия перехода
-    const timer = setTimeout(() => {
-      setActiveId(hash);
-      const el = document.getElementById(hash);
+    const centerTarget = (smooth: boolean) => {
+      const el = document.getElementById(targetId);
       if (!el) return;
+
       const rect = el.getBoundingClientRect();
-      const elCenter = window.scrollY + rect.top + rect.height / 2;
-      const targetScroll = Math.max(0, elCenter - window.innerHeight / 2);
+      const elementTop = window.scrollY + rect.top;
+      const elementHeight = rect.height;
+
+      // Высота плавающей шапки + отступ сверху
+      const headerOffset = 90;
+      const viewportHeight = window.innerHeight;
+      const visibleAreaHeight = viewportHeight - headerOffset;
+
+      // Идеальное центрирование в видимой рабочей области (между шапкой и низом экрана)
+      const idealScroll = elementTop + elementHeight / 2 - (headerOffset + visibleAreaHeight / 2);
+
+      // Защита: верх элемента ни при каких условиях не должен уезжать под шапку
+      const maxScroll = elementTop - headerOffset - 24;
+
+      const targetScroll = Math.max(0, Math.min(idealScroll, maxScroll));
+
       window.scrollTo({
         top: targetScroll,
-        behavior: "smooth",
+        behavior: smooth ? "smooth" : "auto",
       });
-    }, 120);
+    };
+
+    // Первичная подстройка (пока плашка закрыта) — мгновенно под шторкой
+    centerTarget(!isPending);
+
+    // Мягкая центровка после полного завершения раскрытия плашки (400мс задержка + 320мс анимация)
+    const timer = setTimeout(() => {
+      centerTarget(true);
+    }, 750);
 
     return () => clearTimeout(timer);
-  }, [hash]);
+  }, [targetId, isPending]);
 
-  // При клике на самой странице - переключаем активную плашку
+  // При клике на самой странице - переключаем активную плашку без скролла и задержек
   const toggleAccordion = (id: string) => {
-    setActiveId((prev) => (prev === id ? null : id));
+    setManualSelectedId((prev) => {
+      const current = prev === "none" ? null : prev ?? autoOpenedId;
+      return current === id ? "none" : id;
+    });
   };
 
   return (
@@ -365,15 +446,15 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      {/* Services List with generous bottom padding to allow any card to center */}
-      <section className="max-w-7xl mx-auto px-6 pt-12 pb-[50vh]">
+      {/* Services List */}
+      <section className="max-w-7xl mx-auto px-6 pt-12 pb-16 md:pb-20">
         <div className="divide-y divide-neutral-200 dark:divide-neutral-800 border-t border-b border-neutral-200 dark:border-neutral-800">
           {SECTIONS.map((sec) => {
             const isOpen = activeId === sec.id;
             const Icon = ICON_MAP[sec.iconName];
 
             return (
-              <div key={sec.id} id={sec.id} className="py-6 transition-colors">
+              <div key={sec.id} id={sec.id} className="py-6 transition-colors scroll-mt-28">
                 <button
                   onClick={() => toggleAccordion(sec.id)}
                   className="w-full text-left flex items-center justify-between gap-4 py-2 group focus:outline-none"
@@ -386,11 +467,10 @@ export default function ServicesPage() {
                     <Icon
                       trigger={animTrigger[sec.id] || 0}
                       isOpen={isOpen}
-                      className={`transition-colors ${
-                        isOpen
-                          ? "text-blue-600 dark:text-blue-400"
-                          : "text-neutral-400 group-hover:text-neutral-700 dark:group-hover:text-neutral-300"
-                      }`}
+                      className={`transition-colors ${isOpen
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-neutral-400 group-hover:text-neutral-700 dark:group-hover:text-neutral-300"
+                        }`}
                     />
                     <div>
                       <h2 className="text-xl md:text-3xl font-light tracking-tight text-neutral-950 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
@@ -412,7 +492,7 @@ export default function ServicesPage() {
                   </div>
                 </button>
 
-                <AnimatePresence>
+                <AnimatePresence initial={false}>
                   {isOpen && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}

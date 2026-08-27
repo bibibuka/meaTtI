@@ -49,8 +49,16 @@ export function TransitionProvider({
       if (href.startsWith("#")) return;
 
       const targetPath = href.split("#")[0] || "/";
-      if (targetPath === pathname && !href.includes("#")) {
-        window.scrollTo({ top: 0, behavior: "smooth" });
+      if (targetPath === pathname) {
+        if (href.includes("#")) {
+          const targetHash = href.split("#")[1];
+          if (targetHash) {
+            window.location.hash = targetHash;
+            window.dispatchEvent(new Event("hashchange"));
+          }
+        } else {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
         return;
       }
 

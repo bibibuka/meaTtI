@@ -198,16 +198,16 @@ const SCENE_ORDER: (keyof typeof ART)[] = [
 ];
 
 const LAYOUTS: [number, number, number, number][][] = [
-  [[18,16,0.95,-4],[74,22,0.85,3],[32,38,1.2,-4],[78,58,1.45,4],[55,30,0.9,0],[22,72,1.5,-5],[86,42,1.1,0],[46,86,1.6,-5],[12,52,1.25,0],[66,68,1.35,0],[10,32,0.95,0],[34,58,1.15,0]],
-  [[72,18,0.9,4],[26,26,1,-3],[62,44,1.3,3],[18,66,1.5,-4],[44,34,0.95,0],[80,74,1.45,4],[12,40,1.05,0],[56,86,1.6,4],[86,54,1.2,0],[34,54,1.1,0],[68,62,1.25,0],[20,88,1.4,0]],
-  [[34,15,0.85,-5],[82,26,0.95,4],[20,36,1.15,-3],[66,70,1.5,4],[50,48,1.2,0],[14,80,1.45,-4],[86,58,1.25,0],[34,64,1.35,5],[60,30,1,0],[10,54,1.05,0],[44,86,1.5,0],[88,84,1.35,0]],
-  [[60,17,0.9,3],[14,24,0.95,-4],[42,50,1.3,4],[84,34,1.05,-3],[24,44,1.1,0],[62,78,1.5,5],[30,72,1.4,0],[76,86,1.55,-4],[88,62,1.15,0],[52,30,0.9,0],[10,62,1.2,0],[40,88,1.45,0]],
-  [[46,16,1,-3],[86,28,0.85,4],[24,52,1.35,-4],[68,38,1.1,3],[40,68,1.35,0],[88,72,1.3,-5],[14,32,0.95,0],[62,86,1.6,4],[52,56,1.2,0],[30,26,0.9,0],[76,58,1.25,0],[18,86,1.45,0]],
-  [[22,20,0.9,4],[66,15,0.95,-3],[50,40,1.25,-4],[16,70,1.5,4],[78,48,1.15,0],[44,82,1.5,-4],[88,32,1,0],[70,74,1.5,5],[30,56,1.2,0],[60,62,1.2,0],[10,42,1,0],[84,88,1.5,0]],
-  [[38,18,0.95,-4],[80,24,0.9,3],[14,42,1.15,4],[58,66,1.45,-3],[34,56,1.15,0],[86,80,1.4,4],[68,40,1.05,0],[22,84,1.55,-5],[48,32,0.95,0],[88,58,1.2,0],[12,64,1.15,0],[56,88,1.5,0]],
-  [[70,20,0.9,-3],[20,15,0.95,4],[40,34,1.1,3],[74,62,1.45,-4],[12,50,1.2,0],[52,78,1.45,5],[34,60,1.25,0],[84,86,1.55,4],[62,44,1.1,0],[88,36,0.95,0],[24,84,1.5,0],[10,70,1.3,0]],
-  [[52,14,0.9,4],[12,26,0.95,-4],[30,48,1.25,-3],[80,44,1.2,4],[62,30,0.9,0],[26,78,1.45,-5],[48,66,1.3,0],[78,84,1.55,5],[10,62,1.15,0],[66,56,1.15,0],[88,66,1.25,0],[44,88,1.45,0]],
-  [[28,22,0.95,3],[76,16,0.9,-4],[56,52,1.35,4],[16,38,1.05,-3],[84,60,1.25,0],[38,74,1.4,4],[70,34,1,0],[14,86,1.55,-4],[44,34,1,0],[10,58,1.15,0],[88,84,1.45,0],[60,72,1.3,0]],
+  [[18, 16, 0.95, -4], [74, 22, 0.85, 3], [32, 38, 1.2, -4], [78, 58, 1.45, 4], [55, 30, 0.9, 0], [22, 72, 1.5, -5], [86, 42, 1.1, 0], [46, 86, 1.6, -5], [12, 52, 1.25, 0], [66, 68, 1.35, 0], [10, 32, 0.95, 0], [34, 58, 1.15, 0]],
+  [[72, 18, 0.9, 4], [26, 26, 1, -3], [62, 44, 1.3, 3], [18, 66, 1.5, -4], [44, 34, 0.95, 0], [80, 74, 1.45, 4], [12, 40, 1.05, 0], [56, 86, 1.6, 4], [86, 54, 1.2, 0], [34, 54, 1.1, 0], [68, 62, 1.25, 0], [20, 88, 1.4, 0]],
+  [[34, 15, 0.85, -5], [82, 26, 0.95, 4], [20, 36, 1.15, -3], [66, 70, 1.5, 4], [50, 48, 1.2, 0], [14, 80, 1.45, -4], [86, 58, 1.25, 0], [34, 64, 1.35, 5], [60, 30, 1, 0], [10, 54, 1.05, 0], [44, 86, 1.5, 0], [88, 84, 1.35, 0]],
+  [[60, 17, 0.9, 3], [14, 24, 0.95, -4], [42, 50, 1.3, 4], [84, 34, 1.05, -3], [24, 44, 1.1, 0], [62, 78, 1.5, 5], [30, 72, 1.4, 0], [76, 86, 1.55, -4], [88, 62, 1.15, 0], [52, 30, 0.9, 0], [10, 62, 1.2, 0], [40, 88, 1.45, 0]],
+  [[46, 16, 1, -3], [86, 28, 0.85, 4], [24, 52, 1.35, -4], [68, 38, 1.1, 3], [40, 68, 1.35, 0], [88, 72, 1.3, -5], [14, 32, 0.95, 0], [62, 86, 1.6, 4], [52, 56, 1.2, 0], [30, 26, 0.9, 0], [76, 58, 1.25, 0], [18, 86, 1.45, 0]],
+  [[22, 20, 0.9, 4], [66, 15, 0.95, -3], [50, 40, 1.25, -4], [16, 70, 1.5, 4], [78, 48, 1.15, 0], [44, 82, 1.5, -4], [88, 32, 1, 0], [70, 74, 1.5, 5], [30, 56, 1.2, 0], [60, 62, 1.2, 0], [10, 42, 1, 0], [84, 88, 1.5, 0]],
+  [[38, 18, 0.95, -4], [80, 24, 0.9, 3], [14, 42, 1.15, 4], [58, 66, 1.45, -3], [34, 56, 1.15, 0], [86, 80, 1.4, 4], [68, 40, 1.05, 0], [22, 84, 1.55, -5], [48, 32, 0.95, 0], [88, 58, 1.2, 0], [12, 64, 1.15, 0], [56, 88, 1.5, 0]],
+  [[70, 20, 0.9, -3], [20, 15, 0.95, 4], [40, 34, 1.1, 3], [74, 62, 1.45, -4], [12, 50, 1.2, 0], [52, 78, 1.45, 5], [34, 60, 1.25, 0], [84, 86, 1.55, 4], [62, 44, 1.1, 0], [88, 36, 0.95, 0], [24, 84, 1.5, 0], [10, 70, 1.3, 0]],
+  [[52, 14, 0.9, 4], [12, 26, 0.95, -4], [30, 48, 1.25, -3], [80, 44, 1.2, 4], [62, 30, 0.9, 0], [26, 78, 1.45, -5], [48, 66, 1.3, 0], [78, 84, 1.55, 5], [10, 62, 1.15, 0], [66, 56, 1.15, 0], [88, 66, 1.25, 0], [44, 88, 1.45, 0]],
+  [[28, 22, 0.95, 3], [76, 16, 0.9, -4], [56, 52, 1.35, 4], [16, 38, 1.05, -3], [84, 60, 1.25, 0], [38, 74, 1.4, 4], [70, 34, 1, 0], [14, 86, 1.55, -4], [44, 34, 1, 0], [10, 58, 1.15, 0], [88, 84, 1.45, 0], [60, 72, 1.3, 0]],
 ];
 
 function SheetScene({ layout }: { layout: number }) {
@@ -280,13 +280,8 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(() => {
-    if (typeof window !== "undefined") {
-      return window.scrollY > 10;
-    }
-    return false;
-  });
-  
+  const [scrolled, setScrolled] = useState(false);
+
   const transition = usePageTransition();
   const pending = transition?.pending ?? null;
   const layout = transition?.layout ?? 0;
@@ -371,13 +366,26 @@ export default function Header() {
           reduce
             ? { duration: 0 }
             : {
-                duration: pending ? 0.55 : 0.65,
-                ease: [0.22, 1, 0.36, 1],
-                // Спуск ждёт, пока шапка докрасится в голубой
-                delay: pending ? 0.2 : 0,
-              }
+              duration: pending ? 0.55 : 0.65,
+              ease: [0.22, 1, 0.36, 1],
+              // Спуск ждёт, пока шапка докрасится в голубой
+              delay: pending ? 0.2 : 0,
+            }
         }
-        onAnimationComplete={() => pending && router.push(pending.href)}
+        onAnimationComplete={() => {
+          if (pending) {
+            router.push(pending.href, { scroll: !pending.href.includes("#") });
+            if (pending.href.includes("#")) {
+              const h = pending.href.split("#")[1];
+              setTimeout(() => {
+                if (window.location.hash !== `#${h}`) {
+                  window.location.hash = h;
+                }
+                window.dispatchEvent(new Event("hashchange"));
+              }, 60);
+            }
+          }
+        }}
       >
         <div
           className="absolute inset-x-0 top-0 bg-sky-100"
@@ -454,9 +462,8 @@ export default function Header() {
             }
           >
             <div
-              className={`absolute inset-0 backdrop-blur-xl transition-colors duration-200 ${
-                pending ? "bg-sky-100" : "bg-sky-100/85"
-              }`}
+              className={`absolute inset-0 backdrop-blur-xl transition-colors duration-200 ${pending ? "bg-sky-100" : "bg-sky-100/85"
+                }`}
               style={{
                 clipPath: "url(#liquid-glass-clip)",
                 boxShadow: scrolled ? "0 4px 30px rgba(0, 0, 0, 0.1)" : "none",
@@ -530,11 +537,10 @@ export default function Header() {
                               setIsOpen(false);
                               startTransition(link.href)(e);
                             }}
-                            className={`block text-lg font-bold ${
-                              isActive
+                            className={`block text-lg font-bold ${isActive
                                 ? "text-blue-600 dark:text-blue-400"
                                 : "text-foreground/75 hover:text-foreground"
-                            } transition-colors`}
+                              } transition-colors`}
                           >
                             {link.label}
                           </Link>
@@ -584,11 +590,10 @@ export default function Header() {
                 key={link.href}
                 href={link.href}
                 onClick={startTransition(link.href)}
-                className={`text-sm font-semibold tracking-wide ${
-                  isDarkHeader
+                className={`text-sm font-semibold tracking-wide ${isDarkHeader
                     ? "text-neutral-300 hover:text-white"
                     : "text-foreground/80 hover:text-foreground"
-                } transition-colors py-2`}
+                  } transition-colors py-2`}
               >
                 {link.label}
               </Link>
@@ -596,9 +601,8 @@ export default function Header() {
 
             {/* Persistent sliding underline */}
             <motion.span
-              className={`absolute bottom-0 h-0.5 pointer-events-none ${
-                isDarkHeader ? "bg-white" : "bg-foreground"
-              }`}
+              className={`absolute bottom-0 h-0.5 pointer-events-none ${isDarkHeader ? "bg-white" : "bg-foreground"
+                }`}
               style={{ left: 0 }}
               initial={false}
               animate={{
@@ -620,11 +624,10 @@ export default function Header() {
               href="https://t.me/maetti_agency_stub"
               target="_blank"
               rel="noopener noreferrer"
-              className={`inline-flex items-center gap-2 ${
-                isDarkHeader
+              className={`inline-flex items-center gap-2 ${isDarkHeader
                   ? "bg-white text-neutral-950 hover:bg-neutral-200"
                   : "bg-foreground text-background"
-              } font-bold px-5 py-2.5 rounded-full hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg text-sm`}
+                } font-bold px-5 py-2.5 rounded-full hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg text-sm`}
             >
               <Send className="w-4 h-4" />
               <span>Написать в Telegram</span>

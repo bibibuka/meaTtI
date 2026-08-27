@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import DiverScroll from "@/components/DiverScroll";
 import HoverLine from "@/components/HoverLine";
+
 import { TransitionProvider } from "@/context/TransitionContext";
 
 const geistSans = Geist({
@@ -18,7 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "maeTtI - IT Студия Разработки",
+  title: "maeTtI — IT Студия Разработки",
   description: "Разработка высококлассных веб-сайтов, Telegram-ботов, макросов, интеграций, рекламы и SEO.",
 };
 
