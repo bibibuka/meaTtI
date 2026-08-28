@@ -440,8 +440,8 @@ export default function ServicesPage() {
               Наши Услуги
             </h1>
           </div>
-          <p className="text-base md:text-lg text-neutral-500 dark:text-neutral-400 font-light leading-relaxed">
-            Нажмите на любую позицию для раскрытия подробного состава пакета и условий работы.
+          <p className="text-base md:text-lg text-neutral-500 dark:text-neutral-400 font-light leading-relaxed text-pretty">
+            Три направления - один подрядчик. Раскройте любую позицию, чтобы увидеть состав, сроки и стоимость.
           </p>
         </div>
       </section>
@@ -476,7 +476,7 @@ export default function ServicesPage() {
                       <h2 className="text-xl md:text-3xl font-light tracking-tight text-neutral-950 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                         {sec.title}
                       </h2>
-                      <p className="text-xs md:text-sm text-neutral-500 dark:text-neutral-400 font-light mt-1 hidden sm:block">
+                      <p className="text-xs md:text-sm text-neutral-500 dark:text-neutral-400 font-light mt-1 hidden sm:block line-clamp-2">
                         {sec.subtitle}
                       </p>
                     </div>
@@ -501,40 +501,60 @@ export default function ServicesPage() {
                       transition={{ duration: 0.3, ease: "easeInOut" }}
                       className="overflow-hidden"
                     >
-                      <div className="pt-6 pb-4 pl-0 sm:pl-16 grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-                        <div className="md:col-span-8 space-y-4">
-                          <p className="text-sm text-neutral-500 dark:text-neutral-400 font-light block sm:hidden">
+                      <div className="pt-6 pb-4 pl-0 sm:pl-16 grid grid-cols-1 md:grid-cols-12 gap-8 md:items-center">
+                        <div className="md:col-span-8 space-y-4 max-w-xl">
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400 font-light block sm:hidden text-pretty">
                             {sec.subtitle}
                           </p>
                           <h3 className="text-xs font-mono text-neutral-400 uppercase tracking-widest">
-                            Состав пакета:
+                            Что входит:
                           </h3>
-                          <ul className="space-y-3">
-                            {sec.bullets.map((bullet, bIdx) => (
-                              <li key={bIdx} className="flex items-start gap-3 text-sm text-neutral-700 dark:text-neutral-300">
-                                <Check className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-                                <span>{bullet}</span>
-                              </li>
+                          <div className="space-y-6">
+                            {sec.groups.map((group) => (
+                              <div key={group.title}>
+                                <div className="text-[11px] font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-widest mb-2.5">
+                                  {group.title}
+                                </div>
+                                <ul className="space-y-2.5">
+                                  {group.items.map((item, bIdx) => (
+                                    <li key={bIdx} className="flex items-start gap-3 text-sm text-neutral-700 dark:text-neutral-300">
+                                      <Check className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                                      <span>{item}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
                             ))}
-                          </ul>
+                          </div>
+                          <p className="text-xs text-neutral-400 dark:text-neutral-500 font-light pt-1">
+                            Не нашли свою задачу в списке? Напишите нам - скорее всего, мы её уже делали.
+                          </p>
                         </div>
 
-                        <div className="md:col-span-4 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-6 space-y-4">
-                          <div>
-                            <div className="text-xs font-mono text-neutral-400 uppercase tracking-widest mb-1">Стоимость</div>
-                            <div className="text-2xl font-light text-blue-600 dark:text-blue-400">{sec.price}</div>
-                            <div className="text-xs text-neutral-400 mt-1 font-mono">{sec.time}</div>
-                          </div>
+                        <div className="md:col-span-4 self-center">
+                          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8 flex flex-col justify-center gap-5 md:min-h-[420px]">
+                            <div>
+                              <div className="text-xs font-mono text-neutral-400 uppercase tracking-widest mb-1">Стоимость</div>
+                              <div className="text-3xl font-light text-blue-600 dark:text-blue-400">{sec.price}</div>
+                              <div className="text-xs text-neutral-400 mt-1.5 font-mono">{sec.time}</div>
+                            </div>
 
-                          <a
-                            href="https://t.me/maetti_agency_stub"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-full inline-flex items-center justify-center gap-2 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold text-xs py-3 hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white transition-all duration-300"
-                          >
-                            <span>Обсудить задачу</span>
-                            <Send className="w-3.5 h-3.5" />
-                          </a>
+                            <div className="h-px bg-neutral-100 dark:bg-neutral-800" />
+
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400 font-light leading-relaxed text-pretty">
+                              Если сомневаетесь, оставьте заявку - поможем разобраться и подобрать подходящий вариант. Итоговая стоимость может быть ниже указанной.
+                            </p>
+
+                            <a
+                              href="https://t.me/maetti_agency_stub"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full inline-flex items-center justify-center gap-2 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold text-xs py-3.5 hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white transition-all duration-300"
+                            >
+                              <span>Обсудить задачу</span>
+                              <Send className="w-3.5 h-3.5" />
+                            </a>
+                          </div>
                         </div>
                       </div>
                     </motion.div>

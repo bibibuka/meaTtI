@@ -9,10 +9,12 @@ import {
   FolderOpen,
   Gamepad2,
   Globe,
+  Info,
   Mail,
   Minus,
   Rocket,
   SignalHigh,
+  Sparkles,
   Square,
   Trash2,
   TriangleAlert,
@@ -55,6 +57,7 @@ function DragonIcon({ className }: { className?: string }) {
 }
 
 const ICONS: Item[] = [
+  { id: "info", label: "Инфо", Icon: Info, tint: "from-blue-500 to-indigo-600" },
   { id: "uslugi", label: "Услуги", href: "/uslugi", Icon: Briefcase, tint: "from-sky-400 to-blue-600" },
   { id: "keysy", label: "Кейсы", href: "/keysy", Icon: Rocket, tint: "from-violet-400 to-indigo-600" },
   { id: "team", label: "Команда", href: "/team", Icon: Users, tint: "from-emerald-400 to-teal-600" },
@@ -66,6 +69,7 @@ const ICONS: Item[] = [
 ];
 
 const TITLES: Record<string, string> = {
+  info: "О проекте",
   bin: "Корзина",
   explorer: "explorer.exe",
   snake: "Змейка",
@@ -88,6 +92,11 @@ const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 /* На айфоне те же две сломанные иконки зовутся и ругаются по-своему. */
 const IOS: Record<string, { label: string; head: string; body: string }> = {
+  info: {
+    label: "Инфо",
+    head: "Интерактивная среда",
+    body: "Демонстрация возможностей maeTtI",
+  },
   bin: {
     label: "Корзина",
     head: "Не удалось открыть «Корзина»",
@@ -769,6 +778,7 @@ export default function WinDesktop() {
   const [wins, setWins] = useState<WinState[]>([]);
   const [start, setStart] = useState(false);
   const [clock, setClock] = useState("");
+  const [showNotice, setShowNotice] = useState(true);
   // Компонент грузится только на клиенте (dynamic ssr:false), поэтому ширину
   // можно спросить сразу — иначе на телефоне мигнёт винда.
   const [phone, setPhone] = useState(() => matchMedia("(max-width: 767px)").matches);
@@ -806,6 +816,10 @@ export default function WinDesktop() {
 
   const open = (id: string) => {
     setStart(false);
+    if (id === "info") {
+      setShowNotice(true);
+      return;
+    }
     setWins((w) => [...w.filter((x) => x.id !== id), { id, min: false }]);
     // Окно живёт внутри секции: если стол виден лишь наполовину, окно срежет
     // краем экрана. Поэтому на открытии доводим стол до полного кадра —
@@ -832,6 +846,11 @@ export default function WinDesktop() {
   // Ярлык страницы никуда не уводит: страница открывается окном здесь же.
   // Ctrl/⌘/Shift оставляем браузеру — ссылка настоящая, пусть откроет вкладку.
   const nav = (e: React.MouseEvent, id: string) => {
+    if (id === "info") {
+      e.preventDefault();
+      setShowNotice(true);
+      return;
+    }
     if (SITE[id] && (e.metaKey || e.ctrlKey || e.shiftKey)) return;
     e.preventDefault();
     open(id);
@@ -841,6 +860,11 @@ export default function WinDesktop() {
   // вообще на тач-экране двойного тапа никто не ждёт — там открываем сразу.
   const hit = (e: React.MouseEvent, it: Item) => {
     setSel(it.id);
+    if (it.id === "info") {
+      e.preventDefault();
+      setShowNotice(true);
+      return;
+    }
     if (!phone && !coarse.current && e.detail < 2) {
       e.preventDefault();
       return;
@@ -910,6 +934,58 @@ export default function WinDesktop() {
         <div className="mx-auto mt-3 h-1 w-32 rounded-full bg-white/80" />
       </div>
 
+      {/* Информационная плашка (iOS стиль) */}
+      {showNotice && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/55 backdrop-blur-md px-5 select-none">
+          <div className="ios-open w-full max-w-[21.5rem] overflow-hidden rounded-[28px] bg-white/95 text-center shadow-2xl backdrop-blur-2xl border border-white/60 p-5">
+            {/* Иконка */}
+            <div className="mx-auto mb-3.5 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-blue-600 shadow-lg ring-4 ring-blue-500/20 text-white">
+              <Sparkles className="h-7 w-7 text-amber-300 animate-pulse" />
+            </div>
+
+            <span className="inline-block rounded-full bg-blue-100 px-3 py-0.5 text-[0.6875rem] font-bold text-blue-700 uppercase tracking-wider mb-1.5">
+              Интерактивный концепт
+            </span>
+            <h3 className="text-[1.125rem] font-bold text-neutral-900 leading-snug">
+              Добро пожаловать в maeTtI!
+            </h3>
+
+            <p className="mt-2 text-[0.8125rem] leading-relaxed text-neutral-600">
+              Этот сайт и операционная система созданы, чтобы наглядно показать наши технические возможности и нестандартный подход к разработке.
+            </p>
+
+            <div className="mt-3.5 space-y-2 text-left rounded-2xl bg-neutral-100/90 p-3 text-[0.75rem]">
+              <div className="flex items-start gap-2">
+                <span className="text-base leading-none">📱</span>
+                <span className="text-neutral-700 leading-snug">
+                  <strong className="text-neutral-900">Разделы сайта:</strong> открывайте «Услуги», «Кейсы», «Команду» и «Контакты» прямо в приложениях.
+                </span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-base leading-none">🕹️</span>
+                <span className="text-neutral-700 leading-snug">
+                  <strong className="text-neutral-900">Мини-игры:</strong> запускайте «Змейку» и «Дракончика» прямо с экрана.
+                </span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-base leading-none">✨</span>
+                <span className="text-neutral-700 leading-snug">
+                  <strong className="text-neutral-900">Интерактивность:</strong> тапайте по ярлыкам и исследуйте интерфейс!
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowNotice(false)}
+              className="mt-4.5 w-full rounded-2xl bg-blue-600 py-3 text-[0.9375rem] font-bold text-white shadow-lg shadow-blue-600/30 active:scale-95 transition-transform cursor-pointer"
+            >
+              Понял!
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* открытое «приложение»: игры и страницы на весь экран, остальное — алерт */}
       {top &&
         (GAMES[top.id] || SITE[top.id] ? (
@@ -965,7 +1041,7 @@ export default function WinDesktop() {
           </div>
 
           {/* ярлыки: колонкой сверху вниз, переносом вправо — как в винде */}
-          <div className="absolute left-2 top-2 z-10 grid grid-flow-col grid-rows-4 gap-1">
+          <div className="absolute left-2 top-2 z-10 grid grid-flow-col grid-rows-5 gap-1">
             {ICONS.map((it) => (
               <Hit
                 key={it.id}
@@ -1042,6 +1118,90 @@ export default function WinDesktop() {
               </Win>
             );
           })}
+
+          {/* Информационная плашка (Windows UI стиль) */}
+          {showNotice && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-[2px] p-4 select-none">
+              <div className="w-[min(34rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-white/60 bg-[#f8f7f2] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+                {/* Title bar */}
+                <div className="flex items-center justify-between bg-gradient-to-r from-[#195bb7] via-[#2f79e7] to-[#195bb7] px-3.5 py-2 text-white shadow-inner">
+                  <div className="flex items-center gap-2">
+                    <div className="grid h-5 w-5 place-items-center rounded bg-white/20">
+                      <Sparkles className="h-3.5 w-3.5 text-yellow-300" />
+                    </div>
+                    <span className="text-[0.8125rem] font-bold tracking-wide [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]">
+                      maeTtI OS — Демонстрация возможностей
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowNotice(false)}
+                    className="grid h-5 w-5 place-items-center rounded border border-white/40 bg-red-500/90 text-white hover:bg-red-600 active:scale-95 transition-all cursor-pointer"
+                    title="Закрыть"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                {/* Body */}
+                <div className="p-5 text-neutral-800">
+                  <div className="mb-4 flex items-start gap-3.5">
+                    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md ring-2 ring-blue-400/30">
+                      <Info className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-2.5 py-0.5 text-[0.6875rem] font-bold text-blue-700 uppercase tracking-wider mb-1">
+                        💡 Интерактивный концепт
+                      </span>
+                      <h3 className="text-lg font-black text-neutral-900 leading-tight">
+                        Добро пожаловать в интерактивный стол maeTtI!
+                      </h3>
+                    </div>
+                  </div>
+
+                  <p className="text-[0.8125rem] leading-relaxed text-neutral-600 mb-4">
+                    Весь наш сайт и эта операционная система — живой пример того, как мы умеем воплощать нестандартные цифровые идеи и создавать интерактивный пользовательский опыт.
+                  </p>
+
+                  <div className="space-y-2 rounded-xl bg-white/90 border border-neutral-200/80 p-3.5 text-[0.8125rem] shadow-xs">
+                    <div className="flex items-start gap-2.5">
+                      <span className="text-base leading-none">📂</span>
+                      <p className="text-neutral-700 leading-snug">
+                        <strong className="text-neutral-950">Сайт в формате окон:</strong> открывайте «Услуги», «Кейсы», «Команду» и «Контакты» в отдельных интерактивных окнах.
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                      <span className="text-base leading-none">🎮</span>
+                      <p className="text-neutral-700 leading-snug">
+                        <strong className="text-neutral-950">Мини-игры:</strong> сыграйте в «Змейку» или «Дракончика», чтобы отвлечься и протестировать отзывчивость.
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                      <span className="text-base leading-none">🖱️</span>
+                      <p className="text-neutral-700 leading-snug">
+                        <strong className="text-neutral-950">Симуляция ОС:</strong> перемещайте окна, сворачивайте их в панель задач и пробуйте меню «Пуск»!
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Footer actions */}
+                  <div className="mt-5 flex items-center justify-between pt-3 border-t border-black/10">
+                    <span className="text-[0.6875rem] text-neutral-500">
+                      Подсказку всегда можно открыть снова через ярлык «Инфо»
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowNotice(false)}
+                      className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 px-5 py-2 text-[0.8125rem] font-bold text-white shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer ring-2 ring-blue-400/40"
+                    >
+                      <span>Понял!</span>
+                      <ArrowUpRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* меню «Пуск» */}
           {start && (

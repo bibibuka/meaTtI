@@ -67,19 +67,24 @@ export default function Variant2Page() {
                   <h3 className="text-xl font-normal tracking-tight text-neutral-950 dark:text-white mb-2">
                     {sec.title}
                   </h3>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 font-light leading-relaxed mb-6">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 font-light leading-relaxed mb-6 text-pretty line-clamp-3">
                     {sec.subtitle}
                   </p>
 
                   {/* Bullets */}
                   <div className="border-t border-neutral-100 dark:border-neutral-800 pt-4 mb-6">
                     <ul className="space-y-2.5">
-                      {sec.bullets.map((bullet, bIdx) => (
+                      {sec.bullets.slice(0, 6).map((bullet, bIdx) => (
                         <li key={bIdx} className="flex items-start gap-2.5 text-xs text-neutral-600 dark:text-neutral-300">
                           <Check className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
                           <span>{bullet}</span>
                         </li>
                       ))}
+                      {sec.bullets.length > 6 && (
+                        <li className="text-xs text-neutral-400 dark:text-neutral-500 font-light pt-1">
+                          + ещё {sec.bullets.length - 6} возможностей - спросите подробнее
+                        </li>
+                      )}
                     </ul>
                   </div>
                 </div>

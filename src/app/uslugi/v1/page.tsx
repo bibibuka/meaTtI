@@ -102,7 +102,7 @@ export default function Variant1Page() {
                     <h2 className="text-2xl md:text-4xl font-normal tracking-tight text-neutral-950 dark:text-white">
                       {activeService.title}
                     </h2>
-                    <p className="text-neutral-500 dark:text-neutral-400 text-sm md:text-base mt-3 font-light leading-relaxed max-w-2xl">
+                    <p className="text-neutral-500 dark:text-neutral-400 text-sm md:text-base mt-3 font-light leading-relaxed max-w-2xl text-pretty">
                       {activeService.subtitle}
                     </p>
                   </div>
@@ -118,7 +118,7 @@ export default function Variant1Page() {
                   <h3 className="text-xs font-mono text-neutral-400 uppercase tracking-widest">
                     Что входит в услугу:
                   </h3>
-                  <ul className="grid grid-cols-1 gap-3">
+                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
                     {activeService.bullets.map((bullet, idx) => (
                       <li key={idx} className="flex items-start gap-3 text-sm md:text-base text-neutral-700 dark:text-neutral-200">
                         <Check className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
