@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import KelpFrame from "@/components/KelpFrame";
+import { TransitionLink } from "@/context/TransitionContext";
 
 // Футер продолжает фон своей страницы, иначе снизу торчит чужая полоса.
 // Умолчание — bg-neutral-50, оно и так совпадает с услугами, кейсами и спасибо;
@@ -58,24 +58,24 @@ export default function Footer() {
       <footer className={`w-full border-t ${config.border} ${config.bg} ${config.text}`}>
         <div className="max-w-7xl mx-auto px-6 py-3 md:py-3.5 flex flex-col md:flex-row items-center justify-between gap-2.5 text-xs">
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-sm font-black tracking-tighter shrink-0 hover:opacity-80 transition-opacity">
+            <TransitionLink href="/" className="text-sm font-black tracking-tighter shrink-0 hover:opacity-80 transition-opacity">
               <span className={config.logo}>maetti</span>
               <span className="text-blue-500">.</span>
-            </Link>
+            </TransitionLink>
             <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700">|</span>
             <p className="text-[11px] text-neutral-500 hidden sm:inline">
-              Студия разработки цифровых решений
+               Студия разработки цифровых решений
             </p>
           </div>
 
           <div className="flex flex-wrap items-center justify-center md:justify-end gap-x-4 gap-y-1 text-[11px]">
             <span>© {new Date().getFullYear()} maeTtI. Все права защищены.</span>
             <span className="text-neutral-300 dark:text-neutral-700">•</span>
-            <Link href="/policy" className="hover:text-foreground transition-colors">
+            <TransitionLink href="/policy" className="hover:text-foreground transition-colors">
               Политика конфиденциальности
-            </Link>
+            </TransitionLink>
             <span className="text-neutral-300 dark:text-neutral-700">•</span>
-            <span className="opacity-75">ИП Маетный Д. А. ИНН 123456789012 ОГРНИП 321123456789012</span>
+            <span className="opacity-75">Работаем по договору · Закрывающие документы для юрлиц и ИП · По запросу — соответствие 152-ФЗ</span>
           </div>
         </div>
       </footer>

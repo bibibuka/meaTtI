@@ -10,6 +10,7 @@ import WaveRule from "@/components/WaveRule";
 const ICON_MAP = {
   code: Code,
   bot: Bot,
+  automation: Workflow,
   makros: Cpu,
   api: Workflow,
   reklama: TrendingUp,

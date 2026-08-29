@@ -51,9 +51,20 @@ export default function DiverScroll() {
     const gripBox = grip.getBBox();
     const gripXRatio =
       (gripBox.x + gripBox.width / 2) / diverArt.viewBox.baseVal.width;
-    const ropeLength = rope.getTotalLength();
+    let ropeLength = 0;
+    try {
+      ropeLength = rope.getTotalLength();
+    } catch {}
     const ropeViewBoxWidth = ropeSvg.viewBox.baseVal.width;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    // кэшируем thumb ширину, чтобы не мерить каждый кадр
+    let cachedThumbWidth = thumb.getBoundingClientRect().width;
+    const roThumb = new ResizeObserver(() => {
+      cachedThumbWidth = thumb.getBoundingClientRect().width;
+      try { ropeLength = rope.getTotalLength(); } catch {}
+    });
+    roThumb.observe(thumb);
+    roThumb.observe(track);
 
     let progress = 0;
     let previousScrollTop = window.scrollY;
@@ -109,11 +120,16 @@ export default function DiverScroll() {
     function render(nextProgress: number) {
       progress = clamp01(nextProgress);
       const trackRect = track.getBoundingClientRect();
-      const ropePoint = rope.getPointAtLength(ropeLength * progress);
-      const thumbX =
-        (ropePoint.x / ropeViewBoxWidth) * trackRect.width -
-        gripXRatio * thumb.getBoundingClientRect().width;
-      const thumbY = progress * trackRect.height;
+      let thumbX = 0;
+      let thumbY = progress * trackRect.height;
+      try {
+        const ropePoint = rope.getPointAtLength(ropeLength * progress);
+        thumbX =
+          (ropePoint.x / ropeViewBoxWidth) * trackRect.width -
+          gripXRatio * cachedThumbWidth;
+      } catch {
+        thumbX = 0;
+      }
       const percent = Math.round(progress * 100);
 
       thumb.style.transform = `translate3d(${thumbX.toFixed(2)}px, ${thumbY.toFixed(2)}px, 0) translateY(-50%)`;
@@ -126,6 +142,7 @@ export default function DiverScroll() {
             ? "100 процентов, дно"
             : `${percent} процентов, глубина ${percent} метров`,
       );
+      // clipPath триггерит перерисовку, используем более дешевую трансформацию через opacity/height
       rope.style.clipPath = `inset(0 0 ${((1 - progress) * 100).toFixed(2)}% 0)`;
     }
 
@@ -293,6 +310,7 @@ export default function DiverScroll() {
       thumb.removeEventListener("lostpointercapture", onLostCapture);
       thumb.removeEventListener("keydown", handleKeydown);
       resizeObserver.disconnect();
+      roThumb.disconnect();
       if (frame) window.cancelAnimationFrame(frame);
       pendingBubbles.forEach(window.clearTimeout);
       window.clearTimeout(startTimer);

@@ -1,39 +1,429 @@
 "use client";
 
-import React, { useState, useSyncExternalStore } from "react";
+import React, { useState, useEffect, useSyncExternalStore } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Send, Plus, Minus, Code, Bot, Cpu, Workflow, TrendingUp, Search } from "lucide-react";
+import { Check, Send, Plus, Minus } from "lucide-react";
 import { SECTIONS } from "./data";
 import WaveRule from "@/components/WaveRule";
+import { usePageTransition } from "@/context/TransitionContext";
+
+// 1. Анимированная иконка кода: кавычки разъезжаются, пишется 'code', удаляется, кавычки сужаются
+function AnimatedCodeIcon({
+  trigger,
+  className = "",
+}: {
+  trigger: number;
+  isOpen?: boolean;
+  className?: string;
+}) {
+  const [text, setText] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+
+  useEffect(() => {
+    if (trigger === 0) return;
+
+    const word = "www";
+    const timers: NodeJS.Timeout[] = [];
+
+    timers.push(
+      setTimeout(() => {
+        setIsTyping(true);
+        setText("");
+      }, 0)
+    );
+
+    // Печатаем по одной букве (145мс на букву, чтобы сохранить ту же общую длительность)
+    for (let i = 1; i <= word.length; i++) {
+      timers.push(
+        setTimeout(() => {
+          setText(word.slice(0, i));
+        }, 145 * i)
+      );
+    }
+
+    // Пауза на полном слове
+    const pauseTime = 145 * word.length + 325;
+
+    // Стираем буквы по одной (100мс на букву)
+    for (let i = word.length - 1; i >= 0; i--) {
+      const step = word.length - i;
+      timers.push(
+        setTimeout(() => {
+          setText(word.slice(0, i));
+          if (i === 0) {
+            setIsTyping(false);
+          }
+        }, pauseTime + 100 * step)
+      );
+    }
+
+    return () => timers.forEach(clearTimeout);
+  }, [trigger]);
+
+  return (
+    <div
+      className={`w-14 h-6 flex items-center justify-center select-none shrink-0 ${className}`}
+    >
+      <svg
+        className="w-2.5 h-4 shrink-0"
+        viewBox="0 0 10 16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <polyline points="7 3 2 8 7 13" />
+      </svg>
+
+      <AnimatePresence>
+        {(isTyping || text) && (
+          <motion.span
+            initial={{ opacity: 0, width: 0 }}
+            animate={{ opacity: 1, width: "auto" }}
+            exit={{ opacity: 0, width: 0 }}
+            transition={{ duration: 0.15 }}
+            className="px-1 font-mono text-[16px] md:text-[18px] font-black text-blue-600 dark:text-blue-400 overflow-hidden inline-flex items-center leading-none tracking-normal"
+          >
+            {text}
+          </motion.span>
+        )}
+      </AnimatePresence>
+
+      <svg
+        className="w-2.5 h-4 shrink-0"
+        viewBox="0 0 10 16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <polyline points="3 3 8 8 3 13" />
+      </svg>
+    </div>
+  );
+}
+
+// 2. Анимированная иконка робота: приближается (кивок), подмигивает одним глазом и отдаляется
+function AnimatedBotIcon({
+  trigger,
+  className = "",
+}: {
+  trigger: number;
+  isOpen?: boolean;
+  className?: string;
+}) {
+  const [isWinking, setIsWinking] = useState(false);
+  const [animating, setAnimating] = useState(false);
+
+  useEffect(() => {
+    if (trigger === 0) return;
+    const t0 = setTimeout(() => {
+      setAnimating(true);
+      setIsWinking(false);
+    }, 0);
+
+    // При приближении подмигивает глазом в момент максимального зума
+    const t1 = setTimeout(() => setIsWinking(true), 200);
+    // Открывает глаз
+    const t2 = setTimeout(() => setIsWinking(false), 520);
+    // Возвращается на исходную
+    const t3 = setTimeout(() => setAnimating(false), 800);
+
+    return () => {
+      clearTimeout(t0);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [trigger]);
+
+  return (
+    <motion.div
+      className={`w-14 h-6 flex items-center justify-center shrink-0 ${className}`}
+      animate={
+        animating
+          ? {
+            scale: [1, 1.35, 1.35, 1],
+            y: [0, -3, -2.5, 0],
+            rotate: [0, -5, 3, 0],
+          }
+          : { scale: 1, y: 0, rotate: 0 }
+      }
+      transition={{ duration: 0.8, ease: [0.34, 1.56, 0.64, 1] }}
+    >
+      <svg
+        className="w-6 h-6 overflow-visible"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        {/* Антенна */}
+        <line x1="12" y1="2" x2="12" y2="6" />
+        <circle cx="12" cy="2" r="1.2" fill="currentColor" />
+
+        {/* Ушки */}
+        <line x1="1.5" y1="12" x2="3.5" y2="12" />
+        <line x1="20.5" y1="12" x2="22.5" y2="12" />
+
+        {/* Голова */}
+        <rect x="3.5" y="6" width="17" height="12" rx="3" />
+
+        {/* Левый глаз (всегда открыт) */}
+        <circle cx="8.5" cy="11" r="1.4" fill="currentColor" stroke="none" />
+
+        {/* Правый глаз (подмигивает в линию при анимации) */}
+        {isWinking ? (
+          <line
+            x1="13.8"
+            y1="11"
+            x2="17.2"
+            y2="11"
+            strokeWidth="2.2"
+            stroke="currentColor"
+          />
+        ) : (
+          <circle cx="15.5" cy="11" r="1.4" fill="currentColor" stroke="none" />
+        )}
+
+        {/* Улыбка */}
+        <path d="M9 15 Q12 16.8 15 15" strokeWidth="1.5" />
+      </svg>
+    </motion.div>
+  );
+}
+
+// 3. Анимированная иконка автоматизации: рисуется контур, плавно течёт линия между 2 узлами
+function AnimatedWorkflowIcon({
+  trigger,
+  className = "",
+}: {
+  trigger: number;
+  isOpen?: boolean;
+  className?: string;
+}) {
+  const isFirstRender = trigger === 0;
+
+  return (
+    <div
+      key={trigger}
+      className={`w-14 h-6 flex items-center justify-center shrink-0 overflow-hidden ${className}`}
+    >
+      <svg
+        className="w-6 h-6 overflow-hidden"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        {/* Узел 1 (Верхний левый квадратик): прорисовывается по контуру */}
+        <motion.path
+          d="M 7 11 H 5 A 2 2 0 0 1 3 9 V 5 A 2 2 0 0 1 5 3 H 9 A 2 2 0 0 1 11 5 V 9 A 2 2 0 0 1 9 11 Z"
+          initial={isFirstRender ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0.3 }}
+          animate={{ pathLength: 1, opacity: 1 }}
+          transition={{ duration: 0.28, ease: "easeOut" }}
+        />
+
+        {/* Соединительная линия: плавно вытекает из узла 1 и течёт к узлу 2 */}
+        <motion.path
+          d="M 7 11 V 15 A 2 2 0 0 0 9 17 H 13"
+          initial={isFirstRender ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0.2 }}
+          animate={{ pathLength: 1, opacity: 1 }}
+          transition={
+            isFirstRender
+              ? { duration: 0 }
+              : { duration: 0.32, delay: 0.22, ease: "easeInOut" }
+          }
+        />
+
+        {/* Узел 2 (Нижний правый квадратик): рисуется, как только линия в него втекает */}
+        <motion.path
+          d="M 13 17 V 15 A 2 2 0 0 1 15 13 H 19 A 2 2 0 0 1 21 15 V 19 A 2 2 0 0 1 19 21 H 15 A 2 2 0 0 1 13 19 Z"
+          initial={isFirstRender ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0.3 }}
+          animate={{ pathLength: 1, opacity: 1 }}
+          transition={
+            isFirstRender
+              ? { duration: 0 }
+              : { duration: 0.3, delay: 0.48, ease: "easeOut" }
+          }
+        />
+
+        {/* Эффект текущей линии: световой импульс протекает по соединению 2 раза */}
+        {!isFirstRender && (
+          <motion.path
+            d="M 7 11 V 15 A 2 2 0 0 0 9 17 H 13"
+            strokeDasharray="4 8"
+            initial={{ strokeDashoffset: 12, opacity: 0 }}
+            animate={{
+              strokeDashoffset: [12, -12],
+              opacity: [0, 1, 1, 0],
+            }}
+            transition={{
+              duration: 0.5,
+              delay: 0.72,
+              ease: "linear",
+              repeat: 1,
+            }}
+            strokeWidth="2.2"
+            className="text-blue-500 dark:text-blue-400"
+          />
+        )}
+      </svg>
+    </div>
+  );
+}
 
 const ICON_MAP = {
-  code: Code,
-  bot: Bot,
-  makros: Cpu,
-  api: Workflow,
-  reklama: TrendingUp,
-  seo: Search,
+  code: AnimatedCodeIcon,
+  bot: AnimatedBotIcon,
+  automation: AnimatedWorkflowIcon,
 };
 
 const subscribeHash = (cb: () => void) => {
   window.addEventListener("hashchange", cb);
-  return () => window.removeEventListener("hashchange", cb);
+  window.addEventListener("popstate", cb);
+  return () => {
+    window.removeEventListener("hashchange", cb);
+    window.removeEventListener("popstate", cb);
+  };
 };
 
 export default function ServicesPage() {
+  const transition = usePageTransition();
+  const isPending = !!transition?.pending;
+
   // Ссылки с главной ведут на /uslugi#id — эта позиция раскрыта по умолчанию
   const hash = useSyncExternalStore(
     subscribeHash,
-    () => window.location.hash.slice(1),
+    () => (typeof window !== "undefined" ? window.location.hash.slice(1) : ""),
     () => ""
   );
-  const [toggled, setToggled] = useState<Record<string, boolean>>({});
 
-  const isOpenId = (id: string) =>
-    toggled[id] ?? (hash ? id === hash : id === SECTIONS[0].id);
+  const [clientHash, setClientHash] = useState("");
 
-  const toggleAccordion = (id: string) =>
-    setToggled((prev) => ({ ...prev, [id]: !isOpenId(id) }));
+  useEffect(() => {
+    const update = () => {
+      if (typeof window !== "undefined") {
+        setClientHash(window.location.hash.slice(1));
+      }
+    };
+    update();
+    window.addEventListener("hashchange", update);
+    window.addEventListener("popstate", update);
+    return () => {
+      window.removeEventListener("hashchange", update);
+      window.removeEventListener("popstate", update);
+    };
+  }, []);
+
+  const pendingHash = transition?.pending?.href?.includes("#")
+    ? transition.pending.href.split("#")[1]
+    : "";
+
+  const effectiveHash = pendingHash || clientHash || hash;
+
+  const [prevHash, setPrevHash] = useState(effectiveHash);
+  const [manualSelectedId, setManualSelectedId] = useState<string | null>(null);
+  const [autoOpenedId, setAutoOpenedId] = useState<string | null>(null);
+
+  if (prevHash !== effectiveHash) {
+    setPrevHash(effectiveHash);
+    setManualSelectedId(null);
+    setAutoOpenedId(null);
+  }
+
+  // Целевая плашка: если есть хэш в переходе — берем её, иначе первую
+  const targetId =
+    effectiveHash && SECTIONS.some((s) => s.id === effectiveHash)
+      ? effectiveHash
+      : SECTIONS[0].id;
+
+  // Отложенное раскрытие: сначала переходим на закрытую плашку,
+  // даём пользователю прибыть на страницу (400мс пауза) и плавно раскрываем нужный блок
+  useEffect(() => {
+    if (isPending || !targetId) return;
+    if (manualSelectedId !== null) return;
+
+    const timer = setTimeout(() => {
+      setAutoOpenedId(targetId);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [targetId, isPending, manualSelectedId]);
+
+  const activeId =
+    manualSelectedId === "none"
+      ? null
+      : manualSelectedId ?? autoOpenedId;
+
+  const [animTrigger, setAnimTrigger] = useState<Record<string, number>>({});
+
+  // Анимация иконки запускается ТОЛЬКО когда блок уже полностью открылся (анимация раскрытия длится 300ms)
+  useEffect(() => {
+    if (!activeId) return;
+
+    const timer = setTimeout(() => {
+      setAnimTrigger((prev) => ({ ...prev, [activeId]: (prev[activeId] || 0) + 1 }));
+    }, 320);
+
+    return () => clearTimeout(timer);
+  }, [activeId]);
+
+  // Центрирование при переходе по ссылке/хэшу с главной страницы
+  useEffect(() => {
+    if (!targetId || !SECTIONS.some((s) => s.id === targetId)) return;
+
+    const centerTarget = (smooth: boolean) => {
+      const el = document.getElementById(targetId);
+      if (!el) return;
+
+      const rect = el.getBoundingClientRect();
+      const elementTop = window.scrollY + rect.top;
+      const elementHeight = rect.height;
+
+      // Высота плавающей шапки + отступ сверху
+      const headerOffset = 90;
+      const viewportHeight = window.innerHeight;
+      const visibleAreaHeight = viewportHeight - headerOffset;
+
+      // Идеальное центрирование в видимой рабочей области (между шапкой и низом экрана)
+      const idealScroll = elementTop + elementHeight / 2 - (headerOffset + visibleAreaHeight / 2);
+
+      // Защита: верх элемента ни при каких условиях не должен уезжать под шапку
+      const maxScroll = elementTop - headerOffset - 24;
+
+      const targetScroll = Math.max(0, Math.min(idealScroll, maxScroll));
+
+      window.scrollTo({
+        top: targetScroll,
+        behavior: smooth ? "smooth" : "auto",
+      });
+    };
+
+    // Первичная подстройка (пока плашка закрыта) — мгновенно под шторкой
+    centerTarget(!isPending);
+
+    // Мягкая центровка после полного завершения раскрытия плашки (400мс задержка + 320мс анимация)
+    const timer = setTimeout(() => {
+      centerTarget(true);
+    }, 750);
+
+    return () => clearTimeout(timer);
+  }, [targetId, isPending]);
+
+  // При клике на самой странице - переключаем активную плашку без скролла и задержек
+  const toggleAccordion = (id: string) => {
+    setManualSelectedId((prev) => {
+      const current = prev === "none" ? null : prev ?? autoOpenedId;
+      return current === id ? "none" : id;
+    });
+  };
 
   return (
     <div className="bg-neutral-50 dark:bg-neutral-950 min-h-screen text-neutral-900 dark:text-neutral-100 font-sans">
@@ -46,36 +436,43 @@ export default function ServicesPage() {
               Наши Услуги
             </h1>
           </div>
-          <p className="text-base md:text-lg text-neutral-500 dark:text-neutral-400 font-light leading-relaxed">
-            Нажмите на любую позицию для раскрытия подробного состава пакета и условий работы.
+          <p className="text-base md:text-lg text-neutral-500 dark:text-neutral-400 font-light leading-relaxed text-pretty">
+            Три направления - один подрядчик. Раскройте любую позицию, чтобы увидеть состав, сроки и стоимость.
           </p>
         </div>
       </section>
 
       {/* Services List */}
-      <section className="max-w-7xl mx-auto px-6 py-16">
+      <section className="max-w-7xl mx-auto px-6 pt-12 pb-16 md:pb-20">
         <div className="divide-y divide-neutral-200 dark:divide-neutral-800 border-t border-b border-neutral-200 dark:border-neutral-800">
           {SECTIONS.map((sec) => {
-            const isOpen = isOpenId(sec.id);
+            const isOpen = activeId === sec.id;
             const Icon = ICON_MAP[sec.iconName];
 
             return (
-              <div key={sec.id} id={sec.id} className="py-6 transition-colors scroll-mt-28">
+              <div key={sec.id} id={sec.id} className="py-6 px-4 sm:px-6 rounded-xl transition-all duration-300 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/5 scroll-mt-28 border border-transparent">
                 <button
                   onClick={() => toggleAccordion(sec.id)}
-                  className="w-full text-left flex items-center justify-between gap-4 py-2 group focus:outline-none"
+                  className="w-full text-left flex items-center justify-between gap-4 py-2 group focus:outline-none active:scale-[0.99] transition-transform"
                   aria-expanded={isOpen}
                 >
                   <div className="flex items-center gap-4 sm:gap-6">
                     <span className="text-sm font-mono text-neutral-400 font-semibold min-w-[30px]">
                       [{sec.num}]
                     </span>
-                    <Icon className={`w-6 h-6 shrink-0 transition-colors ${isOpen ? "text-blue-600 dark:text-blue-400" : "text-neutral-400 group-hover:text-neutral-700 dark:group-hover:text-neutral-300"}`} />
+                    <Icon
+                      trigger={animTrigger[sec.id] || 0}
+                      isOpen={isOpen}
+                      className={`transition-colors ${isOpen
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-neutral-400 group-hover:text-neutral-700 dark:group-hover:text-neutral-300"
+                        }`}
+                    />
                     <div>
                       <h2 className="text-xl md:text-3xl font-light tracking-tight text-neutral-950 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                         {sec.title}
                       </h2>
-                      <p className="text-xs md:text-sm text-neutral-500 dark:text-neutral-400 font-light mt-1 hidden sm:block">
+                      <p className="text-xs md:text-sm text-neutral-500 dark:text-neutral-400 font-light mt-1 hidden sm:block line-clamp-2">
                         {sec.subtitle}
                       </p>
                     </div>
@@ -85,13 +482,13 @@ export default function ServicesPage() {
                     <span className="text-sm font-mono font-medium text-blue-600 dark:text-blue-400 hidden md:block">
                       {sec.price}
                     </span>
-                    <div className={`w-8 h-8 rounded-full border border-neutral-300 dark:border-neutral-700 flex items-center justify-center transition-transform duration-300 ${isOpen ? "bg-neutral-950 text-white dark:bg-white dark:text-black rotate-180" : "group-hover:border-neutral-400"}`}>
+                    <div className={`w-8 h-8 rounded-full border border-neutral-300 dark:border-neutral-700 flex items-center justify-center transition-all duration-300 active:scale-90 ${isOpen ? "bg-neutral-950 text-white dark:bg-white dark:text-black rotate-180" : "group-hover:border-neutral-400"}`}>
                       {isOpen ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                     </div>
                   </div>
                 </button>
 
-                <AnimatePresence>
+                <AnimatePresence initial={false}>
                   {isOpen && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
@@ -100,40 +497,60 @@ export default function ServicesPage() {
                       transition={{ duration: 0.3, ease: "easeInOut" }}
                       className="overflow-hidden"
                     >
-                      <div className="pt-6 pb-4 pl-0 sm:pl-16 grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-                        <div className="md:col-span-8 space-y-4">
-                          <p className="text-sm text-neutral-500 dark:text-neutral-400 font-light block sm:hidden">
+                      <div className="pt-6 pb-4 pl-0 sm:pl-16 grid grid-cols-1 md:grid-cols-12 gap-8 md:items-center">
+                        <div className="md:col-span-8 space-y-4 max-w-xl">
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400 font-light block sm:hidden text-pretty">
                             {sec.subtitle}
                           </p>
                           <h3 className="text-xs font-mono text-neutral-400 uppercase tracking-widest">
-                            Состав пакета:
+                            Что входит:
                           </h3>
-                          <ul className="space-y-3">
-                            {sec.bullets.map((bullet, bIdx) => (
-                              <li key={bIdx} className="flex items-start gap-3 text-sm text-neutral-700 dark:text-neutral-300">
-                                <Check className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-                                <span>{bullet}</span>
-                              </li>
+                          <div className="space-y-6">
+                            {sec.groups.map((group) => (
+                              <div key={group.title}>
+                                <div className="text-[11px] font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-widest mb-2.5">
+                                  {group.title}
+                                </div>
+                                <ul className="space-y-2.5">
+                                  {group.items.map((item, bIdx) => (
+                                    <li key={bIdx} className="flex items-start gap-3 text-sm text-neutral-700 dark:text-neutral-300">
+                                      <Check className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                                      <span>{item}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
                             ))}
-                          </ul>
+                          </div>
+                          <p className="text-xs text-neutral-400 dark:text-neutral-500 font-light pt-1">
+                            Не нашли свою задачу в списке? Напишите нам - скорее всего, мы её уже делали.
+                          </p>
                         </div>
 
-                        <div className="md:col-span-4 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-6 space-y-4">
-                          <div>
-                            <div className="text-xs font-mono text-neutral-400 uppercase tracking-widest mb-1">Стоимость</div>
-                            <div className="text-2xl font-light text-blue-600 dark:text-blue-400">{sec.price}</div>
-                            <div className="text-xs text-neutral-400 mt-1 font-mono">{sec.time}</div>
-                          </div>
+                        <div className="md:col-span-4 self-center">
+                          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 sm:p-8 flex flex-col justify-center gap-5 md:min-h-[420px] transition-all duration-300 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/5">
+                            <div>
+                              <div className="text-xs font-mono text-neutral-400 uppercase tracking-widest mb-1">Стоимость</div>
+                              <div className="text-3xl font-light text-blue-600 dark:text-blue-400">{sec.price}</div>
+                              <div className="text-xs text-neutral-400 mt-1.5 font-mono">{sec.time}</div>
+                            </div>
 
-                          <a
-                            href="https://t.me/maetti_agency_stub"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-full inline-flex items-center justify-center gap-2 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold text-xs py-3 hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white transition-all duration-300"
-                          >
-                            <span>Обсудить задачу</span>
-                            <Send className="w-3.5 h-3.5" />
-                          </a>
+                            <div className="h-px bg-neutral-100 dark:bg-neutral-800" />
+
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400 font-light leading-relaxed text-pretty">
+                              Если сомневаетесь, оставьте заявку - поможем разобраться и подобрать подходящий вариант. Итоговая стоимость может быть ниже указанной.
+                            </p>
+
+                            <a
+                              href="https://t.me/maetti_agency_stub"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full inline-flex items-center justify-center gap-2 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold text-xs py-3.5 rounded-lg hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white active:scale-95 transition-all duration-200"
+                            >
+                              <span>Обсудить задачу</span>
+                              <Send className="w-3.5 h-3.5" />
+                            </a>
+                          </div>
                         </div>
                       </div>
                     </motion.div>

@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
   // next/link дописывает basePath сам, а сырые пути (адресная строка и iframe
   // окна на «рабочем столе») о нём не знают — отдаём значение в клиент.
   env: { NEXT_PUBLIC_BASE_PATH: base },
+  compress: true,
+  productionBrowserSourceMaps: false,
+  experimental: {
+    optimizePackageImports: ["framer-motion", "lucide-react"],
+  },
 };
 
 export default nextConfig;

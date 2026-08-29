@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Send, Terminal, ShieldCheck, RefreshCw } from "lucide-react";
+import { TransitionLink } from "@/context/TransitionContext";
 
 export default function ContactsPage() {
   const router = useRouter();
@@ -48,9 +48,8 @@ export default function ContactsPage() {
   return (
     <div className="bg-neutral-950 min-h-screen text-neutral-200 font-mono p-4 sm:p-8 md:p-12 flex flex-col justify-center items-center select-text">
       
-      {/* CMD Window Container. -translate-y-5 — те самые 20px вверх от центра:
-          отступом не обойтись, в центрированном флексе он сдвигает на половину. */}
-      <div className="w-full max-w-3xl -translate-y-5 bg-[#0c0c0c] border border-neutral-700 shadow-2xl rounded-sm overflow-hidden">
+      {/* CMD Window Container. -translate-y-7 — 28px вверх от центра */}
+      <div className="w-full max-w-3xl -translate-y-7 bg-[#0c0c0c] border border-neutral-700 shadow-2xl rounded-sm overflow-hidden">
         
         {/* Windows CMD Title Bar */}
         <div className="bg-[#1f1f1f] px-3 py-1.5 flex items-center justify-between border-b border-neutral-800 text-xs select-none">
@@ -152,9 +151,9 @@ export default function ContactsPage() {
               />
               <label htmlFor="consentCheck" className="cursor-pointer">
                 Согласен на обработку данных •{" "}
-                <Link href="/policy" className="underline hover:text-white">
+                <TransitionLink href="/policy" className="underline hover:text-white">
                   Политика
-                </Link>
+                </TransitionLink>
               </label>
             </div>
 
@@ -195,7 +194,7 @@ export default function ContactsPage() {
                   </>
                 ) : (
                   <>
-                    <span>[ Enter ] Отправить</span>
+                    <span>Отправить</span>
                     <Send className="w-3.5 h-3.5" />
                   </>
                 )}

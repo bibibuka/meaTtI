@@ -10,6 +10,7 @@ import WaveRule from "@/components/WaveRule";
 const ICON_MAP = {
   code: Code,
   bot: Bot,
+  automation: Workflow,
   makros: Cpu,
   api: Workflow,
   reklama: TrendingUp,
@@ -66,7 +67,7 @@ export default function Variant3Page() {
                       <h2 className="text-xl md:text-3xl font-light tracking-tight text-neutral-950 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                         {sec.title}
                       </h2>
-                      <p className="text-xs md:text-sm text-neutral-500 dark:text-neutral-400 font-light mt-1 hidden sm:block">
+                      <p className="text-xs md:text-sm text-neutral-500 dark:text-neutral-400 font-light mt-1 hidden sm:block line-clamp-2">
                         {sec.subtitle}
                       </p>
                     </div>
@@ -97,7 +98,7 @@ export default function Variant3Page() {
                             {sec.subtitle}
                           </p>
                           <h3 className="text-xs font-mono text-neutral-400 uppercase tracking-widest">
-                            Состав пакета:
+                            Что входит:
                           </h3>
                           <ul className="space-y-3">
                             {sec.bullets.map((bullet, bIdx) => (

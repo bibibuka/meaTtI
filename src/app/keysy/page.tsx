@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, MotionConfig } from "framer-motion";
-import { ArrowRight, Send, ExternalLink, Image as ImageIcon, X, ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
+import { ArrowRight, Send } from "lucide-react";
 import WaveRule from "@/components/WaveRule";
 
 const CASES = [
@@ -19,29 +19,6 @@ const CASES = [
       { metric: "+43%", label: "Конверсия в покупку" },
       { metric: "0.8 сек", label: "Скорость загрузки (LCP)" },
       { metric: "-35%", label: "Брошенные корзины" }
-    ],
-    domain: "boutique-digital.store",
-    gallery: [
-      {
-        url: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1600&q=80",
-        title: "Главная страница и каталог товаров",
-        desc: "Адаптивная верстка с бесшовным переключением категорий и фильтрацией в реальном времени."
-      },
-      {
-        url: "https://images.unsplash.com/photo-1472851294608-062f824d29cc?auto=format&fit=crop&w=1600&q=80",
-        title: "Карточка товара и мобильный интерфейс",
-        desc: "Проектирование быстрых пользовательских сценариев покупки в один клик."
-      },
-      {
-        url: "https://images.unsplash.com/photo-1556742049-0a67dd3f3a8b?auto=format&fit=crop&w=1600&q=80",
-        title: "Модуль оформления заказа (Checkout)",
-        desc: "Интеграция эквайринга и службы доставки соавтоматическим расчетом сроков."
-      },
-      {
-        url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1600&q=80",
-        title: "Панель администратора и аналитика ERP",
-        desc: "Синхронизация по WebSockets с остатками на складе и аналитикой продаваемости."
-      }
     ]
   },
   {
@@ -57,29 +34,6 @@ const CASES = [
       { metric: "72%", label: "Вопросов решается без оператора" },
       { metric: "< 3 сек", label: "Время ответа ассистента" },
       { metric: "x2.5", label: "Рост объема записей" }
-    ],
-    domain: "t.me/medicall_bot",
-    gallery: [
-      {
-        url: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1600&q=80",
-        title: "Диалоговый интерфейс ассистента в Telegram",
-        desc: "Распознавание естественного языка и помощь пациентам 24/7 по регламентам клиники."
-      },
-      {
-        url: "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=1600&q=80",
-        title: "Интерактивный календарь записи (Telegram Mini App)",
-        desc: "Выбор свободного слота врача и подгрузка медицинской карты за несколько секунд."
-      },
-      {
-        url: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=1600&q=80",
-        title: "Личный кабинет пациента",
-        desc: "Напоминания о приеме, подготовка к анализам и история прошлых посещений."
-      },
-      {
-        url: "https://images.unsplash.com/photo-1530497610245-94d3c16cda28?auto=format&fit=crop&w=1600&q=80",
-        title: "Дашборд загруженности операторов клиники",
-        desc: "Мониторинг обращений в реальном времени с функцией бесшовного перевода на оператора."
-      }
     ]
   },
   {
@@ -95,24 +49,6 @@ const CASES = [
       { metric: "-35 ч", label: "Времени экономится каждую неделю" },
       { metric: "0%", label: "Человеческих ошибок в расчетах" },
       { metric: "1 кл", label: "Сведение отчета вместо часов" }
-    ],
-    domain: "analytics.fintech-logic.internal",
-    gallery: [
-      {
-        url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1600&q=80",
-        title: "Сводная аналитическая панель расчетов",
-        desc: "Автоматическое агрегирование показателей 14 филиалов в единый интерактивный отчет."
-      },
-      {
-        url: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1600&q=80",
-        title: "Пайплайн валидации и очистки данных",
-        desc: "Проверка форматов JSON, CSV и XLS без участия сотрудников компании."
-      },
-      {
-        url: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1600&q=80",
-        title: "Экспорт и генерация итоговых Excel-таблиц",
-        desc: "Автоматическая выгрузка с формулами, макросами и диаграммами распределения бюджетов."
-      }
     ]
   }
 ];
@@ -149,15 +85,12 @@ function scrollTrackToProgress(track: HTMLElement, progress: number) {
   window.scrollTo({ top: window.scrollY + delta, behavior: "smooth" });
 }
 
-function CaseDetail({ c, onOpenGallery }: { c: Case; onOpenGallery: (c: Case, photoIndex?: number) => void }) {
-  const mainPhoto = c.gallery[0];
-
+function CaseDetail({ c }: { c: Case }) {
   return (
-    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col justify-between p-5 sm:p-6 md:p-7 h-full min-h-[34rem]">
-      
+    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm flex flex-col justify-between p-5 sm:p-6 md:p-7 h-full min-h-[28.75rem] max-h-[36.25rem] transition-all duration-300 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/5">
       {/* Header */}
-      <div className="border-b border-neutral-100 dark:border-neutral-800 pb-3 mb-3">
-        <div className="flex items-center justify-between gap-4 mb-1.5">
+      <div className="border-b border-neutral-100 dark:border-neutral-800 pb-4 mb-4">
+        <div className="flex items-center justify-between gap-4 mb-2">
           <span className="text-xs font-mono text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wider">
             {c.category}
           </span>
@@ -170,42 +103,10 @@ function CaseDetail({ c, onOpenGallery }: { c: Case; onOpenGallery: (c: Case, ph
         </h2>
       </div>
 
-      {/* Styled Browser Frame / Clickable Photo Gallery Preview */}
-      <div 
-        onClick={() => onOpenGallery(c, 0)}
-        className="my-2 border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-950 group cursor-pointer relative"
-      >
-        <div className="bg-neutral-100 dark:bg-neutral-900 px-3 py-1.5 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between text-[11px] font-mono text-neutral-500">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-neutral-300 dark:bg-neutral-700 inline-block" />
-            <span className="w-2.5 h-2.5 rounded-full bg-neutral-300 dark:bg-neutral-700 inline-block" />
-            <span className="w-2.5 h-2.5 rounded-full bg-neutral-300 dark:bg-neutral-700 inline-block" />
-          </div>
-          <div className="flex items-center gap-1.5 text-neutral-400 truncate max-w-[240px]">
-            <ExternalLink className="w-3 h-3 text-blue-600 dark:text-blue-400 shrink-0" />
-            <span className="truncate">{c.domain}</span>
-          </div>
-        </div>
-
-        <div className="relative h-36 sm:h-44 w-full overflow-hidden bg-neutral-900">
-          <img
-            src={mainPhoto.url}
-            alt={c.title}
-            className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105 opacity-90 group-hover:opacity-100"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
-
-          <div className="absolute bottom-2 left-3 right-3 flex items-center justify-between text-[11px] font-mono text-neutral-200">
-            <span className="truncate drop-shadow">{mainPhoto.title}</span>
-            <span className="shrink-0 bg-black/60 px-2 py-0.5 rounded text-[10px]">Клик для просмотра</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Задача & Решение */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 my-2">
-        <div className="bg-neutral-50 dark:bg-neutral-950/60 p-3 sm:p-3.5 border border-neutral-100 dark:border-neutral-800/80">
-          <h3 className="text-xs font-mono text-neutral-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+      {/* Задача & Решение: 2 колонки на десктопе для компактности */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 my-auto">
+        <div className="bg-neutral-50 dark:bg-neutral-950/60 p-3.5 sm:p-4 border border-neutral-100 dark:border-neutral-800/80">
+          <h3 className="text-xs font-mono text-neutral-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
             Задача
           </h3>
@@ -213,8 +114,8 @@ function CaseDetail({ c, onOpenGallery }: { c: Case; onOpenGallery: (c: Case, ph
             {c.challenge}
           </p>
         </div>
-        <div className="bg-neutral-50 dark:bg-neutral-950/60 p-3 sm:p-3.5 border border-neutral-100 dark:border-neutral-800/80">
-          <h3 className="text-xs font-mono text-neutral-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+        <div className="bg-neutral-50 dark:bg-neutral-950/60 p-3.5 sm:p-4 border border-neutral-100 dark:border-neutral-800/80">
+          <h3 className="text-xs font-mono text-neutral-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
             Решение
           </h3>
@@ -224,11 +125,11 @@ function CaseDetail({ c, onOpenGallery }: { c: Case; onOpenGallery: (c: Case, ph
         </div>
       </div>
 
-      {/* Метрики */}
-      <div className="mt-2 grid grid-cols-3 gap-px bg-neutral-200 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800">
+      {/* Метрики — тонкие волосяные линии между колонками */}
+      <div className="mt-4 grid grid-cols-3 gap-px bg-neutral-200 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800">
         {c.results.map((res, rIdx) => (
-          <div key={rIdx} className="bg-neutral-50 dark:bg-neutral-950 p-2 sm:p-2.5 text-center">
-            <div className="text-sm sm:text-base md:text-xl font-light text-blue-600 dark:text-blue-400 whitespace-nowrap">
+          <div key={rIdx} className="bg-neutral-50 dark:bg-neutral-950 p-2.5 sm:p-3 md:p-3.5 text-center">
+            <div className="text-base sm:text-lg md:text-2xl font-light text-blue-600 dark:text-blue-400 whitespace-nowrap">
               {res.metric}
             </div>
             <div className="text-[10px] md:text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 leading-snug">
@@ -239,16 +140,16 @@ function CaseDetail({ c, onOpenGallery }: { c: Case; onOpenGallery: (c: Case, ph
       </div>
 
       {/* CTA */}
-      <div className="mt-3 pt-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between flex-wrap gap-3">
+      <div className="mt-4 pt-4 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between flex-wrap gap-3">
         <div className="hidden sm:block">
           <span className="text-[11px] text-neutral-400 block">Похожая задача?</span>
-          <span className="text-xs md:text-sm font-medium text-neutral-800 dark:text-neutral-200">Разберем ваш случай за 30 минут</span>
+          <span className="text-xs md:text-sm font-medium text-neutral-800 dark:text-neutral-200">Подберем решение за 30 минут</span>
         </div>
         <a
           href="https://t.me/maetti_agency_stub"
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full sm:w-auto justify-center inline-flex items-center gap-2.5 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold px-5 py-2 hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white transition-all duration-300 shadow-sm text-xs sm:text-sm"
+          className="w-full sm:w-auto justify-center inline-flex items-center gap-2.5 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold px-5 py-2.5 rounded-lg hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white active:scale-95 transition-all duration-200 shadow-sm text-xs sm:text-sm"
         >
           <span>Подробный разбор</span>
           <Send className="w-3.5 h-3.5" />
@@ -263,10 +164,6 @@ export default function CasesPage() {
   const [direction, setDirection] = useState(1);
   const prevActiveRef = useRef(0);
 
-  // Gallery Modal State
-  const [galleryCase, setGalleryCase] = useState<Case | null>(null);
-  const [photoIndex, setPhotoIndex] = useState(0);
-
   const desktopTrackRef = useRef<HTMLDivElement>(null);
   const railRef = useRef<HTMLDivElement>(null);
   const chipsRef = useRef<HTMLDivElement>(null);
@@ -275,39 +172,6 @@ export default function CasesPage() {
   const clickGenRef = useRef(0);
 
   const activeCase = CASES[active];
-
-  // Open / Close Gallery Handlers
-  const handleOpenGallery = (c: Case, idx = 0) => {
-    setGalleryCase(c);
-    setPhotoIndex(idx);
-  };
-
-  const handleCloseGallery = () => {
-    setGalleryCase(null);
-  };
-
-  const handlePrevPhoto = () => {
-    if (!galleryCase) return;
-    setPhotoIndex((prev) => (prev === 0 ? galleryCase.gallery.length - 1 : prev - 1));
-  };
-
-  const handleNextPhoto = () => {
-    if (!galleryCase) return;
-    setPhotoIndex((prev) => (prev === galleryCase.gallery.length - 1 ? 0 : prev + 1));
-  };
-
-  // Keyboard navigation for gallery modal
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!galleryCase) return;
-      if (e.key === "Escape") handleCloseGallery();
-      if (e.key === "ArrowLeft") handlePrevPhoto();
-      if (e.key === "ArrowRight") handleNextPhoto();
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [galleryCase]);
 
   useEffect(() => {
     const track = desktopTrackRef.current;
@@ -395,9 +259,9 @@ export default function CasesPage() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="bg-neutral-50 dark:bg-neutral-950 min-h-screen text-neutral-900 dark:text-neutral-100 font-sans relative">
+      <div className="bg-neutral-50 dark:bg-neutral-950 min-h-screen text-neutral-900 dark:text-neutral-100 font-sans">
         {/* Hero */}
-        <section className="max-w-7xl mx-auto px-6 pt-8 pb-10 border-b border-neutral-200 dark:border-neutral-800">
+        <section className="max-w-7xl mx-auto px-6 pt-8 pb-12 border-b border-neutral-200 dark:border-neutral-800">
           <div className="max-w-3xl">
             <div className="w-fit mb-4">
               <WaveRule className="mb-4" />
@@ -406,12 +270,12 @@ export default function CasesPage() {
               </h1>
             </div>
             <p className="text-sm md:text-base text-neutral-500 dark:text-neutral-400 font-light leading-relaxed">
-              Листайте страницу вниз для просмотра проектов. Нажмите на превью фотографии для входа в галерею проекта.
+              Листайте страницу вниз для последовательного просмотра проектов, задач, технических решений и измеримых результатов.
             </p>
           </div>
         </section>
 
-        {/* ===== Desktop: Pinned Scroll Track ===== */}
+        {/* ===== Desktop: Pinned Scroll Track (по 5 тиков на каждый кейс) ===== */}
         <div
           ref={desktopTrackRef}
           className="hidden lg:block relative"
@@ -474,10 +338,6 @@ export default function CasesPage() {
                     );
                   })}
 
-                  <div className="pt-3 flex items-center gap-2 text-xs font-mono text-neutral-400">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse" />
-                    <span>Скролльте для переключения</span>
-                  </div>
                 </div>
 
                 {/* Детали карточки справа */}
@@ -491,7 +351,7 @@ export default function CasesPage() {
                       exit={{ opacity: 0, y: -direction * 18, scale: 0.99 }}
                       transition={{ duration: 0.25, ease: "easeOut" }}
                     >
-                      <CaseDetail c={activeCase} onOpenGallery={handleOpenGallery} />
+                      <CaseDetail c={activeCase} />
                     </motion.div>
                   </AnimatePresence>
                 </div>
@@ -502,6 +362,7 @@ export default function CasesPage() {
 
         {/* ===== Mobile: липкая лента + свайп-карусель ===== */}
         <div className="lg:hidden">
+          {/* Липкая шапка навигации */}
           <div className="sticky top-24 z-30 bg-neutral-50/85 dark:bg-neutral-950/85 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800">
             <div className="flex items-center gap-3 px-6 pt-3 pb-2.5">
               <div
@@ -531,6 +392,7 @@ export default function CasesPage() {
               </span>
             </div>
 
+            {/* Прогресс */}
             <div className="h-px bg-neutral-200 dark:bg-neutral-800">
               <motion.div
                 className="h-px bg-blue-600 dark:bg-blue-400"
@@ -540,6 +402,7 @@ export default function CasesPage() {
             </div>
           </div>
 
+          {/* Карусель: нативный scroll-snap */}
           <div
             ref={railRef}
             onScroll={syncFromRail}
@@ -547,128 +410,18 @@ export default function CasesPage() {
           >
             {CASES.map((c) => (
               <div key={c.id} className="snap-center shrink-0 w-[calc(100vw-4.5rem)] max-w-lg">
-                <CaseDetail c={c} onOpenGallery={handleOpenGallery} />
+                <CaseDetail c={c} />
               </div>
             ))}
           </div>
 
           <p className="px-6 pb-12 md:pb-16 text-xs font-mono text-neutral-400 flex items-center gap-2">
             <ArrowRight className="w-3.5 h-3.5" />
-            Листайте вбок — следующий кейс
+            Листайте вбок - следующий кейс
           </p>
         </div>
-
-        {/* ===== Interactive Fullscreen Gallery Lightbox Modal ===== */}
-        <AnimatePresence>
-          {galleryCase && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col justify-between p-4 sm:p-6 md:p-8 select-none"
-            >
-              {/* Modal Header */}
-              <div className="flex items-center justify-between text-white border-b border-neutral-800 pb-4">
-                <div>
-                  <span className="text-xs font-mono text-blue-400 uppercase tracking-widest font-semibold block mb-0.5">
-                    [{galleryCase.num}] {galleryCase.category}
-                  </span>
-                  <h3 className="text-base sm:text-lg font-medium text-white truncate max-w-xl">
-                    {galleryCase.title}
-                  </h3>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <span className="text-xs font-mono text-neutral-400 hidden sm:inline-block">
-                    {photoIndex + 1} из {galleryCase.gallery.length}
-                  </span>
-                  <button
-                    onClick={handleCloseGallery}
-                    className="p-2 text-neutral-400 hover:text-white bg-neutral-900 border border-neutral-800 hover:border-neutral-600 rounded-md transition-colors"
-                    aria-label="Закрыть галерею"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Main Image View Area */}
-              <div className="relative flex-1 flex items-center justify-center my-4 overflow-hidden">
-                {/* Left Arrow */}
-                <button
-                  onClick={handlePrevPhoto}
-                  className="absolute left-2 sm:left-4 z-10 p-3 text-white bg-neutral-900/80 hover:bg-blue-600 border border-neutral-700 rounded-full transition-all shadow-lg"
-                  aria-label="Предыдущее фото"
-                >
-                  <ChevronLeft className="w-6 h-6" />
-                </button>
-
-                {/* Animated Current Photo */}
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={photoIndex}
-                    initial={{ opacity: 0, scale: 0.96 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.96 }}
-                    transition={{ duration: 0.25 }}
-                    className="max-w-5xl max-h-[65vh] relative flex flex-col items-center justify-center"
-                  >
-                    <img
-                      src={galleryCase.gallery[photoIndex].url}
-                      alt={galleryCase.gallery[photoIndex].title}
-                      className="max-w-full max-h-[58vh] object-contain rounded-md shadow-2xl border border-neutral-800"
-                    />
-
-                    {/* Image Caption & Description */}
-                    <div className="mt-3 text-center max-w-2xl px-4">
-                      <h4 className="text-sm sm:text-base font-medium text-white">
-                        {galleryCase.gallery[photoIndex].title}
-                      </h4>
-                      <p className="text-xs text-neutral-400 font-light mt-0.5">
-                        {galleryCase.gallery[photoIndex].desc}
-                      </p>
-                    </div>
-                  </motion.div>
-                </AnimatePresence>
-
-                {/* Right Arrow */}
-                <button
-                  onClick={handleNextPhoto}
-                  className="absolute right-2 sm:right-4 z-10 p-3 text-white bg-neutral-900/80 hover:bg-blue-600 border border-neutral-700 rounded-full transition-all shadow-lg"
-                  aria-label="Следующее фото"
-                >
-                  <ChevronRight className="w-6 h-6" />
-                </button>
-              </div>
-
-              {/* Thumbnails Strip Footer */}
-              <div className="border-t border-neutral-800 pt-3 flex items-center justify-center gap-3 overflow-x-auto no-scrollbar">
-                {galleryCase.gallery.map((item, idx) => {
-                  const isActive = idx === photoIndex;
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => setPhotoIndex(idx)}
-                      className={`relative w-16 sm:w-20 h-10 sm:h-12 rounded overflow-hidden border transition-all shrink-0 ${
-                        isActive
-                          ? "border-blue-500 scale-105 shadow-md"
-                          : "border-neutral-800 opacity-50 hover:opacity-100"
-                      }`}
-                    >
-                      <img
-                        src={item.url}
-                        alt={item.title}
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
       </div>
     </MotionConfig>
   );
 }
+
