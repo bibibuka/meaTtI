@@ -411,15 +411,15 @@ export default function Header() {
         </svg>
       </motion.div>
 
-      {/* ClipPath Definition */}
+      {/* ClipPath Definition - пауза когда шапка не видна (submerged=false) */}
       <svg className="absolute w-0 h-0 pointer-events-none" aria-hidden="true">
         <defs>
           <clipPath id="liquid-glass-clip" clipPathUnits="objectBoundingBox">
             <motion.path
               d={WAVE_FILL.closed[0]}
-              animate={{ d: reduce ? WAVE_FILL[state][0] : WAVE_FILL[state] }}
+              animate={{ d: reduce || !submerged ? WAVE_FILL[state][0] : WAVE_FILL[state] }}
               transition={
-                reduce
+                reduce || !submerged
                   ? { duration: 0 }
                   : { duration: 6, repeat: Infinity, ease: "linear" }
               }
@@ -492,10 +492,10 @@ export default function Header() {
                 // Появление и так на opacity.
                 animate={{
                   opacity: submerged && !pending ? 1 : 0,
-                  d: reduce ? WAVE_LINE[state][0] : WAVE_LINE[state],
+                  d: reduce || !submerged ? WAVE_LINE[state][0] : WAVE_LINE[state],
                 }}
                 transition={{
-                  d: reduce
+                  d: reduce || !submerged
                     ? { duration: 0 }
                     : { duration: 6, repeat: Infinity, ease: "linear" },
                   opacity: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },

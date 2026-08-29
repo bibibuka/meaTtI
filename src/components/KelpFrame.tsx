@@ -7,9 +7,37 @@
    на всех страницах кроме неё. Своего фона у полосы нет: она отрицательным
    отступом ложится на низ самой страницы — см. .kelp-strip в globals.css. */
 
+"use client";
+import { useEffect, useRef, useState } from "react";
+
 export default function KelpFrame({ className = "" }: { className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([e]) => setPaused(!e.isIntersecting),
+      { threshold: 0, rootMargin: "100px" }
+    );
+    io.observe(el);
+    const onVis = () => setPaused(document.hidden);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      io.disconnect();
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, []);
+
   return (
-    <div className={`kelp-strip ${className}`} aria-hidden="true">
+    <div
+      ref={ref}
+      className={`kelp-strip ${className}`}
+      aria-hidden="true"
+      style={paused ? ({ ["--kelp-paused" as string]: "paused" } as React.CSSProperties) : undefined}
+      data-paused={paused ? "true" : undefined}
+    >
       <svg
         className="kelp-scene"
         viewBox="0 0 1440 430"

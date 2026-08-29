@@ -84,6 +84,10 @@ function MemberPhoto({
         <img
           src={`${base}${photo}.jpg`}
           alt={name}
+          loading="lazy"
+          decoding="async"
+          width={400}
+          height={400}
           onError={() => setStep(1)}
           className="absolute inset-0 w-full h-full object-cover"
         />

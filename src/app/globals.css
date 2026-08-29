@@ -745,6 +745,12 @@ html {
   }
 }
 
+.kelp-strip[data-paused="true"] .kelp-motion,
+.kelp-strip[data-paused="true"] .frond,
+.kelp-strip[data-paused="true"] .kelp-bubble {
+  animation-play-state: paused !important;
+}
+
 /* =========================================================
    РАБОЧИЙ СТОЛ — секция <WinDesktop/> в самом низу главной.
    Пока она занимает экран целиком, на <html> висит .desk-on:

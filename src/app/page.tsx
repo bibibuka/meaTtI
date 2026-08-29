@@ -52,7 +52,9 @@ function HeroBlob({
     const stage = stageRef.current;
     if (!el || !stage) return;
 
-    const box = () => {
+    // кэшируем размеры, чтобы не дергать getBoundingClientRect каждый кадр
+    let cachedBox = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+    const updateBox = () => {
       const w = stage.clientWidth;
       const h = stage.clientHeight;
       const floor = ctaEl
@@ -60,19 +62,19 @@ function HeroBlob({
           stage.getBoundingClientRect().top -
           BLOB_FLOOR_LIFT
         : h * 0.35;
-      return {
+      cachedBox = {
         minX: w * 0.06,
         maxX: w * 0.94,
         minY: 0,
         maxY: Math.max(0, floor),
       };
     };
+    updateBox();
 
-    const b0 = box();
+    const b0 = cachedBox;
     let x = b0.minX + spec.start[0] * (b0.maxX - b0.minX);
     let y = Math.min(b0.maxY, b0.minY + spec.start[1] * (b0.maxY - b0.minY));
-    el.style.left = `${x}px`;
-    el.style.top = `${y}px`;
+    el.style.transform = `translate3d(${x}px,${y}px,0) translate(-50%,-50%)`;
 
     if (reduceMotion) return;
 
@@ -85,6 +87,7 @@ function HeroBlob({
     let start = performance.now();
     let dur = 1;
     let raf = 0;
+    let paused = document.hidden;
     const wobblePhase = Math.random() * Math.PI * 2;
     const wobbleA = rand(22, 48);
     const wobbleB = rand(14, 32);
@@ -92,7 +95,7 @@ function HeroBlob({
     const wobbleSpeedB = rand(0.9, 1.7);
 
     const retarget = (now: number) => {
-      const b = box();
+      const b = cachedBox;
       fromX = x;
       fromY = y;
       let tries = 0;
@@ -117,7 +120,11 @@ function HeroBlob({
     retarget(performance.now());
 
     const tick = (now: number) => {
-      const b = box();
+      if (paused) {
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+      const b = cachedBox;
       let t = (now - start) / dur;
       if (t >= 1) {
         retarget(now);
@@ -132,19 +139,34 @@ function HeroBlob({
       y += wobbleB * Math.cos(n * wobbleSpeedB + wobblePhase * 1.3);
       x = Math.min(b.maxX, Math.max(b.minX, x));
       y = Math.min(b.maxY, Math.max(b.minY, y));
-      el.style.left = `${x}px`;
-      el.style.top = `${y}px`;
+      el.style.transform = `translate3d(${x}px,${y}px,0) translate(-50%,-50%)`;
       raf = requestAnimationFrame(tick);
     };
 
+    const onVis = () => {
+      paused = document.hidden;
+      if (!paused) start = performance.now() - (performance.now() - start);
+    };
+    document.addEventListener("visibilitychange", onVis);
+    const ro = new ResizeObserver(updateBox);
+    ro.observe(stage);
+    if (ctaEl) ro.observe(ctaEl);
+    window.addEventListener("resize", updateBox, { passive: true });
+
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("resize", updateBox);
+      ro.disconnect();
+    };
   }, [ctaEl, reduceMotion, spec, stageRef]);
 
   return (
     <div
       ref={ref}
-      className={`absolute rounded-full -translate-x-1/2 -translate-y-1/2 ${spec.className}`}
+      className={`absolute rounded-full will-change-transform ${spec.className}`}
+      style={{ left: 0, top: 0 }}
     />
   );
 }
@@ -177,7 +199,10 @@ function HeroBlobs({
   );
 }
 
-const WinDesktop = dynamic(() => import("@/components/WinDesktop"), { ssr: false });
+const WinDesktop = dynamic(() => import("@/components/WinDesktop"), {
+  ssr: false,
+  loading: () => <div className="h-[100svh] w-full bg-gradient-to-b from-[#1a4f8a] to-[#a9dbf5]" aria-hidden />,
+});
 
 const SERVICES = [
   {
