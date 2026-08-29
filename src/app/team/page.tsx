@@ -71,18 +71,20 @@ function MemberPhoto({
   emoji: string;
 }) {
   const [step, setStep] = useState(0);
+  // На GitHub Pages сайт живёт в /meaTtI, сырые src о basePath не знают
+  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
   return (
     <div
       className={`relative w-full aspect-square border-4 border-black dark:border-white mb-5 sm:mb-6 overflow-hidden shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] ${
-        step < 2 ? "bg-neutral-100 dark:bg-neutral-800" : color
+        step < 1 ? "bg-neutral-100 dark:bg-neutral-800" : color
       }`}
     >
-      {step < 2 ? (
+      {step < 1 ? (
         <img
-          src={step === 0 ? `${photo}.jpg` : `${photo}.png`}
+          src={`${base}${photo}.jpg`}
           alt={name}
-          onError={() => setStep((s) => s + 1)}
+          onError={() => setStep(1)}
           className="absolute inset-0 w-full h-full object-cover"
         />
       ) : (
