@@ -177,15 +177,20 @@ function CaseDetail({
 
       {/* 2. 4 Прямоугольника (2x2 Grid) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 my-auto items-stretch">
-        {/* Левый верхний: ТЕКСТ (Задача) */}
-        <div className="bg-neutral-50 dark:bg-neutral-950/60 p-4 sm:p-5 border border-neutral-100 dark:border-neutral-800/80 rounded-xl flex flex-col justify-center">
-          <h3 className="text-xs font-mono text-neutral-400 uppercase tracking-widest mb-2 flex items-center gap-1.5 font-semibold">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
-            Задача
-          </h3>
-          <p className="text-xs sm:text-sm text-neutral-700 dark:text-neutral-300 font-light leading-relaxed">
-            {c.challenge}
-          </p>
+        {/* Левый верхний: ТЕКСТ (Метрики просто текстом без плашки) */}
+        <div className="flex flex-col justify-center px-1 sm:px-2 py-2">
+          <div className="grid grid-cols-3 gap-3 sm:gap-4 text-left">
+            {c.results.map((res, rIdx) => (
+              <div key={rIdx} className="flex flex-col">
+                <div className="text-xl sm:text-2xl md:text-3xl font-light text-blue-600 dark:text-blue-400 tracking-tight">
+                  {res.metric}
+                </div>
+                <div className="text-[11px] sm:text-xs text-neutral-500 dark:text-neutral-400 mt-1 leading-snug">
+                  {res.label}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Правый верхний: ФОТО 16:9 (Браузерный фрейм) */}
@@ -226,20 +231,15 @@ function CaseDetail({
           </div>
         </div>
 
-        {/* Левый нижний: ТЕКСТ (Метрики просто текстом без плашки) */}
-        <div className="flex flex-col justify-center px-1 sm:px-2 py-2">
-          <div className="grid grid-cols-3 gap-3 sm:gap-4 text-left">
-            {c.results.map((res, rIdx) => (
-              <div key={rIdx} className="flex flex-col">
-                <div className="text-xl sm:text-2xl md:text-3xl font-light text-blue-600 dark:text-blue-400 tracking-tight">
-                  {res.metric}
-                </div>
-                <div className="text-[11px] sm:text-xs text-neutral-500 dark:text-neutral-400 mt-1 leading-snug">
-                  {res.label}
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* Левый нижний: ТЕКСТ (Задача) */}
+        <div className="bg-neutral-50 dark:bg-neutral-950/60 p-4 sm:p-5 border border-neutral-100 dark:border-neutral-800/80 rounded-xl flex flex-col justify-center">
+          <h3 className="text-xs font-mono text-neutral-400 uppercase tracking-widest mb-2 flex items-center gap-1.5 font-semibold">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
+            Задача
+          </h3>
+          <p className="text-xs sm:text-sm text-neutral-700 dark:text-neutral-300 font-light leading-relaxed">
+            {c.challenge}
+          </p>
         </div>
 
         {/* Правый нижний: ТЕКСТ (Решение) */}
