@@ -159,9 +159,9 @@ function CaseDetail({
   const mainPhoto = c.gallery[0];
 
   return (
-    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm flex flex-col justify-between px-5 sm:px-6 md:px-7 py-3.5 sm:py-4 md:py-4.5 transition-all duration-300 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/5">
+    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm flex flex-col justify-between px-5 sm:px-6 md:px-7 py-4 sm:py-5 transition-all duration-300 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/5">
       {/* 1. Header */}
-      <div className="border-b border-neutral-100 dark:border-neutral-800 pb-2 mb-2.5">
+      <div className="border-b border-neutral-100 dark:border-neutral-800 pb-2.5 mb-3">
         <div className="flex items-center justify-between gap-4 mb-1">
           <span className="text-xs font-mono text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wider">
             {c.category}
@@ -170,22 +170,22 @@ function CaseDetail({
             ПРОЕКТ [{c.num}]
           </span>
         </div>
-        <h2 className="text-base sm:text-lg md:text-xl font-normal tracking-tight text-neutral-950 dark:text-white leading-tight">
+        <h2 className="text-lg sm:text-xl md:text-2xl font-normal tracking-tight text-neutral-950 dark:text-white leading-tight">
           {c.title}
         </h2>
       </div>
 
-      {/* 2. 4 Прямоугольника (2x2 Grid с компактными вертикальными отступами) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-2.5 sm:gap-y-3 my-auto items-stretch">
+      {/* 2. 4 Прямоугольника (2x2 Grid) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-3 sm:gap-y-4 my-auto items-stretch">
         {/* Левый верхний: ТЕКСТ (Метрики просто текстом без плашки) */}
-        <div className="flex flex-col justify-center px-1 sm:px-2 py-0.5">
+        <div className="flex flex-col justify-center px-1 sm:px-2 py-1">
           <div className="grid grid-cols-3 gap-3 sm:gap-4 text-left">
             {c.results.map((res, rIdx) => (
               <div key={rIdx} className="flex flex-col">
-                <div className="text-lg sm:text-xl md:text-2xl font-light text-blue-600 dark:text-blue-400 tracking-tight">
+                <div className="text-xl sm:text-2xl md:text-3xl font-light text-blue-600 dark:text-blue-400 tracking-tight">
                   {res.metric}
                 </div>
-                <div className="text-[10px] sm:text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 leading-tight">
+                <div className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1 leading-snug">
                   {res.label}
                 </div>
               </div>
@@ -206,10 +206,10 @@ function CaseDetail({
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
 
-            <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between text-[10px] text-neutral-200">
-              <span className="truncate drop-shadow font-sans text-[11px] font-medium">{mainPhoto.title}</span>
-              <span className="shrink-0 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-[9px] flex items-center gap-1 border border-white/10 ml-1.5">
-                <Images className="w-3 h-3 text-blue-400" />
+            <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-neutral-200">
+              <span className="truncate drop-shadow font-sans text-xs sm:text-sm font-medium">{mainPhoto.title}</span>
+              <span className="shrink-0 bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded text-xs flex items-center gap-1.5 border border-white/10 ml-2">
+                <Images className="w-3.5 h-3.5 text-blue-400" />
                 <span>Галерея ({c.gallery.length})</span>
               </span>
             </div>
@@ -217,39 +217,39 @@ function CaseDetail({
         </div>
 
         {/* Левый нижний: ТЕКСТ (Задача) */}
-        <div className="bg-neutral-50 dark:bg-neutral-950/60 px-3.5 sm:px-4 py-2.5 sm:py-3 border border-neutral-100 dark:border-neutral-800/80 rounded-lg flex flex-col justify-center">
-          <h3 className="text-[11px] font-mono text-neutral-400 uppercase tracking-widest mb-1 flex items-center gap-1.5 font-semibold">
+        <div className="bg-neutral-50 dark:bg-neutral-950/60 p-4 sm:p-4.5 border border-neutral-100 dark:border-neutral-800/80 rounded-xl flex flex-col justify-center">
+          <h3 className="text-xs font-mono text-neutral-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5 font-semibold">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
             Задача
           </h3>
-          <p className="text-xs sm:text-[13px] text-neutral-700 dark:text-neutral-300 font-light leading-snug">
+          <p className="text-sm sm:text-[14.5px] text-neutral-700 dark:text-neutral-200 font-light leading-relaxed">
             {c.challenge}
           </p>
         </div>
 
         {/* Правый нижний: ТЕКСТ (Решение) */}
-        <div className="bg-neutral-50 dark:bg-neutral-950/60 px-3.5 sm:px-4 py-2.5 sm:py-3 border border-neutral-100 dark:border-neutral-800/80 rounded-lg flex flex-col justify-center">
-          <h3 className="text-[11px] font-mono text-neutral-400 uppercase tracking-widest mb-1 flex items-center gap-1.5 font-semibold">
+        <div className="bg-neutral-50 dark:bg-neutral-950/60 p-4 sm:p-4.5 border border-neutral-100 dark:border-neutral-800/80 rounded-xl flex flex-col justify-center">
+          <h3 className="text-xs font-mono text-neutral-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5 font-semibold">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
             Решение
           </h3>
-          <p className="text-xs sm:text-[13px] text-neutral-700 dark:text-neutral-300 font-light leading-snug">
+          <p className="text-sm sm:text-[14.5px] text-neutral-700 dark:text-neutral-200 font-light leading-relaxed">
             {c.solution}
           </p>
         </div>
       </div>
 
       {/* 3. CTA Footer */}
-      <div className="mt-3 pt-2.5 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between flex-wrap gap-2.5">
+      <div className="mt-3.5 pt-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between flex-wrap gap-3">
         <div>
-          <span className="text-[10px] text-neutral-400 block">Похожая задача?</span>
-          <span className="text-xs sm:text-sm font-medium text-neutral-800 dark:text-neutral-200">Подберем решение за 30 минут</span>
+          <span className="text-xs text-neutral-400 block">Похожая задача?</span>
+          <span className="text-sm sm:text-base font-medium text-neutral-800 dark:text-neutral-200">Подберем решение за 30 минут</span>
         </div>
         <a
           href="https://t.me/maetti_agency_stub"
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full sm:w-auto justify-center inline-flex items-center gap-2 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold px-4 py-2 rounded-lg hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white active:scale-95 transition-all duration-200 shadow-sm text-xs sm:text-sm"
+          className="w-full sm:w-auto justify-center inline-flex items-center gap-2.5 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold px-5 py-2.5 rounded-lg hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white active:scale-95 transition-all duration-200 shadow-sm text-xs sm:text-sm"
         >
           <span>Подробный разбор</span>
           <Send className="w-3.5 h-3.5" />
