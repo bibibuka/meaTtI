@@ -87,7 +87,7 @@ function scrollTrackToProgress(track: HTMLElement, progress: number) {
 
 function CaseDetail({ c }: { c: Case }) {
   return (
-    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col justify-between p-5 sm:p-6 md:p-7 h-full min-h-[28.75rem] max-h-[36.25rem]">
+    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm flex flex-col justify-between p-5 sm:p-6 md:p-7 h-full min-h-[28.75rem] max-h-[36.25rem] transition-all duration-300 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/5">
       {/* Header */}
       <div className="border-b border-neutral-100 dark:border-neutral-800 pb-4 mb-4">
         <div className="flex items-center justify-between gap-4 mb-2">
@@ -143,13 +143,13 @@ function CaseDetail({ c }: { c: Case }) {
       <div className="mt-4 pt-4 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between flex-wrap gap-3">
         <div className="hidden sm:block">
           <span className="text-[11px] text-neutral-400 block">Похожая задача?</span>
-          <span className="text-xs md:text-sm font-medium text-neutral-800 dark:text-neutral-200">Разберем ваш случай за 30 минут</span>
+          <span className="text-xs md:text-sm font-medium text-neutral-800 dark:text-neutral-200">Подберем решение за 30 минут</span>
         </div>
         <a
           href="https://t.me/maetti_agency_stub"
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full sm:w-auto justify-center inline-flex items-center gap-2.5 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold px-5 py-2.5 hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white transition-all duration-300 shadow-sm text-xs sm:text-sm"
+          className="w-full sm:w-auto justify-center inline-flex items-center gap-2.5 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold px-5 py-2.5 rounded-lg hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white active:scale-95 transition-all duration-200 shadow-sm text-xs sm:text-sm"
         >
           <span>Подробный разбор</span>
           <Send className="w-3.5 h-3.5" />
@@ -338,10 +338,6 @@ export default function CasesPage() {
                     );
                   })}
 
-                  <div className="pt-3 flex items-center gap-2 text-xs font-mono text-neutral-400">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse" />
-                    <span>Скролльте для переключения</span>
-                  </div>
                 </div>
 
                 {/* Детали карточки справа */}

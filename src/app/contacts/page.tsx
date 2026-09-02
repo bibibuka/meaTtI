@@ -194,7 +194,7 @@ export default function ContactsPage() {
                   </>
                 ) : (
                   <>
-                    <span>[ Enter ] Отправить</span>
+                    <span>Отправить</span>
                     <Send className="w-3.5 h-3.5" />
                   </>
                 )}

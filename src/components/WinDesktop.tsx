@@ -62,8 +62,6 @@ const ICONS: Item[] = [
   { id: "keysy", label: "Кейсы", href: "/keysy", Icon: Rocket, tint: "from-violet-400 to-indigo-600" },
   { id: "team", label: "Команда", href: "/team", Icon: Users, tint: "from-emerald-400 to-teal-600" },
   { id: "contacts", label: "Контакты", href: "/contacts", Icon: Mail, tint: "from-amber-400 to-orange-600" },
-  { id: "bin", label: "Корзина", Icon: Trash2, tint: "from-neutral-300 to-neutral-500" },
-  { id: "explorer", label: "Проводник", Icon: FolderOpen, tint: "from-yellow-300 to-amber-500" },
   { id: "snake", label: "Змейка", Icon: Gamepad2, tint: "from-lime-400 to-green-600" },
   { id: "dragon", label: "Дракончик", Icon: DragonIcon, tint: "from-orange-400 to-red-600" },
 ];
@@ -778,7 +776,29 @@ export default function WinDesktop() {
   const [wins, setWins] = useState<WinState[]>([]);
   const [start, setStart] = useState(false);
   const [clock, setClock] = useState("");
-  const [showNotice, setShowNotice] = useState(true);
+  const [showNotice, setShowNotice] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return !sessionStorage.getItem("maetti_notice_seen");
+    } catch {
+      return false;
+    }
+  });
+
+  const closeNotice = () => {
+    setShowNotice(false);
+    try {
+      sessionStorage.setItem("maetti_notice_seen", "true");
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (showNotice) {
+      try {
+        sessionStorage.setItem("maetti_notice_seen", "true");
+      } catch {}
+    }
+  }, [showNotice]);
   // Компонент грузится только на клиенте (dynamic ssr:false), поэтому ширину
   // можно спросить сразу — иначе на телефоне мигнёт винда.
   const [phone, setPhone] = useState(() => matchMedia("(max-width: 767px)").matches);
@@ -977,7 +997,7 @@ export default function WinDesktop() {
 
             <button
               type="button"
-              onClick={() => setShowNotice(false)}
+              onClick={closeNotice}
               className="mt-4.5 w-full rounded-2xl bg-blue-600 py-3 text-[0.9375rem] font-bold text-white shadow-lg shadow-blue-600/30 active:scale-95 transition-transform cursor-pointer"
             >
               Понял!
@@ -1040,29 +1060,29 @@ export default function WinDesktop() {
             <div className="absolute -bottom-[10%] -left-[10%] h-[46%] w-[120%] rounded-[50%] bg-gradient-to-b from-[#86c94a] to-[#3f7d24]" />
           </div>
 
-          {/* ярлыки: колонкой сверху вниз, переносом вправо — как в винде */}
-          <div className="absolute left-2 top-2 z-10 grid grid-flow-col grid-rows-5 gap-1">
+          {/* ярлыки: строго в один вертикальный столбик */}
+          <div className="absolute left-3 top-3 z-10 flex flex-col gap-2.5">
             {ICONS.map((it) => (
               <Hit
                 key={it.id}
                 href={it.href}
                 label={it.label}
                 onClick={(e) => hit(e, it)}
-                className={`flex w-[5.375rem] flex-col items-center gap-1 rounded p-1.5 text-center outline-none focus-visible:ring-2 focus-visible:ring-white ${
-                  sel === it.id ? "bg-white/25 ring-1 ring-white/70" : "hover:bg-white/15"
+                className={`flex w-[5.5rem] flex-col items-center gap-1.5 rounded-xl p-2 text-center outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-white ${
+                  sel === it.id ? "bg-white/30 backdrop-blur-md ring-1 ring-white/80 scale-105 shadow-lg" : "hover:bg-white/20 hover:scale-105"
                 }`}
               >
                 <span
-                  className={`relative grid h-11 w-11 place-items-center rounded-lg bg-gradient-to-br ${it.tint} shadow-md ring-1 ring-white/40`}
+                  className={`relative grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br ${it.tint} shadow-lg ring-1 ring-white/40 transition-transform`}
                 >
                   <it.Icon className="h-6 w-6 text-white drop-shadow" />
                   {it.href && (
-                    <span className="absolute -bottom-1 -left-1 grid h-4 w-4 place-items-center rounded-sm border border-neutral-400 bg-white">
+                    <span className="absolute -bottom-1 -left-1 grid h-4 w-4 place-items-center rounded-md border border-neutral-300 bg-white/90 shadow-sm">
                       <ArrowUpRight className="h-3 w-3 text-neutral-700" />
                     </span>
                   )}
                 </span>
-                <span className="text-[0.6875rem] leading-tight text-white [text-shadow:0_1px_2px_rgba(0,0,0,.85)]">
+                <span className="text-[0.6875rem] font-medium leading-tight text-white drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.9)]">
                   {it.label}
                 </span>
               </Hit>
@@ -1135,7 +1155,7 @@ export default function WinDesktop() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setShowNotice(false)}
+                    onClick={closeNotice}
                     className="grid h-5 w-5 place-items-center rounded border border-white/40 bg-red-500/90 text-white hover:bg-red-600 active:scale-95 transition-all cursor-pointer"
                     title="Закрыть"
                   >
@@ -1191,7 +1211,7 @@ export default function WinDesktop() {
                     </span>
                     <button
                       type="button"
-                      onClick={() => setShowNotice(false)}
+                      onClick={closeNotice}
                       className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 px-5 py-2 text-[0.8125rem] font-bold text-white shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer ring-2 ring-blue-400/40"
                     >
                       <span>Понял!</span>

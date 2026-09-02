@@ -61,12 +61,8 @@ function AnimatedCodeIcon({
   }, [trigger]);
 
   return (
-    <motion.div
-      className={`h-6 flex items-center justify-center select-none shrink-0 ${className}`}
-      animate={{
-        width: isTyping || text ? "auto" : 24,
-      }}
-      transition={{ duration: 0.2, ease: "easeInOut" }}
+    <div
+      className={`w-14 h-6 flex items-center justify-center select-none shrink-0 ${className}`}
     >
       <svg
         className="w-2.5 h-4 shrink-0"
@@ -105,7 +101,7 @@ function AnimatedCodeIcon({
       >
         <polyline points="3 3 8 8 3 13" />
       </svg>
-    </motion.div>
+    </div>
   );
 }
 
@@ -145,7 +141,7 @@ function AnimatedBotIcon({
 
   return (
     <motion.div
-      className={`w-6 h-6 flex items-center justify-center shrink-0 ${className}`}
+      className={`w-14 h-6 flex items-center justify-center shrink-0 ${className}`}
       animate={
         animating
           ? {
@@ -215,7 +211,7 @@ function AnimatedWorkflowIcon({
   return (
     <div
       key={trigger}
-      className={`w-6 h-6 flex items-center justify-center shrink-0 overflow-hidden ${className}`}
+      className={`w-14 h-6 flex items-center justify-center shrink-0 overflow-hidden ${className}`}
     >
       <svg
         className="w-6 h-6 overflow-hidden"
@@ -454,10 +450,10 @@ export default function ServicesPage() {
             const Icon = ICON_MAP[sec.iconName];
 
             return (
-              <div key={sec.id} id={sec.id} className="py-6 transition-colors scroll-mt-28">
+              <div key={sec.id} id={sec.id} className="py-6 px-4 sm:px-6 rounded-xl transition-all duration-300 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/5 scroll-mt-28 border border-transparent">
                 <button
                   onClick={() => toggleAccordion(sec.id)}
-                  className="w-full text-left flex items-center justify-between gap-4 py-2 group focus:outline-none"
+                  className="w-full text-left flex items-center justify-between gap-4 py-2 group focus:outline-none active:scale-[0.99] transition-transform"
                   aria-expanded={isOpen}
                 >
                   <div className="flex items-center gap-4 sm:gap-6">
@@ -486,7 +482,7 @@ export default function ServicesPage() {
                     <span className="text-sm font-mono font-medium text-blue-600 dark:text-blue-400 hidden md:block">
                       {sec.price}
                     </span>
-                    <div className={`w-8 h-8 rounded-full border border-neutral-300 dark:border-neutral-700 flex items-center justify-center transition-transform duration-300 ${isOpen ? "bg-neutral-950 text-white dark:bg-white dark:text-black rotate-180" : "group-hover:border-neutral-400"}`}>
+                    <div className={`w-8 h-8 rounded-full border border-neutral-300 dark:border-neutral-700 flex items-center justify-center transition-all duration-300 active:scale-90 ${isOpen ? "bg-neutral-950 text-white dark:bg-white dark:text-black rotate-180" : "group-hover:border-neutral-400"}`}>
                       {isOpen ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                     </div>
                   </div>
@@ -532,7 +528,7 @@ export default function ServicesPage() {
                         </div>
 
                         <div className="md:col-span-4 self-center">
-                          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8 flex flex-col justify-center gap-5 md:min-h-[420px]">
+                          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 sm:p-8 flex flex-col justify-center gap-5 md:min-h-[420px] transition-all duration-300 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/5">
                             <div>
                               <div className="text-xs font-mono text-neutral-400 uppercase tracking-widest mb-1">Стоимость</div>
                               <div className="text-3xl font-light text-blue-600 dark:text-blue-400">{sec.price}</div>
@@ -549,7 +545,7 @@ export default function ServicesPage() {
                               href="https://t.me/maetti_agency_stub"
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="w-full inline-flex items-center justify-center gap-2 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold text-xs py-3.5 hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white transition-all duration-300"
+                              className="w-full inline-flex items-center justify-center gap-2 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold text-xs py-3.5 rounded-lg hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white active:scale-95 transition-all duration-200"
                             >
                               <span>Обсудить задачу</span>
                               <Send className="w-3.5 h-3.5" />
