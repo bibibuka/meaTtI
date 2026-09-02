@@ -159,10 +159,10 @@ function CaseDetail({
   const mainPhoto = c.gallery[0];
 
   return (
-    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm flex flex-col justify-between p-4 sm:p-5 md:p-6 h-full min-h-[32rem] transition-all duration-300 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/5">
+    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm flex flex-col justify-between p-4 sm:p-5 h-full max-h-[480px] transition-all duration-300 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/5">
       {/* Header */}
-      <div className="border-b border-neutral-100 dark:border-neutral-800 pb-3 mb-2.5">
-        <div className="flex items-center justify-between gap-4 mb-1.5">
+      <div className="border-b border-neutral-100 dark:border-neutral-800 pb-2.5 mb-2.5">
+        <div className="flex items-center justify-between gap-4 mb-1">
           <span className="text-xs font-mono text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wider">
             {c.category}
           </span>
@@ -170,96 +170,104 @@ function CaseDetail({
             ПРОЕКТ [{c.num}]
           </span>
         </div>
-        <h2 className="text-lg sm:text-xl md:text-2xl font-normal tracking-tight text-neutral-950 dark:text-white leading-tight">
+        <h2 className="text-base sm:text-lg md:text-xl font-normal tracking-tight text-neutral-950 dark:text-white leading-tight">
           {c.title}
         </h2>
       </div>
 
-      {/* Styled Browser Frame / Clickable Photo Gallery Preview */}
-      <div
-        onClick={() => onOpenGallery(c, 0)}
-        className="my-2 border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-950 group cursor-pointer relative"
-      >
-        <div className="bg-neutral-100 dark:bg-neutral-900 px-3 py-1.5 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between text-[11px] font-mono text-neutral-500">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-neutral-300 dark:bg-neutral-700 inline-block" />
-            <span className="w-2.5 h-2.5 rounded-full bg-neutral-300 dark:bg-neutral-700 inline-block" />
-            <span className="w-2.5 h-2.5 rounded-full bg-neutral-300 dark:bg-neutral-700 inline-block" />
-          </div>
-          <div className="flex items-center gap-1.5 text-neutral-400 truncate max-w-[240px]">
-            <ExternalLink className="w-3 h-3 text-blue-600 dark:text-blue-400 shrink-0" />
-            <span className="truncate">{c.domain}</span>
-          </div>
-        </div>
-
-        <div className="relative h-28 sm:h-36 w-full overflow-hidden bg-neutral-900">
-          <img
-            src={mainPhoto.url}
-            alt={c.title}
-            className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105 opacity-90 group-hover:opacity-100"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
-
-          <div className="absolute bottom-2 left-3 right-3 flex items-center justify-between text-[11px] font-mono text-neutral-200">
-            <span className="truncate drop-shadow font-sans">{mainPhoto.title}</span>
-            <span className="shrink-0 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] flex items-center gap-1 border border-white/10">
-              <Images className="w-3 h-3 text-blue-400" />
-              <span>Галерея ({c.gallery.length})</span>
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Задача & Решение: 2 колонки на десктопе для компактности */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 md:gap-3.5 my-2">
-        <div className="bg-neutral-50 dark:bg-neutral-950/60 p-3 sm:p-3.5 border border-neutral-100 dark:border-neutral-800/80 rounded-lg">
-          <h3 className="text-xs font-mono text-neutral-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
-            Задача
-          </h3>
-          <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-300 font-light leading-relaxed">
-            {c.challenge}
-          </p>
-        </div>
-        <div className="bg-neutral-50 dark:bg-neutral-950/60 p-3 sm:p-3.5 border border-neutral-100 dark:border-neutral-800/80 rounded-lg">
-          <h3 className="text-xs font-mono text-neutral-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
-            Решение
-          </h3>
-          <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-300 font-light leading-relaxed">
-            {c.solution}
-          </p>
-        </div>
-      </div>
-
-      {/* Метрики — тонкие волосяные линии между колонками */}
-      <div className="mt-2 grid grid-cols-3 gap-px bg-neutral-200 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden">
-        {c.results.map((res, rIdx) => (
-          <div key={rIdx} className="bg-neutral-50 dark:bg-neutral-950 p-2 sm:p-2.5 text-center">
-            <div className="text-sm sm:text-base md:text-xl font-light text-blue-600 dark:text-blue-400 whitespace-nowrap">
-              {res.metric}
+      {/* Main Body: 2 Columns (Left: Text & Metrics, Right: Photo / Browser Frame) */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-3 my-auto items-stretch">
+        {/* Left Column (Red circle area in user mockup): Задача, Решение, Метрики */}
+        <div className="md:col-span-7 flex flex-col justify-between gap-2.5">
+          {/* Задача & Решение */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="bg-neutral-50 dark:bg-neutral-950/60 p-2.5 sm:p-3 border border-neutral-100 dark:border-neutral-800/80 rounded-lg flex flex-col">
+              <h3 className="text-[11px] font-mono text-neutral-400 uppercase tracking-widest mb-1 flex items-center gap-1.5 font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
+                Задача
+              </h3>
+              <p className="text-xs text-neutral-600 dark:text-neutral-300 font-light leading-relaxed">
+                {c.challenge}
+              </p>
             </div>
-            <div className="text-[10px] md:text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 leading-snug">
-              {res.label}
+            <div className="bg-neutral-50 dark:bg-neutral-950/60 p-2.5 sm:p-3 border border-neutral-100 dark:border-neutral-800/80 rounded-lg flex flex-col">
+              <h3 className="text-[11px] font-mono text-neutral-400 uppercase tracking-widest mb-1 flex items-center gap-1.5 font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+                Решение
+              </h3>
+              <p className="text-xs text-neutral-600 dark:text-neutral-300 font-light leading-relaxed">
+                {c.solution}
+              </p>
             </div>
           </div>
-        ))}
+
+          {/* Метрики */}
+          <div className="grid grid-cols-3 gap-px bg-neutral-200 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden">
+            {c.results.map((res, rIdx) => (
+              <div key={rIdx} className="bg-neutral-50 dark:bg-neutral-950 p-2 text-center">
+                <div className="text-sm sm:text-base font-light text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                  {res.metric}
+                </div>
+                <div className="text-[10px] text-neutral-500 dark:text-neutral-400 mt-0.5 leading-tight">
+                  {res.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Column (Blue circle area in user mockup): Styled Browser Frame / Clickable Photo Gallery */}
+        <div className="md:col-span-5 flex flex-col min-h-[170px]">
+          <div
+            onClick={() => onOpenGallery(c, 0)}
+            className="h-full w-full border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-950 group cursor-pointer relative flex flex-col shadow-xs"
+          >
+            <div className="bg-neutral-100 dark:bg-neutral-900 px-3 py-1.5 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between text-[11px] font-mono text-neutral-500 shrink-0">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-neutral-300 dark:bg-neutral-700 inline-block" />
+                <span className="w-2 h-2 rounded-full bg-neutral-300 dark:bg-neutral-700 inline-block" />
+                <span className="w-2 h-2 rounded-full bg-neutral-300 dark:bg-neutral-700 inline-block" />
+              </div>
+              <div className="flex items-center gap-1 text-neutral-400 truncate max-w-[160px]">
+                <ExternalLink className="w-3 h-3 text-blue-600 dark:text-blue-400 shrink-0" />
+                <span className="truncate text-[10px]">{c.domain}</span>
+              </div>
+            </div>
+
+            <div className="relative flex-1 w-full min-h-[140px] overflow-hidden bg-neutral-900">
+              <img
+                src={mainPhoto.url}
+                alt={c.title}
+                className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105 opacity-90 group-hover:opacity-100"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent pointer-events-none" />
+
+              <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between text-[11px] font-mono text-neutral-200">
+                <span className="truncate drop-shadow font-sans text-[11px]">{mainPhoto.title}</span>
+                <span className="shrink-0 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] flex items-center gap-1 border border-white/10 ml-1.5">
+                  <Images className="w-3 h-3 text-blue-400" />
+                  <span>Галерея ({c.gallery.length})</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* CTA */}
-      <div className="mt-3 pt-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between flex-wrap gap-3">
+      <div className="pt-2.5 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between flex-wrap gap-2">
         <div className="hidden sm:block">
-          <span className="text-[11px] text-neutral-400 block">Похожая задача?</span>
-          <span className="text-xs md:text-sm font-medium text-neutral-800 dark:text-neutral-200">Подберем решение за 30 минут</span>
+          <span className="text-[10px] text-neutral-400 block leading-tight">Похожая задача?</span>
+          <span className="text-xs font-medium text-neutral-800 dark:text-neutral-200">Подберем решение за 30 минут</span>
         </div>
         <a
           href="https://t.me/maetti_agency_stub"
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full sm:w-auto justify-center inline-flex items-center gap-2.5 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold px-5 py-2.5 rounded-lg hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white active:scale-95 transition-all duration-200 shadow-sm text-xs sm:text-sm"
+          className="w-full sm:w-auto justify-center inline-flex items-center gap-2 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold px-4 py-2 rounded-lg hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white active:scale-95 transition-all duration-200 shadow-sm text-xs"
         >
           <span>Подробный разбор</span>
-          <Send className="w-3.5 h-3.5" />
+          <Send className="w-3 h-3" />
         </a>
       </div>
     </div>
