@@ -160,7 +160,7 @@ function CaseDetail({
 
   return (
     <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm flex flex-col justify-between p-5 sm:p-6 md:p-7 transition-all duration-300 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/5">
-      {/* Header */}
+      {/* 1. Header */}
       <div className="border-b border-neutral-100 dark:border-neutral-800 pb-3 mb-4">
         <div className="flex items-center justify-between gap-4 mb-1.5">
           <span className="text-xs font-mono text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wider">
@@ -175,13 +175,12 @@ function CaseDetail({
         </h2>
       </div>
 
-      {/* Main Body: 2 Columns */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-5 my-auto items-center">
-        {/* Left Column (Красная зона: Задача, Решение, Метрики) */}
-        <div className="md:col-span-7 flex flex-col gap-3.5">
-          {/* Задача & Решение */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="bg-neutral-50 dark:bg-neutral-950/60 p-3.5 border border-neutral-100 dark:border-neutral-800/80 rounded-lg flex flex-col">
+      {/* 2. Top Row: [ Задача + Решение ] слева (синяя зона) + [ Фото 16:9 ] справа (красная зона) */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-5 items-stretch mb-4">
+        {/* Left: Задача & Решение */}
+        <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
+          <div className="bg-neutral-50 dark:bg-neutral-950/60 p-3.5 sm:p-4 border border-neutral-100 dark:border-neutral-800/80 rounded-lg flex flex-col justify-between">
+            <div>
               <h3 className="text-xs font-mono text-neutral-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5 font-semibold">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
                 Задача
@@ -190,7 +189,9 @@ function CaseDetail({
                 {c.challenge}
               </p>
             </div>
-            <div className="bg-neutral-50 dark:bg-neutral-950/60 p-3.5 border border-neutral-100 dark:border-neutral-800/80 rounded-lg flex flex-col">
+          </div>
+          <div className="bg-neutral-50 dark:bg-neutral-950/60 p-3.5 sm:p-4 border border-neutral-100 dark:border-neutral-800/80 rounded-lg flex flex-col justify-between">
+            <div>
               <h3 className="text-xs font-mono text-neutral-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5 font-semibold">
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
                 Решение
@@ -200,24 +201,10 @@ function CaseDetail({
               </p>
             </div>
           </div>
-
-          {/* Метрики */}
-          <div className="grid grid-cols-3 gap-px bg-neutral-200 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden">
-            {c.results.map((res, rIdx) => (
-              <div key={rIdx} className="bg-neutral-50 dark:bg-neutral-950 p-2.5 sm:p-3 text-center">
-                <div className="text-base sm:text-lg md:text-xl font-light text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                  {res.metric}
-                </div>
-                <div className="text-[10px] md:text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 leading-tight">
-                  {res.label}
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
 
-        {/* Right Column (Синяя зона: Фото строго 16:9 в браузере) */}
-        <div className="md:col-span-5 flex flex-col">
+        {/* Right: Фото строго 16:9 в браузерном фрейме */}
+        <div className="md:col-span-5 flex flex-col justify-center">
           <div
             onClick={() => onOpenGallery(c, 0)}
             className="w-full border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-950 group cursor-pointer relative flex flex-col shadow-xs"
@@ -255,7 +242,21 @@ function CaseDetail({
         </div>
       </div>
 
-      {/* CTA Footer */}
+      {/* 3. Middle Row: Метрики на ВСЮ ширину (Full Width Grid) */}
+      <div className="grid grid-cols-3 gap-px bg-neutral-200 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden my-1">
+        {c.results.map((res, rIdx) => (
+          <div key={rIdx} className="bg-neutral-50 dark:bg-neutral-950 p-3 sm:p-3.5 text-center">
+            <div className="text-lg sm:text-xl md:text-2xl font-light text-blue-600 dark:text-blue-400 whitespace-nowrap">
+              {res.metric}
+            </div>
+            <div className="text-[11px] sm:text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 leading-tight">
+              {res.label}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 4. Bottom Row: CTA Footer */}
       <div className="mt-4 pt-4 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between flex-wrap gap-3">
         <div>
           <span className="text-[11px] text-neutral-400 block">Похожая задача?</span>
