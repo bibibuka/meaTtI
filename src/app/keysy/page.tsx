@@ -217,23 +217,23 @@ function CaseDetail({
         </div>
 
         {/* Левый нижний: ТЕКСТ (Задача) */}
-        <div className="bg-neutral-100 dark:bg-neutral-800/60 -mt-2.5 pt-2.5 pb-[132px] px-4 sm:px-5 border border-neutral-200 dark:border-neutral-700/60 rounded-xl flex flex-col justify-start">
-          <h3 className="text-xs font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5 font-semibold">
+        <div className="bg-neutral-100 dark:bg-neutral-800/60 -mt-2.5 pt-3 pb-[132px] px-4.5 sm:px-5.5 border border-neutral-200 dark:border-neutral-700/60 rounded-xl flex flex-col justify-start">
+          <h3 className="text-xs sm:text-[13px] font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-widest mb-2.5 flex items-center gap-1.5 font-semibold">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
             Задача
           </h3>
-          <p className="text-[14.5px] sm:text-[15.5px] text-neutral-800 dark:text-neutral-200 font-light leading-relaxed">
+          <p className="text-base sm:text-lg md:text-[18.5px] text-neutral-850 dark:text-neutral-100 font-light leading-relaxed sm:leading-[1.65]">
             {c.challenge}
           </p>
         </div>
 
         {/* Правый нижний: ТЕКСТ (Решение) */}
-        <div className="bg-neutral-100 dark:bg-neutral-800/60 -mt-2.5 pt-2.5 pb-[132px] px-4 sm:px-5 border border-neutral-200 dark:border-neutral-700/60 rounded-xl flex flex-col justify-start">
-          <h3 className="text-xs font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5 font-semibold">
+        <div className="bg-neutral-100 dark:bg-neutral-800/60 -mt-2.5 pt-3 pb-[132px] px-4.5 sm:px-5.5 border border-neutral-200 dark:border-neutral-700/60 rounded-xl flex flex-col justify-start">
+          <h3 className="text-xs sm:text-[13px] font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-widest mb-2.5 flex items-center gap-1.5 font-semibold">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
             Решение
           </h3>
-          <p className="text-[14.5px] sm:text-[15.5px] text-neutral-800 dark:text-neutral-200 font-light leading-relaxed">
+          <p className="text-base sm:text-lg md:text-[18.5px] text-neutral-850 dark:text-neutral-100 font-light leading-relaxed sm:leading-[1.65]">
             {c.solution}
           </p>
         </div>
