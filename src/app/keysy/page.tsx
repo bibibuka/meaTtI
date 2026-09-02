@@ -217,7 +217,7 @@ function CaseDetail({
         </div>
 
         {/* Левый нижний: ТЕКСТ (Задача) */}
-        <div className="bg-neutral-100 dark:bg-neutral-800/60 -mt-2.5 pt-2.5 pb-[52px] px-4 sm:px-5 border border-neutral-200 dark:border-neutral-700/60 rounded-xl flex flex-col justify-start">
+        <div className="bg-neutral-100 dark:bg-neutral-800/60 -mt-2.5 pt-2.5 pb-[92px] px-4 sm:px-5 border border-neutral-200 dark:border-neutral-700/60 rounded-xl flex flex-col justify-start">
           <h3 className="text-xs font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5 font-semibold">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
             Задача
@@ -228,7 +228,7 @@ function CaseDetail({
         </div>
 
         {/* Правый нижний: ТЕКСТ (Решение) */}
-        <div className="bg-neutral-100 dark:bg-neutral-800/60 -mt-2.5 pt-2.5 pb-[52px] px-4 sm:px-5 border border-neutral-200 dark:border-neutral-700/60 rounded-xl flex flex-col justify-start">
+        <div className="bg-neutral-100 dark:bg-neutral-800/60 -mt-2.5 pt-2.5 pb-[92px] px-4 sm:px-5 border border-neutral-200 dark:border-neutral-700/60 rounded-xl flex flex-col justify-start">
           <h3 className="text-xs font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5 font-semibold">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
             Решение
