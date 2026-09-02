@@ -193,40 +193,25 @@ function CaseDetail({
           </div>
         </div>
 
-        {/* Правый верхний: ФОТО 16:9 (Браузерный фрейм) */}
+        {/* Правый верхний: ФОТО 16:9 (чистое фото без браузерной плашки) */}
         <div className="flex flex-col justify-center">
           <div
             onClick={() => onOpenGallery(c, 0)}
-            className="w-full border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-950 group cursor-pointer relative flex flex-col shadow-xs"
+            className="w-full relative aspect-[16/9] rounded-xl overflow-hidden bg-neutral-900 group cursor-pointer border border-neutral-200/80 dark:border-neutral-800 shadow-sm"
           >
-            <div className="bg-neutral-100 dark:bg-neutral-900 px-3 py-1 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between text-[10px] font-mono text-neutral-500 shrink-0">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-neutral-300 dark:bg-neutral-700 inline-block" />
-                <span className="w-2 h-2 rounded-full bg-neutral-300 dark:bg-neutral-700 inline-block" />
-                <span className="w-2 h-2 rounded-full bg-neutral-300 dark:bg-neutral-700 inline-block" />
-              </div>
-              <div className="flex items-center gap-1.5 text-neutral-400 truncate max-w-[180px]">
-                <ExternalLink className="w-3 h-3 text-blue-600 dark:text-blue-400 shrink-0" />
-                <span className="truncate text-[11px]">{c.domain}</span>
-              </div>
-            </div>
+            <img
+              src={mainPhoto.url}
+              alt={c.title}
+              className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105 opacity-95 group-hover:opacity-100"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
 
-            {/* 16:9 Widescreen Photo */}
-            <div className="relative w-full aspect-[16/9] overflow-hidden bg-neutral-900">
-              <img
-                src={mainPhoto.url}
-                alt={c.title}
-                className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105 opacity-90 group-hover:opacity-100"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent pointer-events-none" />
-
-              <div className="absolute bottom-1.5 left-2 right-2 flex items-center justify-between text-[10px] font-mono text-neutral-200">
-                <span className="truncate drop-shadow font-sans text-[11px]">{mainPhoto.title}</span>
-                <span className="shrink-0 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-[9px] flex items-center gap-1 border border-white/10 ml-1.5">
-                  <Images className="w-3 h-3 text-blue-400" />
-                  <span>Галерея ({c.gallery.length})</span>
-                </span>
-              </div>
+            <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between text-[10px] text-neutral-200">
+              <span className="truncate drop-shadow font-sans text-[11px] font-medium">{mainPhoto.title}</span>
+              <span className="shrink-0 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-[9px] flex items-center gap-1 border border-white/10 ml-1.5">
+                <Images className="w-3 h-3 text-blue-400" />
+                <span>Галерея ({c.gallery.length})</span>
+              </span>
             </div>
           </div>
         </div>
