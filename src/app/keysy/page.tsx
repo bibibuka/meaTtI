@@ -159,10 +159,10 @@ function CaseDetail({
   const mainPhoto = c.gallery[0];
 
   return (
-    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm flex flex-col justify-between px-5 sm:px-6 md:px-7 py-4 sm:py-5 transition-all duration-300 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/5">
+    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm flex flex-col justify-between px-6 sm:px-8 py-5 sm:py-6 transition-all duration-300 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/5">
       {/* 1. Header */}
-      <div className="border-b border-neutral-100 dark:border-neutral-800 pb-2.5 mb-3">
-        <div className="flex items-center justify-between gap-4 mb-1">
+      <div className="border-b border-neutral-100 dark:border-neutral-800 pb-3 mb-4">
+        <div className="flex items-center justify-between gap-4 mb-1.5">
           <span className="text-xs font-mono text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wider">
             {c.category}
           </span>
@@ -170,30 +170,14 @@ function CaseDetail({
             ПРОЕКТ [{c.num}]
           </span>
         </div>
-        <h2 className="text-lg sm:text-xl md:text-2xl font-normal tracking-tight text-neutral-950 dark:text-white leading-tight">
+        <h2 className="text-xl sm:text-2xl font-normal tracking-tight text-neutral-950 dark:text-white leading-snug">
           {c.title}
         </h2>
       </div>
 
       {/* 2. 4 Прямоугольника (2x2 Grid) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-3 sm:gap-y-4 my-auto items-stretch">
-        {/* Левый верхний: ТЕКСТ (Метрики просто текстом без плашки) */}
-        <div className="flex flex-col justify-center px-1 sm:px-2 py-1">
-          <div className="grid grid-cols-3 gap-3 sm:gap-4 text-left">
-            {c.results.map((res, rIdx) => (
-              <div key={rIdx} className="flex flex-col">
-                <div className="text-xl sm:text-2xl md:text-3xl font-light text-blue-600 dark:text-blue-400 tracking-tight">
-                  {res.metric}
-                </div>
-                <div className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1 leading-snug">
-                  {res.label}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Правый верхний: ФОТО 16:9 (чистое фото без браузерной плашки) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5 my-auto items-start">
+        {/* Левый верхний: ФОТО 16:9 */}
         <div className="flex flex-col justify-center">
           <div
             onClick={() => onOpenGallery(c, 0)}
@@ -206,9 +190,8 @@ function CaseDetail({
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
 
-            <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-neutral-200">
-              <span className="truncate drop-shadow font-sans text-xs sm:text-sm font-medium">{mainPhoto.title}</span>
-              <span className="shrink-0 bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded text-xs flex items-center gap-1.5 border border-white/10 ml-2">
+            <div className="absolute bottom-2.5 right-3 flex items-center text-neutral-200">
+              <span className="bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded text-xs flex items-center gap-1.5 border border-white/10">
                 <Images className="w-3.5 h-3.5 text-blue-400" />
                 <span>Галерея ({c.gallery.length})</span>
               </span>
@@ -216,31 +199,47 @@ function CaseDetail({
           </div>
         </div>
 
+        {/* Правый верхний: ТЕКСТ (Метрики просто текстом без плашки) */}
+        <div className="h-full flex flex-col justify-center self-center py-2">
+          <div className="grid grid-cols-3 gap-3 sm:gap-4 text-left">
+            {c.results.map((res, rIdx) => (
+              <div key={rIdx} className="flex flex-col">
+                <div className="text-2xl sm:text-3xl font-light text-blue-600 dark:text-blue-400 tracking-tight">
+                  {res.metric}
+                </div>
+                <div className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1 leading-snug">
+                  {res.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Левый нижний: ТЕКСТ (Задача) */}
-        <div className="bg-neutral-100 dark:bg-neutral-800/60 -mt-2.5 pt-3 pb-[132px] px-4.5 sm:px-5.5 border border-neutral-200 dark:border-neutral-700/60 rounded-xl flex flex-col justify-start">
-          <h3 className="text-xs sm:text-[13px] font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-widest mb-2.5 flex items-center gap-1.5 font-semibold">
+        <div className="flex flex-col justify-start">
+          <h3 className="text-xs font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2 flex items-center gap-1.5 font-semibold">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
             Задача
           </h3>
-          <p className="text-base sm:text-lg md:text-[18.5px] text-neutral-850 dark:text-neutral-100 font-light leading-relaxed sm:leading-[1.65]">
+          <p className="text-sm text-neutral-700 dark:text-neutral-300 font-light leading-relaxed">
             {c.challenge}
           </p>
         </div>
 
         {/* Правый нижний: ТЕКСТ (Решение) */}
-        <div className="bg-neutral-100 dark:bg-neutral-800/60 -mt-2.5 pt-3 pb-[132px] px-4.5 sm:px-5.5 border border-neutral-200 dark:border-neutral-700/60 rounded-xl flex flex-col justify-start">
-          <h3 className="text-xs sm:text-[13px] font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-widest mb-2.5 flex items-center gap-1.5 font-semibold">
+        <div className="flex flex-col justify-start">
+          <h3 className="text-xs font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2 flex items-center gap-1.5 font-semibold">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
             Решение
           </h3>
-          <p className="text-base sm:text-lg md:text-[18.5px] text-neutral-850 dark:text-neutral-100 font-light leading-relaxed sm:leading-[1.65]">
+          <p className="text-sm text-neutral-700 dark:text-neutral-300 font-light leading-relaxed">
             {c.solution}
           </p>
         </div>
       </div>
 
       {/* 3. CTA Footer */}
-      <div className="mt-3.5 pt-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between flex-wrap gap-3">
+      <div className="mt-5 pt-3.5 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between flex-wrap gap-3">
         <div>
           <span className="text-xs text-neutral-400 block">Похожая задача?</span>
           <span className="text-sm sm:text-base font-medium text-neutral-800 dark:text-neutral-200">Подберем решение за 30 минут</span>
@@ -444,11 +443,10 @@ export default function CasesPage() {
                       <button
                         key={c.id}
                         onClick={() => handleDesktopClick(i)}
-                        className={`w-full text-left p-4 transition-all duration-300 border flex items-center justify-between gap-4 group relative ${
-                          isActive
+                        className={`w-full text-left p-4 transition-all duration-300 border flex items-center justify-between gap-4 group relative ${isActive
                             ? "bg-white dark:bg-neutral-900 border-blue-600 dark:border-blue-500 shadow-md translate-x-1"
                             : "bg-transparent border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700"
-                        }`}
+                          }`}
                       >
                         {isActive && (
                           <motion.div
@@ -511,11 +509,10 @@ export default function CasesPage() {
                     <button
                       key={c.id}
                       onClick={() => goToMobile(i)}
-                      className={`shrink-0 flex items-center gap-2 px-3 py-1.5 border text-xs transition-colors duration-300 ${
-                        isActive
+                      className={`shrink-0 flex items-center gap-2 px-3 py-1.5 border text-xs transition-colors duration-300 ${isActive
                           ? "bg-neutral-900 dark:bg-white text-white dark:text-black border-neutral-900 dark:border-white"
                           : "border-neutral-300 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400"
-                      }`}
+                        }`}
                     >
                       <span className="font-mono opacity-60">{c.roman}</span>
                       <span className="font-medium whitespace-nowrap">{c.short}</span>
@@ -648,11 +645,10 @@ export default function CasesPage() {
                     <button
                       key={idx}
                       onClick={() => setPhotoIndex(idx)}
-                      className={`relative w-16 sm:w-20 h-10 sm:h-12 rounded overflow-hidden border transition-all shrink-0 cursor-pointer ${
-                        isActive
+                      className={`relative w-16 sm:w-20 h-10 sm:h-12 rounded overflow-hidden border transition-all shrink-0 cursor-pointer ${isActive
                           ? "border-blue-500 scale-105 shadow-md"
                           : "border-neutral-800 opacity-50 hover:opacity-100"
-                      }`}
+                        }`}
                     >
                       <img
                         src={item.url}
