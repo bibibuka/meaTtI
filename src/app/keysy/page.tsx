@@ -2,137 +2,404 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, MotionConfig } from "framer-motion";
-import { ArrowRight, Send, ExternalLink, ChevronLeft, ChevronRight, X, Images } from "lucide-react";
+import {
+  ArrowRight,
+  Send,
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Images,
+} from "lucide-react";
 import WaveRule from "@/components/WaveRule";
 
-const CASES = [
+export interface Case {
+  id: string;
+  num: string;
+  groupId: "web" | "bots" | "automation";
+  groupTitle: string;
+  title: string;
+  category: string;
+  short: string;
+  note?: string;
+  challenge: string;
+  solution: string;
+  results: { metric: string; label: string }[];
+  domain?: string;
+  url?: string;
+  gallery: {
+    url: string;
+    title: string;
+    desc: string;
+  }[];
+}
+
+export interface CaseGroup {
+  id: "web" | "bots" | "automation";
+  num: string;
+  roman: string;
+  title: string;
+  subtitle: string;
+  caseIndices: number[];
+}
+
+const GROUPS: CaseGroup[] = [
   {
-    id: "boutique",
+    id: "web",
     num: "01",
     roman: "I",
-    title: "Экосистема для премиального ритейла «Boutique Digital»",
-    category: "Веб-разработка & Интеграции",
-    short: "Ритейл",
-    challenge: "Заказчик столкнулся с низкой конверсией мобильной версии и медленным обновлением каталога из старой ERP. Процесс покупки занимал более 6 шагов.",
-    solution: "Мы переработали пользовательский путь (UX) и перенесли интерфейс на headless-архитектуру Next.js. Подключили быструю синхронизацию товаров по WebSockets и внедрили бесшовную оплату в один клик.",
-    results: [
-      { metric: "+43%", label: "Конверсия в покупку" },
-      { metric: "0.8 сек", label: "Скорость загрузки (LCP)" },
-      { metric: "-35%", label: "Брошенные корзины" }
-    ],
-    domain: "boutique-digital.store",
-    gallery: [
-      {
-        url: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1600&q=80",
-        title: "Главная страница и каталог товаров",
-        desc: "Адаптивная верстка с бесшовным переключением категорий и фильтрацией в реальном времени."
-      },
-      {
-        url: "https://images.unsplash.com/photo-1472851294608-062f824d29cc?auto=format&fit=crop&w=1600&q=80",
-        title: "Карточка товара и мобильный интерфейс",
-        desc: "Проектирование быстрых пользовательских сценариев покупки в один клик."
-      },
-      {
-        url: "https://images.unsplash.com/photo-1556742049-0a67dd3f3a8b?auto=format&fit=crop&w=1600&q=80",
-        title: "Модуль оформления заказа (Checkout)",
-        desc: "Интеграция эквайринга и службы доставки соавтоматическим расчетом сроков."
-      },
-      {
-        url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1600&q=80",
-        title: "Панель администратора и аналитика ERP",
-        desc: "Синхронизация по WebSockets с остатками на складе и аналитикой продаваемости."
-      }
-    ]
+    title: "Веб-разработка",
+    subtitle: "Сайты, порталы и CMS",
+    caseIndices: [0, 1, 2, 3],
   },
   {
-    id: "medicall",
+    id: "bots",
     num: "02",
     roman: "II",
-    title: "Интеллектуальный хелпдеск-ассистент «MediCall»",
-    category: "Telegram-боты & ИИ",
-    short: "Боты и ИИ",
-    challenge: "Служба поддержки частных клиник перегружена рутинными вопросами пациентов о расписании врачей, прайсе и подготовке к исследованиям. Время ответа оператора составляло более 12 минут.",
-    solution: "Создали кастомный Telegram Web App с интеграцией тонко настроенной модели GPT-4. Бот мгновенно считывает свободные слоты в CRM клиники, записывает пациентов на прием и отвечает на медицинские вопросы согласно регламенту.",
-    results: [
-      { metric: "72%", label: "Вопросов решается без оператора" },
-      { metric: "< 3 сек", label: "Время ответа ассистента" },
-      { metric: "x2.5", label: "Рост объема записей" }
-    ],
-    domain: "t.me/medicall_bot",
-    gallery: [
-      {
-        url: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1600&q=80",
-        title: "Диалоговый интерфейс ассистента в Telegram",
-        desc: "Распознавание естественного языка и помощь пациентам 24/7 по регламентам клиники."
-      },
-      {
-        url: "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=1600&q=80",
-        title: "Интерактивный календарь записи (Telegram Mini App)",
-        desc: "Выбор свободного слота врача и подгрузка медицинской карты за несколько секунд."
-      },
-      {
-        url: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=1600&q=80",
-        title: "Личный кабинет пациента",
-        desc: "Напоминания о приеме, подготовка к анализам и история прошлых посещений."
-      },
-      {
-        url: "https://images.unsplash.com/photo-1530497610245-94d3c16cda28?auto=format&fit=crop&w=1600&q=80",
-        title: "Дашборд загруженности операторов клиники",
-        desc: "Мониторинг обращений в реальном времени с функцией бесшовного перевода на оператора."
-      }
-    ]
+    title: "Чат-боты и ИИ",
+    subtitle: "Telegram, MAX, VK и CRM",
+    caseIndices: [4, 5],
   },
   {
-    id: "fintech",
+    id: "automation",
     num: "03",
     roman: "III",
-    title: "Автоматизация отчетности холдинга «FinTech Logic»",
-    category: "Скрипты & Макросы",
-    short: "Автоматизация",
-    challenge: "Бухгалтерия тратит около 35 часов еженедельно на ручной сбор и сведение отчетов из 14 разных филиалов, выгружающих данные в разных форматах (CSV, XLS, JSON).",
-    solution: "Разработали систему автоматической валидации и нормализации данных на Node.js. Скрипт по расписанию забирает выгрузки с почты, приводит их к единому стандарту и собирает сводную интерактивную Excel-панель.",
-    results: [
-      { metric: "-35 ч", label: "Времени экономится каждую неделю" },
-      { metric: "0%", label: "Человеческих ошибок в расчетах" },
-      { metric: "1 кл", label: "Сведение отчета вместо часов" }
-    ],
-    domain: "analytics.fintech-logic.internal",
-    gallery: [
-      {
-        url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1600&q=80",
-        title: "Сводная аналитическая панель расчетов",
-        desc: "Автоматическое агрегирование показателей 14 филиалов в единый интерактивный отчет."
-      },
-      {
-        url: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1600&q=80",
-        title: "Пайплайн валидации и очистки данных",
-        desc: "Проверка форматов JSON, CSV и XLS без участия сотрудников компании."
-      },
-      {
-        url: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1600&q=80",
-        title: "Экспорт и генерация итоговых Excel-таблиц",
-        desc: "Автоматическая выгрузка с формулами, макросами и диаграммами распределения бюджетов."
-      }
-    ]
-  }
+    title: "Автоматизация и парсинг",
+    subtitle: "Скрипты, API и данные",
+    caseIndices: [6],
+  },
 ];
 
-type Case = (typeof CASES)[number];
+const CASES: Case[] = [
+  {
+    id: "academie",
+    num: "01",
+    groupId: "web",
+    groupTitle: "Веб-разработка",
+    title: "Премиальная вокальная академия «Académie des Talents» (Швейцария)",
+    category: "Веб-разработка & Мультиязычность",
+    short: "Académie des Talents",
+    note: "Швейцария • DE / EN / RU",
+    challenge:
+      "Заказчику требовался презентационный и конверсионный веб-сервис для академии постановки голоса топ-менеджеров и взрослых в Шаффхаузене с записью на персональную диагностику и высоким уровнем доверия европейских клиентов.",
+    solution:
+      "Разработали премиальный мультиязычный сайт (немецкий, английский, русский), внедрили микроразметку Schema.org (LocalBusiness / MusicSchool), форму записи на индивидуальную диагностику и добились 100/100 по Core Web Vitals.",
+    results: [
+      { metric: "3 языка", label: "Локализация (DE / EN / RU)" },
+      { metric: "100/100", label: "Скорость и SEO-структура" },
+      { metric: "CHF 190+", label: "Средний чек первого визита" },
+    ],
+    domain: "academie-des-talents.com",
+    url: "https://academie-des-talents.com/",
+    gallery: [
+      {
+        url: "/cases/academie_full.webp",
+        title: "Главный экран и позиционирование в Швейцарии",
+        desc: "Утонченная эстетика, микроразметка Schema.org и адаптивность под любые устройства.",
+      },
+      {
+        url: "/cases/academie.webp",
+        title: "Брендинг и визуальная идентификация",
+        desc: "Премиальное позиционирование услуг вокального коучинга для руководителей.",
+      },
+      {
+        url: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=960&q=60",
+        title: "Акустическое пространство и форматы занятий",
+        desc: "Презентация студии, методологии и индивидуальных программ обучения.",
+      },
+      {
+        url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=960&q=60",
+        title: "Executive Voice Coaching для топ-менеджеров",
+        desc: "Целевые сценарии для бизнес-аудитории и онлайн-запись на персональную диагностику.",
+      },
+    ],
+  },
+  {
+    id: "alina",
+    num: "02",
+    groupId: "web",
+    groupTitle: "Веб-разработка",
+    title: "Личный бренд и портфолио оперной певицы «Alina Zamalieva»",
+    category: "Веб-разработка & Личный бренд",
+    short: "Alina Zamalieva",
+    note: "Культура & Арт",
+    challenge:
+      "Создать имиджевый ресурс мирового уровня для оперной певицы (сопрано) для презентации репертуара европейским театрам, агентам, организаторам фестивалей и прессе.",
+    solution:
+      "Спроектировали дизайн в эстетике высокого искусства с академической типографикой (Cormorant Garamond + Montserrat), интерактивной афишей концертов, быстрой медиатекой аудио/видео фрагментов и версткой под Retina-экраны.",
+    results: [
+      { metric: "3 страны", label: "Охват (CH, DE, RU)" },
+      { metric: "< 1.0 сек", label: "Загрузка медиатеки" },
+      { metric: "100%", label: "Презентация для агентов" },
+    ],
+    domain: "alinazamalieva.com",
+    url: "https://www.alinazamalieva.com/",
+    gallery: [
+      {
+        url: "/cases/alina_full.webp",
+        title: "Главный экран и портфолио оперной певицы",
+        desc: "Типографика Cormorant Garamond, медиатека выступлений и афиша концертов.",
+      },
+      {
+        url: "https://www.alinazamalieva.com/images/hero-bg.jpg",
+        title: "Сценический образ и биография",
+        desc: "Презентация репертуара для оперных театров и европейских агентов.",
+      },
+      {
+        url: "https://www.alinazamalieva.com/images/JPF3303.jpg",
+        title: "Репертуарная карта и медиа-материалы",
+        desc: "Фрагменты оперных партий, аудиозаписи и рецензии музыкальных критиков.",
+      },
+      {
+        url: "https://images.unsplash.com/photo-1514306191717-452ec28c7814?auto=format&fit=crop&w=960&q=60",
+        title: "Международная концертная деятельность",
+        desc: "Организация графиков выступлений и прямая связь с продюсерами.",
+      },
+    ],
+  },
+  {
+    id: "rahim",
+    num: "03",
+    groupId: "web",
+    groupTitle: "Веб-разработка",
+    title: "Онлайн-галерея и арт-каталог художника «Rahim El»",
+    category: "Веб-разработка & WordPress CMS",
+    short: "Rahim El",
+    note: "WordPress CMS • Испания",
+    challenge:
+      "Художнику в Испании требовался персональный каталог выставок и картин, которым он может полностью управлять сам без знания кода: создавать серии полотен, загружать фото в 4K и обновлять статус доступности.",
+    solution:
+      "Разработали сайт на базе WordPress CMS с кастомной темой (artist-portfolio), настроили кастомные типы записей и полей для картин, внедрили оптимизацию тяжелых изображений без потери резкости мазков и удобную админ-панель.",
+    results: [
+      { metric: "0 ₽", label: "Затрат на контент-менеджеров" },
+      { metric: "4K / Retina", label: "Качество отображения картин" },
+      { metric: "100%", label: "Автономное управление в CMS" },
+    ],
+    domain: "rahimel.com/artworks/",
+    url: "https://rahimel.com/artworks/",
+    gallery: [
+      {
+        url: "/cases/rahim_full.webp",
+        title: "Каталог произведений современного искусства",
+        desc: "Кастомная тема WordPress с адаптивной сеткой картин и быстрым предпросмотром.",
+      },
+      {
+        url: "https://rahimel.com/wp-content/uploads/2026/07/IMG_4852-1916x2000.jpeg",
+        title: "Оригинальное полотно в высоком разрешении",
+        desc: "Сохранение текстуры мазков и точной цветопередачи на экранах Retina.",
+      },
+      {
+        url: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=960&q=60",
+        title: "Выставочные пространства и кураторские серии",
+        desc: "Структурирование работ по периодам, выставкам и коллекциям.",
+      },
+      {
+        url: "https://images.unsplash.com/photo-1582561424760-0321d75e81fa?auto=format&fit=crop&w=960&q=60",
+        title: "Админ-панель управления экспонатами",
+        desc: "Добавление картин, габаритов, техники и статуса продажи без участия программистов.",
+      },
+    ],
+  },
+  {
+    id: "barori",
+    num: "04",
+    groupId: "web",
+    groupTitle: "Веб-разработка",
+    title: "Федеральный сервис подключения водителей «Барори Парк»",
+    category: "Веб-сервисы & Интеграции",
+    short: "Барори Парк",
+    note: "152-ФЗ • Bitrix • TG-бот",
+    challenge:
+      "Обеспечить высокий поток регистраций водителей и курьеров (Яндекс Такси, Яндекс Смена, Купер) с жестким соблюдением 152-ФЗ, отсевом спам-ботов и мгновенной передачей лидов диспетчерам таксопарка.",
+    solution:
+      "Спроектировали конверсионный веб-сервис с локализацией шрифтов (исключена трансграничная передача IP), отдельным получением согласий на ПДн, защитой Yandex SmartCaptcha и интеграцией с ботом @BaroriPark_Bot и Bitrix.",
+    results: [
+      { metric: "152-ФЗ", label: "Полный юридический комплаенс" },
+      { metric: "24/7", label: "Автоматический прием заявок" },
+      { metric: "+52%", label: "Конверсия в регистрацию водителя" },
+    ],
+    domain: "baroripark.ru",
+    url: "https://baroripark.ru/",
+    gallery: [
+      {
+        url: "/cases/baroripark.webp",
+        title: "Главный экран и калькулятор заработка",
+        desc: "Быстрое подключение к Яндекс Такси, Яндекс Смене и доставке по РФ.",
+      },
+      {
+        url: "https://baroripark.ru/bitrix/templates/barorikorNEW/img/IMG_4314.jfif.jpeg",
+        title: "Условия парка и прозрачные выплаты",
+        desc: "Блок доверия с лицензиями, условиями и поддержкой водителей.",
+      },
+      {
+        url: "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=960&q=60",
+        title: "Мультисервисная интеграция (Такси, Доставка, Купер)",
+        desc: "Маршрутизация заявок исполнителей по направлениям работы.",
+      },
+      {
+        url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=960&q=60",
+        title: "Модуль комплаенса 152-ФЗ и SmartCaptcha",
+        desc: "Хранение данных в РФ, защита от спам-атак и мгновенная отправка в CRM.",
+      },
+    ],
+  },
+  {
+    id: "hr-bot",
+    num: "05",
+    groupId: "bots",
+    groupTitle: "Чат-боты и ИИ",
+    title: "AI-бот рекрутинга полного цикла в Telegram «под ключ»",
+    category: "Telegram-боты & ИИ",
+    short: "AI-Рекрутер",
+    note: "OpenAI • STT • Bitrix24",
+    challenge:
+      "Рекрутеры тратили до 70% рабочего времени на первичную переписку, прослушивание десятков голосовых сообщений соискателей, скрининг анкет и ручное согласование свободного времени первого интервью.",
+    solution:
+      "Разработали автономный Python-бот на OpenAI API с Function Calling: он распознает речь из голосовых (STT), оценивает навыки кандидата по критериям вакансий, бронирует непересекающиеся слоты интервью и синхронизирует всё с Google Таблицами и Bitrix24.",
+    results: [
+      { metric: "-80%", label: "Времени HR на первый скрининг" },
+      { metric: "< 3 сек", label: "Ответ на вопрос или голосовое" },
+      { metric: "0 накладок", label: "Бронирование слотов собеседований" },
+    ],
+    domain: "t.me/hr_recruiter_bot",
+    url: "https://t.me/maetti_agency_stub",
+    gallery: [
+      {
+        url: "/cases/hr_recruiter_bot.webp",
+        title: "Дашборд скоринга кандидатов и чат с ИИ",
+        desc: "Распознавание голосовых сообщений (STT), оценка компетенций и календарь слотов.",
+      },
+      {
+        url: "https://images.unsplash.com/photo-1573497620053-ea5300f94f21?auto=format&fit=crop&w=960&q=60",
+        title: "Квалификационный скрининг соискателей",
+        desc: "Адаптивные системные промпты под каждую вакансию и отработка возражений.",
+      },
+      {
+        url: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=960&q=60",
+        title: "Модуль бронирования слотов интервью",
+        desc: "Исключение овербукинга с синхронизацией календаря рекрутеров.",
+      },
+      {
+        url: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=960&q=60",
+        title: "Двусторонняя интеграция с Bitrix24 и Google Sheets",
+        desc: "Автоматический импорт вакансий и фиксация анкет кандидатов в реальном времени.",
+      },
+    ],
+  },
+  {
+    id: "omnichannel",
+    num: "06",
+    groupId: "bots",
+    groupTitle: "Чат-боты и ИИ",
+    title: "Омниканальный бот клиентской поддержки «MAX + VK + TG»",
+    category: "Мессенджеры & amoCRM",
+    short: "Helpdesk CRM",
+    note: "MAX • VK • TG • amoCRM",
+    challenge:
+      "Поступающие сообщения из мессенджера MAX, ВКонтакте и Telegram обрабатывались вручную в разных окнах, что приводило к задержкам ответа до 20 минут, потере контекста переписки и выгоранию службы поддержки.",
+    solution:
+      "Создали единый шлюз омниканальной коммуникации (аналог Mao Bot): боты ведут первичный диалог и консультацию во всех 3 каналах, а при сложных вопросах бесшовно передают диалог оператору, работающему из «одного окна» amoCRM.",
+    results: [
+      { metric: "1 окно", label: "Для всех обращений в amoCRM" },
+      { metric: "3 канала", label: "MAX, ВКонтакте и Telegram" },
+      { metric: "x3.5", label: "Скорость обработки обращений" },
+    ],
+    domain: "amo.maetti.agency",
+    url: "https://t.me/maetti_agency_stub",
+    gallery: [
+      {
+        url: "/cases/omnichannel_bot.webp",
+        title: "Единое окно оператора amoCRM (MAX + VK + Telegram)",
+        desc: "Объединение всех каналов связи, автоответы ИИ и бесшовный перевод на оператора.",
+      },
+      {
+        url: "https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&w=960&q=60",
+        title: "Быстрый перехват диалога оператором",
+        desc: "Сотрудник видит всю историю диалога с ботом и отвечает прямо из сделки CRM.",
+      },
+      {
+        url: "https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=960&q=60",
+        title: "Автосоздание карточки клиента и тегирование",
+        desc: "Квалификация лида, определение источника рекламы и сохранение контактов.",
+      },
+      {
+        url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=960&q=60",
+        title: "Аналитика времени ответа и качества консультаций",
+        desc: "Контроль нагрузки на операторов и метрик первого ответа (FRT).",
+      },
+    ],
+  },
+  {
+    id: "parsinghh",
+    num: "07",
+    groupId: "automation",
+    groupTitle: "Автоматизация и парсинг",
+    title: "Агрегатор вакансий и прямых контактов «ParsingHH & SuperJob»",
+    category: "Парсинг & Автоматизация данных",
+    short: "ParsingHH",
+    note: "Парсер данных • Python",
+    challenge:
+      "Рекрутинговым агентствам требовалось ежедневно собирать свежие базы вакансий с прямыми контактами нанимателей. При этом ручной поиск отнимал десятки часов, а HH закрыл открытый API номеров телефонов соискателям.",
+    solution:
+      "Разработали специализированный сервис парсинга с гибкой фильтрацией (города, вилки зарплат, минус-слова). Адаптировали логику: прямой сбор номеров телефонов переведен на SuperJob, а с HH выгружаются доступные метаданные с мгновенным экспортом в Excel.",
+    results: [
+      { metric: "10x", label: "Ускорение сбора базы контактов" },
+      { metric: "1 клик", label: "Экспорт в Excel и CSV" },
+      { metric: "100%", label: "Работоспособность с SuperJob" },
+    ],
+    domain: "parsinghh.ru",
+    url: "https://parsinghh.ru/",
+    gallery: [
+      {
+        url: "/cases/parsinghh.webp",
+        title: "Интерфейс фильтрации, стоп-слов и выбора площадок",
+        desc: "Управление источниками (HH.ru / SuperJob), городами и исключениями нерелевантных фраз.",
+      },
+      {
+        url: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=960&q=60",
+        title: "Выгрузка прямых телефонных номеров с SuperJob",
+        desc: "Автоматизированное извлечение контактов нанимателей без ручного кликанья.",
+      },
+      {
+        url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=960&q=60",
+        title: "Экспорт и структурирование данных в Excel/CSV",
+        desc: "Формирование готовых списков для холодного и теплого рекрутинга.",
+      },
+      {
+        url: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=960&q=60",
+        title: "Отказоустойчивая архитектура парсинга",
+        desc: "Обход защит, ротация прокси и гибкая реакция на изменение алгоритмов агрегаторов.",
+      },
+    ],
+  },
+];
 
-/* 1 тик колеса ≈ 100px. На каждый кейс — 5 тиков, потом открепление. */
+/* 1 тик колеса ≈ 100px. Длина скролла увеличена в 1.3 раза (6.5 тиков = 650px на кейс), потом открепление. */
 const TICK_PX = 100;
-const TICKS_PER_SLIDE = 5;
-const SLIDE_PX = TICK_PX * TICKS_PER_SLIDE;
+const TICKS_PER_SLIDE = 6.5;
+const SLIDE_PX = Math.round(TICK_PX * TICKS_PER_SLIDE);
 const PIN_EXTRA_PX = SLIDE_PX * CASES.length;
 
+/* Кэш метрик пина: getComputedStyle на каждый scroll-кадр форсит рефлоу. */
+const pinMetricsCache = new WeakMap<
+  HTMLElement,
+  { top: number; extra: number }
+>();
+
 function pinProgressPx(track: HTMLElement): number {
-  const sticky = track.firstElementChild as HTMLElement | null;
-  if (!sticky || track.offsetHeight === 0) return 0;
-  const extra = Math.max(0, track.offsetHeight - sticky.offsetHeight);
-  if (extra === 0) return 0;
-  const stickyTop = parseFloat(getComputedStyle(sticky).top) || 0;
-  const scrolled = stickyTop - track.getBoundingClientRect().top;
-  return Math.min(extra, Math.max(0, scrolled));
+  let m = pinMetricsCache.get(track);
+  if (!m) {
+    const sticky = track.firstElementChild as HTMLElement | null;
+    const top = sticky ? parseFloat(getComputedStyle(sticky).top) || 0 : 0;
+    const extra = sticky
+      ? Math.max(0, track.offsetHeight - sticky.offsetHeight)
+      : 0;
+    m = { top, extra };
+    pinMetricsCache.set(track, m);
+  }
+  if (m.extra === 0 || track.offsetHeight === 0) return 0;
+  const scrolled = m.top - track.getBoundingClientRect().top;
+  return Math.min(m.extra, Math.max(0, scrolled));
 }
 
 function slideIndexFromProgress(progress: number): number {
@@ -152,9 +419,11 @@ function scrollTrackToProgress(track: HTMLElement, progress: number) {
 function CaseDetail({
   c,
   onOpenGallery,
+  eager,
 }: {
   c: Case;
   onOpenGallery: (c: Case, photoIndex?: number) => void;
+  eager?: boolean;
 }) {
   const mainPhoto = c.gallery[0];
 
@@ -162,14 +431,9 @@ function CaseDetail({
     <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm flex flex-col justify-between px-6 sm:px-8 py-5 sm:py-6 transition-all duration-300 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/5">
       {/* 1. Header */}
       <div className="border-b border-neutral-100 dark:border-neutral-800 pb-3 mb-4">
-        <div className="flex items-center justify-between gap-4 mb-1.5">
-          <span className="text-xs font-mono text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wider">
-            {c.category}
-          </span>
-          <span className="text-xs font-mono text-neutral-400">
-            ПРОЕКТ [{c.num}]
-          </span>
-        </div>
+        <span className="text-xs font-mono text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wider block mb-1.5">
+          {c.category}
+        </span>
         <h2 className="text-xl sm:text-2xl font-normal tracking-tight text-neutral-950 dark:text-white leading-snug">
           {c.title}
         </h2>
@@ -186,6 +450,9 @@ function CaseDetail({
             <img
               src={mainPhoto.url}
               alt={c.title}
+              loading={eager ? "eager" : "lazy"}
+              fetchPriority={eager ? "high" : "auto"}
+              decoding="async"
               className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105 opacity-95 group-hover:opacity-100"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
@@ -242,17 +509,32 @@ function CaseDetail({
       <div className="mt-5 pt-3.5 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between flex-wrap gap-3">
         <div>
           <span className="text-xs text-neutral-400 block">Похожая задача?</span>
-          <span className="text-sm sm:text-base font-medium text-neutral-800 dark:text-neutral-200">Подберем решение за 30 минут</span>
+          <span className="text-sm sm:text-base font-medium text-neutral-800 dark:text-neutral-200">
+            Подберем решение за 30 минут
+          </span>
         </div>
-        <a
-          href="https://t.me/maetti_agency_stub"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-full sm:w-auto justify-center inline-flex items-center gap-2.5 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold px-5 py-2.5 rounded-lg hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white active:scale-95 transition-all duration-200 shadow-sm text-xs sm:text-sm"
-        >
-          <span>Подробный разбор</span>
-          <Send className="w-3.5 h-3.5" />
-        </a>
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          {c.url && (
+            <a
+              href={c.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto justify-center inline-flex items-center gap-1.5 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 px-3.5 py-2.5 rounded-lg hover:border-neutral-400 dark:hover:border-neutral-500 text-xs sm:text-sm font-medium transition-colors"
+            >
+              <span>На сайт</span>
+              <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
+            </a>
+          )}
+          <a
+            href="https://t.me/maetti_agency_stub"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full sm:w-auto justify-center inline-flex items-center gap-2.5 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold px-5 py-2.5 rounded-lg hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white active:scale-95 transition-all duration-200 shadow-sm text-xs sm:text-sm"
+          >
+            <span>Подробный разбор</span>
+            <Send className="w-3.5 h-3.5" />
+          </a>
+        </div>
       </div>
     </div>
   );
@@ -260,7 +542,6 @@ function CaseDetail({
 
 export default function CasesPage() {
   const [active, setActive] = useState(0);
-  const [direction, setDirection] = useState(1);
   const prevActiveRef = useRef(0);
 
   const desktopTrackRef = useRef<HTMLDivElement>(null);
@@ -290,8 +571,20 @@ export default function CasesPage() {
 
   const handlePrevPhoto = () => {
     if (!galleryCase) return;
-    setPhotoIndex((prev) => (prev - 1 + galleryCase.gallery.length) % galleryCase.gallery.length);
+    setPhotoIndex(
+      (prev) => (prev - 1 + galleryCase.gallery.length) % galleryCase.gallery.length
+    );
   };
+
+  // Предзагрузка соседних фото галереи, чтобы листалось без задержек
+  useEffect(() => {
+    if (!galleryCase) return;
+    const n = galleryCase.gallery.length;
+    [(photoIndex + 1) % n, (photoIndex - 1 + n) % n].forEach((i) => {
+      const im = new Image();
+      im.src = galleryCase.gallery[i].url;
+    });
+  }, [galleryCase, photoIndex]);
 
   // Keyboard navigation for lightbox
   useEffect(() => {
@@ -306,28 +599,40 @@ export default function CasesPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [galleryCase]);
 
-  const activeCase = CASES[active];
+  const activeCase = CASES[active] || CASES[0];
+  const activeGroup =
+    GROUPS.find((g) => g.caseIndices.includes(active)) || GROUPS[0];
 
   useEffect(() => {
     const track = desktopTrackRef.current;
     if (!track) return;
+    let ticking = false;
 
+    // rAF-throttle: scroll фаерит десятки раз за кадр, setState нужен 1 раз.
     const sync = () => {
-      if (ignoreScrollRef.current || track.offsetHeight === 0) return;
-      const nextIdx = slideIndexFromProgress(pinProgressPx(track));
-      if (nextIdx !== prevActiveRef.current) {
-        setDirection(nextIdx > prevActiveRef.current ? 1 : -1);
-        prevActiveRef.current = nextIdx;
-        setActive(nextIdx);
-      }
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        if (ignoreScrollRef.current || track.offsetHeight === 0) return;
+        const nextIdx = slideIndexFromProgress(pinProgressPx(track));
+        if (nextIdx !== prevActiveRef.current) {
+          prevActiveRef.current = nextIdx;
+          setActive(nextIdx);
+        }
+      });
+    };
+    const onResize = () => {
+      pinMetricsCache.delete(track);
+      sync();
     };
 
     window.addEventListener("scroll", sync, { passive: true });
-    window.addEventListener("resize", sync);
+    window.addEventListener("resize", onResize);
     sync();
     return () => {
       window.removeEventListener("scroll", sync);
-      window.removeEventListener("resize", sync);
+      window.removeEventListener("resize", onResize);
       clickGenRef.current += 1;
       ignoreScrollRef.current = false;
       window.clearTimeout(unlockTimerRef.current);
@@ -339,7 +644,6 @@ export default function CasesPage() {
     if (!track) return;
 
     if (targetIndex !== active) {
-      setDirection(targetIndex > active ? 1 : -1);
       setActive(targetIndex);
     }
     prevActiveRef.current = targetIndex;
@@ -366,24 +670,52 @@ export default function CasesPage() {
     scrollTrackToProgress(track, targetProgress);
   };
 
-  // Mobile rail swipe sync
-  const syncFromRail = () => {
-    const el = railRef.current;
-    if (!el) return;
-    const step = (el.scrollWidth - el.clientWidth) / (CASES.length - 1);
-    if (step > 0) setActive(Math.min(CASES.length - 1, Math.round(el.scrollLeft / step)));
+  const handleGroupClick = (group: CaseGroup) => {
+    const targetCaseIdx = group.caseIndices[0];
+    handleDesktopClick(targetCaseIdx);
   };
 
-  useEffect(() => {
-    if (window.matchMedia("(min-width: 1024px)").matches) return;
-    chipsRef.current?.children[active]?.scrollIntoView({
-      behavior: "smooth",
-      inline: "center",
-      block: "nearest",
+
+  // Mobile rail swipe sync (rAF-throttle, setState только при смене слайда)
+  const railTickRef = useRef(false);
+  const syncFromRail = () => {
+    if (railTickRef.current) return;
+    railTickRef.current = true;
+    requestAnimationFrame(() => {
+      railTickRef.current = false;
+      const el = railRef.current;
+      if (!el) return;
+      const step = (el.scrollWidth - el.clientWidth) / (CASES.length - 1);
+      if (step <= 0) return;
+      const next = Math.min(
+        CASES.length - 1,
+        Math.round(el.scrollLeft / step)
+      );
+      if (next !== prevActiveRef.current) {
+        prevActiveRef.current = next;
+        setActive(next);
+      }
     });
-  }, [active]);
+  };
+
+  const prevGroupRef = useRef(activeGroup.id);
+  useEffect(() => {
+    // Чипы мотаем только при смене группы, иначе петля scroll→setState→scroll
+    if (prevGroupRef.current === activeGroup.id) return;
+    prevGroupRef.current = activeGroup.id;
+    if (window.matchMedia("(min-width: 1024px)").matches) return;
+    const activeGroupIndex = GROUPS.findIndex((g) => g.id === activeGroup.id);
+    if (activeGroupIndex >= 0) {
+      chipsRef.current?.children[activeGroupIndex]?.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest",
+      });
+    }
+  }, [activeGroup]);
 
   const goToMobile = (i: number) => {
+    prevActiveRef.current = i;
     setActive(i);
     railRef.current?.children[i]?.scrollIntoView({
       behavior: "smooth",
@@ -405,12 +737,12 @@ export default function CasesPage() {
               </h1>
             </div>
             <p className="text-sm md:text-base text-neutral-500 dark:text-neutral-400 font-light leading-relaxed">
-              Листайте страницу вниз для последовательного просмотра проектов, задач, технических решений и измеримых результатов.
+              Листайте страницу вниз для последовательного просмотра проектов по направлениям (Веб, Чат-боты и Автоматизация), задач, технических решений и измеримых результатов.
             </p>
           </div>
         </section>
 
-        {/* ===== Desktop: Pinned Scroll Track (по 5 тиков на каждый кейс) ===== */}
+        {/* ===== Desktop: Pinned Scroll Track ===== */}
         <div
           ref={desktopTrackRef}
           className="hidden lg:block relative"
@@ -419,10 +751,10 @@ export default function CasesPage() {
           <div className="sticky top-20 h-[calc(100vh-5rem)] flex items-center justify-center">
             <div className="max-w-7xl w-full mx-auto px-6">
               <div className="grid grid-cols-12 gap-8 items-center">
-                {/* Навигация слева */}
+                {/* Навигация слева: 3 плашки-группы */}
                 <div className="col-span-4 space-y-3">
                   <div className="flex items-center justify-between text-xs font-mono text-neutral-400 pb-1">
-                    <span>ПРОЕКТЫ</span>
+                    <span>НАПРАВЛЕНИЯ & КЕЙСЫ</span>
                     <span className="tabular-nums text-blue-600 dark:text-blue-400 font-semibold">
                       [{String(active + 1).padStart(2, "0")}/{String(CASES.length).padStart(2, "0")}]
                     </span>
@@ -430,62 +762,127 @@ export default function CasesPage() {
 
                   {/* Индикатор общего прогресса */}
                   <div className="h-1 bg-neutral-200 dark:bg-neutral-800 mb-4 rounded-full overflow-hidden">
-                    <motion.div
-                      className="h-full bg-blue-600 dark:bg-blue-400 rounded-full"
-                      animate={{ width: `${((active + 1) / CASES.length) * 100}%` }}
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    <div
+                      className="h-full bg-blue-600 dark:bg-blue-400 rounded-full transition-[width] duration-300 ease-out"
+                      style={{ width: `${((active + 1) / CASES.length) * 100}%` }}
                     />
                   </div>
 
-                  {CASES.map((c, i) => {
-                    const isActive = i === active;
+                  {GROUPS.map((g) => {
+                    const isGroupActive = g.id === activeGroup.id;
+                    const groupActiveSubIndex = g.caseIndices.indexOf(active);
+
                     return (
                       <button
-                        key={c.id}
-                        onClick={() => handleDesktopClick(i)}
-                        className={`w-full text-left p-4 transition-all duration-300 border flex items-center justify-between gap-4 group relative ${isActive
+                        key={g.id}
+                        type="button"
+                        onClick={() => handleGroupClick(g)}
+                        className={`w-full text-left p-4 transition-all duration-300 border flex flex-col justify-between group relative rounded-xl cursor-pointer ${
+                          isGroupActive
                             ? "bg-white dark:bg-neutral-900 border-blue-600 dark:border-blue-500 shadow-md translate-x-1"
                             : "bg-transparent border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700"
-                          }`}
+                        }`}
                       >
-                        {isActive && (
-                          <motion.div
-                            layoutId="activeBar"
-                            className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 dark:bg-blue-400"
-                          />
+                        {isGroupActive && (
+                          <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-600 dark:bg-blue-400 rounded-l-xl" />
                         )}
-                        <div className="flex items-center gap-3">
-                          <span className={`text-xs font-mono shrink-0 ${isActive ? "text-blue-600 dark:text-blue-400 font-bold" : "text-neutral-400"}`}>
-                            [{c.num}]
-                          </span>
-                          <div>
-                            <h3 className={`text-sm font-medium leading-snug ${isActive ? "text-neutral-950 dark:text-white font-semibold" : "text-neutral-700 dark:text-neutral-300"}`}>
-                              {c.title}
-                            </h3>
-                            <span className="text-[11px] text-neutral-400 font-mono block mt-0.5">
-                              {c.category}
+
+                        <div className="flex items-start justify-between gap-3 w-full">
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={`text-xs font-mono shrink-0 ${
+                                isGroupActive
+                                  ? "text-blue-600 dark:text-blue-400 font-bold"
+                                  : "text-neutral-400"
+                              }`}
+                            >
+                              [{g.num}]
                             </span>
+                            <div>
+                              <h3
+                                className={`text-sm font-medium leading-snug ${
+                                  isGroupActive
+                                    ? "text-neutral-950 dark:text-white font-semibold"
+                                    : "text-neutral-700 dark:text-neutral-300"
+                                }`}
+                              >
+                                {g.title}
+                              </h3>
+                              <span className="text-[11px] text-neutral-400 font-mono block mt-0.5">
+                                {g.subtitle} • {g.caseIndices.length}{" "}
+                                {g.caseIndices.length === 1
+                                  ? "проект"
+                                  : g.caseIndices.length < 5
+                                  ? "проекта"
+                                  : "проектов"}
+                              </span>
+                            </div>
                           </div>
+                          <ArrowRight
+                            className={`w-4 h-4 shrink-0 mt-0.5 transition-transform ${
+                              isGroupActive
+                                ? "text-blue-600 dark:text-blue-400 translate-x-1"
+                                : "text-neutral-300 dark:text-neutral-700 group-hover:text-neutral-400"
+                            }`}
+                          />
                         </div>
-                        <ArrowRight className={`w-4 h-4 shrink-0 transition-transform ${isActive ? "text-blue-600 dark:text-blue-400 translate-x-1" : "text-neutral-300 dark:text-neutral-700 group-hover:text-neutral-400"}`} />
+
+                        {/* Индикатор текущего проекта внутри активной группы */}
+                        {isGroupActive && (
+                          <div className="mt-3 pt-2.5 border-t border-neutral-100 dark:border-neutral-800/80 w-full">
+                            <div className="flex items-center justify-between text-[11px] font-mono text-neutral-500 dark:text-neutral-400 mb-1.5">
+                              <span>
+                                Проект {groupActiveSubIndex + 1} из {g.caseIndices.length}
+                              </span>
+                              <span className="text-neutral-700 dark:text-neutral-200 font-medium truncate max-w-[140px]">
+                                {activeCase.short}
+                              </span>
+                            </div>
+                            <div
+                              className="grid gap-1.5 w-full"
+                              style={{
+                                gridTemplateColumns: `repeat(${g.caseIndices.length}, minmax(0, 1fr))`,
+                              }}
+                            >
+                              {g.caseIndices.map((idx) => {
+                                const isCur = idx === active;
+                                const isPast = idx < active;
+                                return (
+                                  <div
+                                    key={idx}
+                                    className={`h-1 rounded-full transition-all duration-300 ${
+                                      isCur
+                                        ? "bg-blue-600 dark:bg-blue-400"
+                                        : isPast
+                                        ? "bg-blue-300 dark:bg-blue-900"
+                                        : "bg-neutral-200 dark:bg-neutral-800"
+                                    }`}
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </button>
                     );
                   })}
-
                 </div>
 
                 {/* Детали карточки справа */}
                 <div className="col-span-8">
-                  <AnimatePresence mode="wait" custom={direction}>
+                  <AnimatePresence mode="wait">
                     <motion.div
                       key={activeCase.id}
-                      custom={direction}
-                      initial={{ opacity: 0, y: direction * 18, scale: 0.99 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -direction * 18, scale: 0.99 }}
-                      transition={{ duration: 0.25, ease: "easeOut" }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.18, ease: "easeOut" }}
                     >
-                      <CaseDetail c={activeCase} onOpenGallery={handleOpenGallery} />
+                      <CaseDetail
+                        c={activeCase}
+                        onOpenGallery={handleOpenGallery}
+                        eager
+                      />
                     </motion.div>
                   </AnimatePresence>
                 </div>
@@ -494,28 +891,33 @@ export default function CasesPage() {
           </div>
         </div>
 
-        {/* ===== Mobile: липкая лента + свайп-карусель ===== */}
+        {/* ===== Mobile: липкая лента групп + свайп-карусель всех кейсов ===== */}
         <div className="lg:hidden">
-          {/* Липкая шапка навигации */}
-          <div className="sticky top-24 z-30 bg-neutral-50/85 dark:bg-neutral-950/85 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800">
+          {/* Липкая шапка навигации с группами */}
+          <div className="sticky top-24 z-30 bg-neutral-50 dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-800">
             <div className="flex items-center gap-3 px-6 pt-3 pb-2.5">
               <div
                 ref={chipsRef}
                 className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-1 px-1"
               >
-                {CASES.map((c, i) => {
-                  const isActive = i === active;
+                {GROUPS.map((g) => {
+                  const isGroupActive = g.id === activeGroup.id;
                   return (
                     <button
-                      key={c.id}
-                      onClick={() => goToMobile(i)}
-                      className={`shrink-0 flex items-center gap-2 px-3 py-1.5 border text-xs transition-colors duration-300 ${isActive
-                          ? "bg-neutral-900 dark:bg-white text-white dark:text-black border-neutral-900 dark:border-white"
+                      key={g.id}
+                      type="button"
+                      onClick={() => goToMobile(g.caseIndices[0])}
+                      className={`shrink-0 flex items-center gap-2 px-3 py-1.5 border text-xs transition-colors duration-300 rounded-md ${
+                        isGroupActive
+                          ? "bg-neutral-900 dark:bg-white text-white dark:text-black border-neutral-900 dark:border-white font-medium"
                           : "border-neutral-300 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400"
-                        }`}
+                      }`}
                     >
-                      <span className="font-mono opacity-60">{c.roman}</span>
-                      <span className="font-medium whitespace-nowrap">{c.short}</span>
+                      <span className="font-mono opacity-60">[{g.num}]</span>
+                      <span className="whitespace-nowrap">{g.title}</span>
+                      <span className="text-[10px] opacity-70 font-mono">
+                        ({g.caseIndices.length})
+                      </span>
                     </button>
                   );
                 })}
@@ -527,30 +929,36 @@ export default function CasesPage() {
 
             {/* Прогресс */}
             <div className="h-px bg-neutral-200 dark:bg-neutral-800">
-              <motion.div
-                className="h-px bg-blue-600 dark:bg-blue-400"
-                animate={{ width: `${((active + 1) / CASES.length) * 100}%` }}
-                transition={{ type: "spring", stiffness: 260, damping: 30 }}
+              <div
+                className="h-px bg-blue-600 dark:bg-blue-400 transition-[width] duration-300 ease-out"
+                style={{ width: `${((active + 1) / CASES.length) * 100}%` }}
               />
             </div>
           </div>
 
-          {/* Карусель: нативный scroll-snap */}
+          {/* Карусель: нативный scroll-snap со всеми 7 кейсами */}
           <div
             ref={railRef}
             onScroll={syncFromRail}
             className="flex items-stretch gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar px-6 py-8"
           >
-            {CASES.map((c) => (
-              <div key={c.id} className="snap-center shrink-0 w-[calc(100vw-4.5rem)] max-w-lg">
-                <CaseDetail c={c} onOpenGallery={handleOpenGallery} />
+            {CASES.map((c, idx) => (
+              <div
+                key={c.id}
+                className="snap-center shrink-0 w-[calc(100vw-4.5rem)] max-w-lg [content-visibility:auto] [contain-intrinsic-size:auto_640px]"
+              >
+                <CaseDetail
+                  c={c}
+                  onOpenGallery={handleOpenGallery}
+                  eager={idx === 0}
+                />
               </div>
             ))}
           </div>
 
           <p className="px-6 pb-12 md:pb-16 text-xs font-mono text-neutral-400 flex items-center gap-2">
             <ArrowRight className="w-3.5 h-3.5" />
-            Листайте вбок - следующий кейс
+            Листайте вбок для перехода между всеми проектами
           </p>
         </div>
 
@@ -579,6 +987,7 @@ export default function CasesPage() {
                     {photoIndex + 1} из {galleryCase.gallery.length}
                   </span>
                   <button
+                    type="button"
                     onClick={handleCloseGallery}
                     className="p-2 text-neutral-400 hover:text-white bg-neutral-900 border border-neutral-800 hover:border-neutral-600 rounded-md transition-colors cursor-pointer"
                     aria-label="Закрыть галерею"
@@ -592,6 +1001,7 @@ export default function CasesPage() {
               <div className="relative flex-1 flex items-center justify-center my-4 overflow-hidden">
                 {/* Left Arrow */}
                 <button
+                  type="button"
                   onClick={handlePrevPhoto}
                   className="absolute left-2 sm:left-4 z-10 p-3 text-white bg-neutral-900/80 hover:bg-blue-600 border border-neutral-700 rounded-full transition-all shadow-lg cursor-pointer"
                   aria-label="Предыдущее фото"
@@ -612,6 +1022,7 @@ export default function CasesPage() {
                     <img
                       src={galleryCase.gallery[photoIndex].url}
                       alt={galleryCase.gallery[photoIndex].title}
+                      decoding="async"
                       className="max-w-full max-h-[58vh] object-contain rounded-md shadow-2xl border border-neutral-800"
                     />
 
@@ -629,6 +1040,7 @@ export default function CasesPage() {
 
                 {/* Right Arrow */}
                 <button
+                  type="button"
                   onClick={handleNextPhoto}
                   className="absolute right-2 sm:right-4 z-10 p-3 text-white bg-neutral-900/80 hover:bg-blue-600 border border-neutral-700 rounded-full transition-all shadow-lg cursor-pointer"
                   aria-label="Следующее фото"
@@ -644,15 +1056,19 @@ export default function CasesPage() {
                   return (
                     <button
                       key={idx}
+                      type="button"
                       onClick={() => setPhotoIndex(idx)}
-                      className={`relative w-16 sm:w-20 h-10 sm:h-12 rounded overflow-hidden border transition-all shrink-0 cursor-pointer ${isActive
+                      className={`relative w-16 sm:w-20 h-10 sm:h-12 rounded overflow-hidden border transition-all shrink-0 cursor-pointer ${
+                        isActive
                           ? "border-blue-500 scale-105 shadow-md"
                           : "border-neutral-800 opacity-50 hover:opacity-100"
-                        }`}
+                      }`}
                     >
                       <img
                         src={item.url}
                         alt={item.title}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover"
                       />
                     </button>
@@ -662,7 +1078,6 @@ export default function CasesPage() {
             </motion.div>
           )}
         </AnimatePresence>
-
       </div>
     </MotionConfig>
   );
