@@ -428,7 +428,7 @@ export default function Header() {
         </defs>
       </svg>
 
-      <header className="fixed top-0 left-0 right-0 z-50 h-24">
+      <header className="site-header fixed top-0 left-0 right-0 z-50 h-24">
         {/* Клик мимо меню — закрыть */}
         <AnimatePresence>
           {isOpen && (

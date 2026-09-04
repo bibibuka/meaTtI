@@ -9,9 +9,10 @@ import {
 } from "react";
 import dynamic from "next/dynamic";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowUpRight, ChevronRight, Layers, Cpu, Award, MousePointerClick } from "lucide-react";
+import { ChevronRight, Layers, Cpu, Award, MousePointerClick } from "lucide-react";
 import WaveRule from "@/components/WaveRule";
 import { TransitionLink } from "@/context/TransitionContext";
+import ServicesSection from "@/components/ServicesSection";
 
 const BLOB_FLOOR_LIFT = 20;
 
@@ -204,38 +205,7 @@ const WinDesktop = dynamic(() => import("@/components/WinDesktop"), {
   loading: () => <div className="h-[100svh] w-full bg-gradient-to-b from-[#1a4f8a] to-[#a9dbf5]" aria-hidden />,
 });
 
-const SERVICES = [
-  {
-    id: "sajty",
-    title: "Веб-сайты",
-    desc: "Сайты под любую задачу и любое пожелание: от одной страницы до большого сервиса. Витрина, продажи, заявки, нестандартный функционал - без шаблона «как у всех». Если сами не знаете, какой именно сайт нужен, подскажем формат.",
-    color: "from-purple-600 to-indigo-600",
-    bg: "bg-purple-500/10",
-    border: "group-hover:border-blue-500/30 dark:group-hover:border-blue-400/30",
-    badge: "WEB",
-    price: "от 40 000 ₽"
-  },
-  {
-    id: "boty",
-    title: "Чат-боты и\nМини‑приложения",
-    desc: "Любые боты и мини-приложения: консультации, запись, продажи, оплата, рассылки - в Telegram, ВКонтакте и MAX. От простого автоответа до умного ассистента и приложения внутри мессенджера. Опишете, как должно отвечать и что уметь - сделаем.",
-    color: "from-blue-600 to-cyan-600",
-    bg: "bg-blue-500/10",
-    border: "group-hover:border-blue-500/30 dark:group-hover:border-blue-400/30",
-    badge: "BOT",
-    price: "от 50 000 ₽"
-  },
-  {
-    id: "avtomatizacija",
-    title: "Автоматизация и Интеграции",
-    desc: "Избавляем от рутины и связываем ваши сервисы в единую систему. Разрабатываем скрипты для парсинга данных, настраиваем сквозные API-интеграции между CRM, складом и мессенджерами, автоматизируем отчеты в Excel и Google Таблицах и многое другое.",
-    color: "from-teal-600 to-emerald-600",
-    bg: "bg-teal-500/10",
-    border: "group-hover:border-blue-500/30 dark:group-hover:border-blue-400/30",
-    badge: "AUTO",
-    price: "от 25 000 ₽"
-  }
-];
+
 
 const ADVANTAGES = [
   {
@@ -402,55 +372,7 @@ export default function HomePage() {
       </section>
 
       {/* 2. SERVICES GRID SECTION */}
-      <section id="services" className="py-24 px-6 max-w-7xl mx-auto w-full">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
-          <div className="w-fit">
-            <WaveRule className="mb-4" />
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight text-foreground">
-              ЧЕМ МЫ МОЖЕМ ПОМОЧЬ
-            </h2>
-          </div>
-          <p className="text-neutral-500 max-w-md text-sm md:text-base">
-            Полный спектр IT-услуг от разработки сайтов до сложного продвижения и создания умных <br />
-            Telegram-интерфейсов.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {SERVICES.map((s) => (
-            <TransitionLink key={s.id} href={`/uslugi#${s.id}`} className="group relative">
-              <div
-                className={`h-full border border-neutral-200 dark:border-neutral-800 rounded-3xl p-8 flex flex-col justify-between overflow-hidden bg-white dark:bg-neutral-900 transition-all duration-300 group-hover:shadow-lg ${s.border}`}
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <span className="text-xs font-bold px-3 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 group-hover:bg-neutral-200 dark:group-hover:bg-neutral-750 rounded-full tracking-wider transition-all duration-300">
-                      {s.badge}
-                    </span>
-                    <span className="w-10 h-10 rounded-full bg-neutral-100 dark:bg-neutral-800 group-hover:bg-neutral-900 group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-black flex items-center justify-center transition-all duration-300">
-                      <ArrowUpRight className="w-5 h-5" />
-                    </span>
-                  </div>
-                  <h3 className="text-2xl font-black text-foreground mb-4 md:min-h-[4rem] whitespace-pre-line">
-                    {s.title}
-                  </h3>
-                  <p className="text-sm text-neutral-500 leading-relaxed mb-8">
-                    {s.desc}
-                  </p>
-                </div>
-                <div className="pt-4 border-t border-neutral-100 dark:border-neutral-800 group-hover:border-neutral-200 dark:group-hover:border-neutral-700 flex items-center justify-between transition-colors duration-300">
-                  <span className="text-xs font-medium px-3 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 group-hover:bg-neutral-200 dark:group-hover:bg-neutral-750 transition-all duration-300">
-                    Узнать подробнее
-                  </span>
-                  <span className="text-sm font-bold px-3 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 group-hover:bg-neutral-200 dark:group-hover:bg-neutral-750 transition-all duration-300">
-                    {s.price}
-                  </span>
-                </div>
-              </div>
-            </TransitionLink>
-          ))}
-        </div>
-      </section>
+      <ServicesSection />
 
       {/* 3. WHO IS MAETTI */}
       <section className="py-24 px-6 bg-neutral-50 dark:bg-neutral-950 border-y border-neutral-200 dark:border-neutral-900">

@@ -1,807 +1,493 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+/* =========================================================================
+   maeTtI OS — интерактивный рабочий стол на главной.
+   Оболочка: панель сверху, ярлыки, виджеты, окна, док, лаунчер, Spotlight,
+   контекстное меню. Весь внешний вид задаётся токенами темы (desk-themes.ts),
+   поэтому светлая/тёмная палитры одинаково контрастны по построению.
+   ========================================================================= */
+
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import {
-  ArrowUpRight,
-  BatteryFull,
+  ArrowUp,
   Briefcase,
-  FolderOpen,
+  Calculator,
+  Calendar,
+  Clock,
+  FileText,
   Gamepad2,
-  Globe,
+  Flame,
   Info,
+  Layers,
   Mail,
+  Maximize2,
   Minus,
+  Music,
+  Pause,
+  Play,
   Rocket,
-  SignalHigh,
-  Sparkles,
+  Search,
   Square,
-  Trash2,
-  TriangleAlert,
+  Terminal,
   Users,
-  Wifi,
+  Volume2,
+  VolumeX,
   X,
+  type LucideIcon,
 } from "lucide-react";
+import { THEMES, THEME_ORDER, THEME_SWATCH, type WallpaperTheme } from "./desk-themes";
+import { Dragon, InfoApp, ProjectCalculatorApp, SiteIframe, Snake, sounds, TerminalApp } from "./win-apps";
 
-/* Экран «чужого устройства» в самом низу главной. Первые четыре ярлыка ведут
-   туда же, куда вели капли ртутного куба; остальные открывают окна прямо здесь.
-   Широкий экран получает рабочий стол винды, узкий — домашний экран айфона:
-    иллюзия должна совпадать с тем, с чего человек смотрит. Общего у оболочек
-    всё, кроме хрома, — ярлыки, тексты ошибок и сами игры.
-   Пока секция занимает экран целиком, шапка и водолаз уезжают — за это отвечает
-   класс .desk-on на <html> (правила в globals.css). */
+/* ----------------------------- ПРИЛОЖЕНИЯ ----------------------------- */
 
-type Item = {
+interface DesktopApp {
   id: string;
   label: string;
   href?: string;
-  Icon: React.ComponentType<{ className?: string }>;
+  glyph: LucideIcon;
   tint: string;
-};
-
-/* В lucide этой версии нет дракона, поэтому силуэт рисуем сами — тот же
-   интерфейс (className), что у lucide-иконок, чтобы жить в общем списке. */
-function DragonIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
-      <polygon points="5.5,13.5 0.8,13.2 2,17.4 5.5,15.5" />
-      <polygon points="8,11 10.5,3.5 13.5,10.5" />
-      <polygon points="7.5,10.2 8.5,8.2 9.8,10" />
-      <polygon points="10,10 11.3,8.4 12.5,10.4" />
-      <ellipse cx="10" cy="14" rx="5.5" ry="4.2" />
-      <circle cx="15.5" cy="9.5" r="3.2" />
-      <rect x="17.5" y="8.4" width="4.2" height="2.6" rx="1" />
-      <polygon points="14.2,7.6 16,4.4 16.8,7.8" />
-    </svg>
-  );
+  description: string;
 }
 
-const ICONS: Item[] = [
-  { id: "info", label: "Инфо", Icon: Info, tint: "from-blue-500 to-indigo-600" },
-  { id: "uslugi", label: "Услуги", href: "/uslugi", Icon: Briefcase, tint: "from-sky-400 to-blue-600" },
-  { id: "keysy", label: "Кейсы", href: "/keysy", Icon: Rocket, tint: "from-violet-400 to-indigo-600" },
-  { id: "team", label: "Команда", href: "/team", Icon: Users, tint: "from-emerald-400 to-teal-600" },
-  { id: "contacts", label: "Контакты", href: "/contacts", Icon: Mail, tint: "from-amber-400 to-orange-600" },
-  { id: "snake", label: "Змейка", Icon: Gamepad2, tint: "from-lime-400 to-green-600" },
-  { id: "dragon", label: "Дракончик", Icon: DragonIcon, tint: "from-orange-400 to-red-600" },
+const APPS: DesktopApp[] = [
+  { id: "info", label: "Инфо", glyph: Info, tint: "#3b82f6", description: "О системе maeTtI OS" },
+  { id: "uslugi", label: "Услуги", href: "/uslugi", glyph: Briefcase, tint: "#0ea5e9", description: "Разработка, дизайн, digital" },
+  { id: "keysy", label: "Кейсы", href: "/keysy", glyph: Rocket, tint: "#d97706", description: "Наши проекты и результаты" },
+  { id: "team", label: "Команда", href: "/team", glyph: Users, tint: "#10b981", description: "Инженеры и разработчики" },
+  { id: "contacts", label: "Контакты", href: "/contacts", glyph: Mail, tint: "#f43f5e", description: "Связаться с нами" },
+  { id: "calc", label: "Калькулятор", glyph: Calculator, tint: "#14b8a6", description: "Расчёт бюджета проекта" },
+  { id: "terminal", label: "Терминал", glyph: Terminal, tint: "#8b5cf6", description: "Интерактивная консоль" },
+  { id: "snake", label: "Змейка", glyph: Gamepad2, tint: "#22c55e", description: "Ретро-аркада на Canvas" },
+  { id: "dragon", label: "Дракончик", glyph: Flame, tint: "#ef4444", description: "Аркада Flappy Dragon" },
 ];
 
 const TITLES: Record<string, string> = {
-  info: "О проекте",
-  bin: "Корзина",
-  explorer: "explorer.exe",
-  snake: "Змейка",
-  dragon: "Дракончик",
-  uslugi: "Услуги",
+  info: "О системе",
+  uslugi: "Услуги студии",
   keysy: "Кейсы",
   team: "Команда",
   contacts: "Контакты",
+  calc: "Калькулятор проекта",
+  terminal: "maeTtI Shell",
+  snake: "Змейка",
+  dragon: "Дракончик",
 };
 
-/* Страницы сайта открываются не переходом, а окном прямо на столе. */
-const SITE: Record<string, string> = Object.fromEntries(
-  ICONS.filter((it) => it.href).map((it) => [it.id, it.href!]),
-);
-
-/* На GitHub Pages сайт лежит в подпапке /meaTtI (basePath в next.config).
-   next/link подставляет её сам, но адресная строка окна и src айфрейма — это
-   сырые строки, им подпапку дописываем руками. Локально значение пустое. */
-const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-
-/* На айфоне те же две сломанные иконки зовутся и ругаются по-своему. */
-const IOS: Record<string, { label: string; head: string; body: string }> = {
-  info: {
-    label: "Инфо",
-    head: "Интерактивная среда",
-    body: "Демонстрация возможностей maeTtI",
-  },
-  bin: {
-    label: "Корзина",
-    head: "Не удалось открыть «Корзина»",
-    body: "Объект повреждён и не может быть прочитан.",
-  },
-  explorer: {
-    label: "Файлы",
-    head: "Не удалось открыть «Файлы»",
-    body: "Приложение недоступно. Повторите попытку позже.",
-  },
+const SIZES: Record<string, [number, number]> = {
+  uslugi: [880, 620],
+  keysy: [880, 620],
+  team: [880, 620],
+  contacts: [880, 620],
+  calc: [800, 600],
+  terminal: [680, 440],
+  snake: [340, 500],
+  dragon: [340, 560],
+  info: [420, 480],
 };
 
-const ERRORS: Record<string, { head: string; body: string }> = {
-  bin: {
-    head: "Не удалось открыть «Корзина»",
-    body: "Ошибка 0x80070570: файл или папка повреждены. Чтение невозможно.",
-  },
-  explorer: {
-    head: "Программа выполнила недопустимую операцию и будет закрыта",
-    body: "Инструкция по адресу 0x00ma3tt1 обратилась к памяти по адресу 0x00000000. Память не может быть «read».",
-  },
-};
+const tileStyle = (tint: string): CSSProperties => ({
+  background: `color-mix(in srgb, ${tint} 16%, transparent)`,
+  borderColor: `color-mix(in srgb, ${tint} 40%, transparent)`,
+  color: tint,
+});
 
-/* Ярлык-ссылка и ярлык-кнопка отличаются только тегом, поэтому один враппер. */
-function Hit({
-  href,
-  onClick,
-  className,
-  label,
-  children,
-}: {
-  href?: string;
-  onClick: (e: React.MouseEvent) => void;
-  className: string;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return href ? (
-    <Link href={href} onClick={onClick} className={className} aria-label={label}>
-      {children}
-    </Link>
-  ) : (
-    <button type="button" onClick={onClick} className={className} aria-label={label}>
-      {children}
+/* ----------------------------- ЯРЛЫК ПРИЛОЖЕНИЯ ----------------------------- */
+
+function AppTile({ app, onOpen, selected }: { app: DesktopApp; onOpen: () => void; selected: boolean }) {
+  const Glyph = app.glyph;
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={app.label}
+      className="group flex w-[5.5rem] flex-col items-center gap-1.5 rounded-2xl p-1 text-center outline-none transition-transform duration-150 select-none hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-[var(--desk-accent)] cursor-pointer sm:w-24"
+    >
+      <span
+        style={tileStyle(app.tint)}
+        className={`grid h-12 w-12 place-items-center rounded-2xl border shadow-sm backdrop-blur-sm transition-all duration-150 group-hover:shadow-md group-active:scale-90 sm:h-14 sm:w-14 ${
+          selected ? "ring-2 ring-[var(--desk-accent)] ring-offset-2 ring-offset-transparent" : ""
+        }`}
+      >
+        <Glyph className="h-6 w-6 stroke-[1.75] sm:h-7 sm:w-7" />
+      </span>
+      <span
+        className={`w-full line-clamp-2 px-1 text-[0.6875rem] font-medium leading-tight transition-colors sm:text-xs ${
+          selected
+            ? "rounded-md bg-[var(--desk-accent)] px-1.5 py-0.5 font-bold text-[var(--desk-accent-fg)] shadow-xs"
+            : "text-[var(--desk-fg)]"
+        }`}
+      >
+        {app.label}
+      </span>
     </button>
   );
 }
 
-/* ---------------------------------- окно ---------------------------------- */
+/* ----------------------------- КНОПКА-СВЕТОФОР ----------------------------- */
 
-function TBtn({
-  onClick,
-  label,
-  danger,
-  children,
-}: {
-  onClick: () => void;
-  label: string;
-  danger?: boolean;
-  children: React.ReactNode;
-}) {
+function LightBtn({ onClick, type, label }: { onClick: () => void; type: "close" | "min" | "max"; label: string }) {
+  const bg = type === "close" ? "#ff5f57" : type === "min" ? "#febc2e" : "#28c840";
   return (
     <button
       type="button"
       aria-label={label}
-      onClick={onClick}
-      className={`grid h-5 w-5 place-items-center rounded border border-white/40 text-white transition-colors ${
-        danger ? "bg-red-500/90 hover:bg-red-500" : "bg-white/20 hover:bg-white/35"
-      }`}
+      title={label}
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      style={{ backgroundColor: bg }}
+      className="group/l relative grid h-3.5 w-3.5 place-items-center rounded-full border border-black/10 text-black/60 shadow-sm transition-transform duration-100 hover:brightness-110 active:scale-90 cursor-pointer after:absolute after:-inset-3 sm:after:hidden"
     >
-      {children}
+      <span className="opacity-0 transition-opacity group-hover/l:opacity-80">
+        {type === "close" && <X className="h-2 w-2 stroke-[3.5]" />}
+        {type === "min" && <Minus className="h-2 w-2 stroke-[3.5]" />}
+        {type === "max" && <Square className="h-1.5 w-1.5 stroke-[3.5]" />}
+      </span>
     </button>
   );
 }
+
+/* ----------------------------- ОКНО ----------------------------- */
 
 function Win({
   title,
-  dialog,
   size,
   offset,
   z,
-  onFocus,
+  min,
+  focused,
+  phone,
+  dialog,
+  noMaximize,
+  maximized,
+  onToggleMax,
   onClose,
   onMin,
+  onFocus,
   children,
 }: {
   title: string;
-  dialog?: boolean;
-  /* окну со страницей размер задаём мы: iframe сам по себе высоты не имеет */
-  size?: [number, number];
+  size: [number, number];
   offset: number;
   z: number;
-  onFocus: () => void;
+  min: boolean;
+  focused: boolean;
+  phone: boolean;
+  dialog?: boolean;
+  noMaximize?: boolean;
+  maximized?: boolean;
+  onToggleMax?: () => void;
   onClose: () => void;
   onMin: () => void;
+  onFocus: () => void;
   children: React.ReactNode;
 }) {
-  const [p, setP] = useState({ x: offset * 22, y: offset * 22 });
-  const [max, setMax] = useState(false);
+  const [p, setP] = useState({ x: offset * 26, y: offset * 20 });
+  const [internalMax, setInternalMax] = useState(false);
+  const max = maximized !== undefined ? maximized : internalMax;
+  const toggleMax = () => {
+    sounds.playGlassClick();
+    if (onToggleMax) onToggleMax();
+    else setInternalMax((m) => !m);
+  };
+  const [dragging, setDragging] = useState(false);
+  const winRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (dragging) {
+      document.body.classList.add("desk-dragging");
+    } else {
+      document.body.classList.remove("desk-dragging");
+    }
+    return () => {
+      document.body.classList.remove("desk-dragging");
+    };
+  }, [dragging]);
 
   const grab = (e: React.PointerEvent) => {
     onFocus();
-    if (max || e.button !== 0) return;
+    if (phone || max || e.button !== 0) return;
+    const target = e.target as HTMLElement | null;
+    if (target?.closest("button, input, textarea, a")) return;
+
     const sx = e.clientX;
     const sy = e.clientY;
     const p0 = p;
-    const move = (ev: PointerEvent) => setP({ x: p0.x + ev.clientX - sx, y: p0.y + ev.clientY - sy });
+    let moved = false;
+
+    const move = (ev: PointerEvent) => {
+      const dx = ev.clientX - sx;
+      const dy = ev.clientY - sy;
+      if (!moved && Math.hypot(dx, dy) > 4) {
+        moved = true;
+        setDragging(true);
+      }
+      if (!moved) return;
+
+      const el = winRef.current;
+      const h = el?.offsetHeight ?? size[1];
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      // шапка не уезжает под верхнюю панель, низ — под док
+      const loY = 52 - (vh / 2 - h / 2);
+      const hiY = vh - 88 - (vh / 2 + h / 2);
+      // по бокам остаётся минимум 90px окна
+      const loX = -(vw / 2) + 90;
+      const hiX = vw / 2 - 90;
+
+      setP({
+        x: Math.min(Math.max(p0.x + dx, loX), Math.max(loX, hiX)),
+        y: Math.min(Math.max(p0.y + dy, loY), Math.max(loY, hiY)),
+      });
+    };
+    const up = () => {
+      setDragging(false);
+      window.removeEventListener("pointermove", move);
+    };
     window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", () => window.removeEventListener("pointermove", move), {
-      once: true,
-    });
+    window.addEventListener("pointerup", up, { once: true });
   };
+
+  const geometry: CSSProperties = max
+    ? {
+        left: "50%",
+        top: "50%",
+        width: "100%",
+        height: "100%",
+        transform: min ? "translate(-50%, calc(-50% + 48px)) scale(0.92)" : "translate(-50%, -50%)",
+      }
+    : phone
+      ? {
+          top: "3.25rem",
+          bottom: "5.25rem",
+          left: "0.5rem",
+          right: "0.5rem",
+          transform: min ? "translateY(48px) scale(0.92)" : undefined,
+        }
+      : {
+          left: "50%",
+          top: "calc(50% + 0.5rem)",
+          width: `min(${size[0]}px, calc(100vw - 2rem))`,
+          height: `min(${size[1]}px, calc(100svh - 9rem))`,
+          transform: min
+            ? `translate(calc(-50% + ${p.x}px), calc(-50% + ${p.y + 48}px)) scale(0.92)`
+            : `translate(calc(-50% + ${p.x}px), calc(-50% + ${p.y}px))`,
+        };
 
   return (
     <div
+      ref={winRef}
       onPointerDown={onFocus}
       style={{
         zIndex: z,
-        ...(max
-          ? { inset: 8 }
-          : {
-              left: "50%",
-              top: "50%",
-              transform: `translate(calc(-50% + ${p.x}px), calc(-50% + ${p.y}px))`,
-              width: size ? `${size[0] / 16}rem` : undefined,
-              height: size ? `${size[1] / 16}rem` : undefined,
-              // на низком экране окно не должно вылезать за стол — тело прокрутится само
-              maxWidth: "calc(100% - 1rem)",
-              maxHeight: "calc(100% - 4rem)",
-            }),
+        ...geometry,
+        opacity: min ? 0 : 1,
+        pointerEvents: min ? "none" : "auto",
+        borderColor: focused && !max ? "color-mix(in srgb, var(--desk-accent) 55%, var(--desk-border))" : undefined,
+        transition: dragging
+          ? "none"
+          : "width 240ms cubic-bezier(0.2, 0.8, 0.25, 1), height 240ms cubic-bezier(0.2, 0.8, 0.25, 1), transform 240ms cubic-bezier(0.2, 0.8, 0.25, 1), opacity 180ms ease-out, border-color 240ms ease, border-radius 240ms ease",
       }}
-      className="absolute flex flex-col overflow-hidden rounded-lg border border-white/50 bg-[#ece9d8] shadow-[0_18px_50px_rgba(0,0,0,.45)]"
+      className={`desk-fade absolute flex flex-col overflow-hidden select-none ${
+        max
+          ? "rounded-none border-0 shadow-2xl bg-[var(--desk-surface-opaque)]"
+          : "rounded-xl border border-[var(--desk-border)] shadow-[var(--desk-shadow)] bg-[var(--desk-surface)] backdrop-blur-md"
+      } text-[var(--desk-fg)]`}
     >
       <div
         onPointerDown={grab}
-        className="flex cursor-grab touch-none items-center gap-2 bg-gradient-to-b from-[#4a90e2] to-[#1a56c4] px-2 py-1.5 active:cursor-grabbing"
+        onDoubleClick={() => {
+          if (!dialog && !phone && !noMaximize) {
+            toggleMax();
+          }
+        }}
+        className={`flex h-10 shrink-0 touch-none items-center justify-between border-b border-[var(--desk-border)] px-3.5 ${
+          dragging ? "cursor-grabbing" : phone || max ? "" : "cursor-grab"
+        } select-none`}
       >
-        <span className="truncate text-[0.8125rem] font-bold text-white [text-shadow:0_1px_1px_rgba(0,0,0,.45)]">
-          {title}
-        </span>
-        <span className="ml-auto flex shrink-0 gap-1">
+        <span onPointerDown={(e) => e.stopPropagation()} className="flex shrink-0 items-center gap-2">
+          <LightBtn onClick={onClose} type="close" label="Закрыть" />
           {!dialog && (
             <>
-              <TBtn onClick={onMin} label="Свернуть">
-                <Minus className="h-3 w-3" />
-              </TBtn>
-              <TBtn onClick={() => setMax((m) => !m)} label="Развернуть">
-                <Square className="h-2.5 w-2.5" />
-              </TBtn>
+              <LightBtn onClick={onMin} type="min" label="Свернуть" />
+              {!noMaximize && <LightBtn onClick={toggleMax} type="max" label={max ? "Восстановить" : "Развернуть"} />}
             </>
           )}
-          <TBtn onClick={onClose} label="Закрыть" danger>
-            <X className="h-3 w-3" />
-          </TBtn>
         </span>
+
+        <span className={`min-w-0 flex-1 truncate px-2 text-center text-xs font-bold tracking-wide ${focused ? "" : "opacity-60"}`}>{title}</span>
+
+        {/* Распорка для симметричного центрирования заголовка */}
+        <span className="w-14 shrink-0" />
       </div>
-      <div className="min-h-0 flex-1 overflow-auto">{children}</div>
+
+      <div className="desk-scroll relative min-h-0 flex-1 overflow-auto">
+        {dragging && <div className="absolute inset-0 z-50 pointer-events-none" />}
+        {children}
+      </div>
     </div>
   );
 }
 
-/* ----------------------------- страница сайта ----------------------------- */
+/* ----------------------------- СОДЕРЖИМОЕ ВИДЖЕТОВ ----------------------------- */
 
-/* Настоящая страница сайта внутри окна: адресная строка сверху, под ней iframe.
-   Обвязку сайта в нём прячет класс .embed (скрипт в layout.tsx), так что в окне
-   остаётся только контент и скроллит его сам iframe. Одна на стол и айфон. */
-function Site({ id }: { id: string }) {
-  // Домен показываем настоящий: на проде свой, локально — localhost. Компонент
-  // живёт только внутри стола (dynamic ssr:false), так что location уже есть.
-  const host = location.host;
-
+function WidgetsContent({
+  clock,
+  dateStr,
+  noteText,
+  updateNote,
+  isPlayingSound,
+  toggleSound,
+  onOpenCalc,
+}: {
+  clock: string;
+  dateStr: string;
+  noteText: string;
+  updateNote: (t: string) => void;
+  isPlayingSound: boolean;
+  toggleSound: () => void;
+  onOpenCalc: () => void;
+}) {
   return (
-    <div className="flex h-full w-full flex-col bg-white">
-      <div className="flex shrink-0 items-center gap-2 border-b border-black/15 bg-neutral-100 px-2 py-1.5">
-        <Globe className="h-3.5 w-3.5 shrink-0 text-neutral-500" />
-        <span className="min-w-0 flex-1 truncate rounded border border-neutral-300 bg-white px-2 py-0.5 text-[0.75rem] text-neutral-600">
-          {host}
-          {BASE}
-          {SITE[id]}
-        </span>
-        <Link
-          href={SITE[id]}
-          title="Открыть по-настоящему"
-          aria-label="Открыть по-настоящему"
-          className="grid h-6 w-6 shrink-0 place-items-center rounded border border-neutral-300 bg-white text-neutral-600 hover:bg-neutral-50"
-        >
-          <ArrowUpRight className="h-3.5 w-3.5" />
-        </Link>
+    <>
+      <div className="w-full rounded-2xl border border-[var(--desk-border)] bg-[var(--desk-surface)] p-4 shadow-lg backdrop-blur-md">
+        <span className="text-[0.625rem] font-bold uppercase tracking-widest text-[var(--desk-muted)]">Местное время</span>
+        <div className="mt-0.5 font-mono text-4xl font-black tabular-nums tracking-tight text-[var(--desk-fg)]">{clock}</div>
+        <div className="mt-2 flex items-center gap-1.5 border-t border-[var(--desk-border)] pt-2 text-xs font-medium text-[var(--desk-muted)]">
+          <Calendar className="h-3.5 w-3.5" />
+          <span className="first-letter:uppercase">{dateStr}</span>
+        </div>
       </div>
-      <iframe src={BASE + SITE[id]} title={TITLES[id]} className="min-h-0 w-full flex-1 border-0" />
-    </div>
-  );
-}
 
-/* --------------------------------- змейка --------------------------------- */
-
-const N = 20;
-const CELL = 14;
-const SIZE = N * CELL;
-
-const KEYS: Record<string, [number, number]> = {
-  ArrowUp: [0, -1],
-  ArrowDown: [0, 1],
-  ArrowLeft: [-1, 0],
-  ArrowRight: [1, 0],
-  w: [0, -1],
-  s: [0, 1],
-  a: [-1, 0],
-  d: [1, 0],
-  ц: [0, -1],
-  ы: [0, 1],
-  ф: [-1, 0],
-  в: [1, 0],
-};
-
-// «Заново» — это ремонт партии с нуля, поэтому просто перемонтируем доску по key.
-// full — карта тянется на весь экран (айфон); без него — фиксированный
-// размер для плавающего окна на столе.
-function Snake({ full }: { full?: boolean }) {
-  const [run, setRun] = useState(0);
-  return <Board key={run} restart={() => setRun((r) => r + 1)} full={full} />;
-}
-
-function Board({ restart, full }: { restart: () => void; full?: boolean }) {
-  const cv = useRef<HTMLCanvasElement>(null);
-  const turn = useRef<(x: number, y: number) => void>(() => {});
-  const [score, setScore] = useState(0);
-  const [over, setOver] = useState(false);
-
-  useEffect(() => {
-    const c = cv.current!;
-    const ctx = c.getContext("2d")!;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    c.width = SIZE * dpr;
-    c.height = SIZE * dpr;
-    ctx.scale(dpr, dpr);
-
-    const snake = [
-      { x: 9, y: 10 },
-      { x: 8, y: 10 },
-      { x: 7, y: 10 },
-    ];
-    let dir = { x: 1, y: 0 };
-    let next = dir;
-
-    const spawn = () => {
-      let f = { x: 0, y: 0 };
-      do {
-        f = { x: Math.floor(Math.random() * N), y: Math.floor(Math.random() * N) };
-      } while (snake.some((s) => s.x === f.x && s.y === f.y));
-      return f;
-    };
-    let food = spawn();
-
-    const draw = () => {
-      ctx.fillStyle = "#0f172a";
-      ctx.fillRect(0, 0, SIZE, SIZE);
-      ctx.fillStyle = "#ef4444";
-      ctx.fillRect(food.x * CELL + 3, food.y * CELL + 3, CELL - 6, CELL - 6);
-      snake.forEach((s, i) => {
-        ctx.fillStyle = i ? "#22c55e" : "#86efac";
-        ctx.fillRect(s.x * CELL + 1, s.y * CELL + 1, CELL - 2, CELL - 2);
-      });
-    };
-    draw();
-
-    const tick = setInterval(() => {
-      dir = next;
-      const h = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
-      if (h.x < 0 || h.y < 0 || h.x >= N || h.y >= N || snake.some((s) => s.x === h.x && s.y === h.y)) {
-        clearInterval(tick);
-        setOver(true);
-        return;
-      }
-      snake.unshift(h);
-      if (h.x === food.x && h.y === food.y) {
-        setScore((v) => v + 1);
-        food = spawn();
-      } else {
-        snake.pop();
-      }
-      draw();
-    }, 120);
-
-    // Разворот на 180° запрещён, и сверяемся с уже применённым dir, а не с next:
-    // иначе два нажатия внутри одного тика складываются в разворот.
-    turn.current = (x, y) => {
-      if (x !== -dir.x || y !== -dir.y) next = { x, y };
-    };
-
-    const onKey = (e: KeyboardEvent) => {
-      // Стрелки перехватываем только пока стол на экране, иначе игра съест
-      // прокрутку страницы на всё время, что окно открыто.
-      if (!document.documentElement.classList.contains("desk-on")) return;
-      const k = KEYS[e.key] ?? KEYS[e.key.toLowerCase()];
-      if (!k) return;
-      e.preventDefault();
-      turn.current(k[0], k[1]);
-    };
-    window.addEventListener("keydown", onKey);
-
-    return () => {
-      clearInterval(tick);
-      window.removeEventListener("keydown", onKey);
-    };
-  }, []);
-
-  const pad = (x: number, y: number, label: string, glyph: string) => (
-    <button
-      type="button"
-      aria-label={label}
-      onClick={() => turn.current(x, y)}
-      className="h-10 touch-none rounded bg-neutral-300 text-sm font-bold text-neutral-700 active:bg-neutral-400"
-    >
-      {glyph}
-    </button>
-  );
-
-  return (
-    <div className={full ? "flex h-full flex-col p-3" : "p-3"}>
-      <div className="mb-2 flex items-center justify-between text-[0.75rem] font-bold text-neutral-700">
-        <span>Счёт: {score}</span>
+      <div className="w-full rounded-2xl border border-[var(--desk-border)] bg-[var(--desk-surface)] p-4 shadow-lg backdrop-blur-md">
+        <div className="flex items-center gap-2.5">
+          <span style={tileStyle("#14b8a6")} className="grid h-8 w-8 place-items-center rounded-xl border">
+            <Calculator className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <div className="text-xs font-bold text-[var(--desk-fg)]">Калькулятор проекта</div>
+            <div className="text-[0.6875rem] text-[var(--desk-muted)]">Расчёт за минуту</div>
+          </div>
+        </div>
         <button
           type="button"
-          onClick={restart}
-          className="rounded border border-neutral-400 bg-neutral-200 px-2 py-0.5 hover:bg-neutral-100"
+          onClick={onOpenCalc}
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-[var(--desk-accent)] py-2.5 text-xs font-bold text-[var(--desk-accent-fg)] transition-all hover:brightness-110 active:scale-[0.98] cursor-pointer shadow-xs"
         >
-          Заново
+          Открыть
         </button>
       </div>
 
-      <div
-        className={full ? "relative mx-auto aspect-square w-full min-h-0 flex-1" : "relative"}
-        style={full ? undefined : { width: SIZE, height: SIZE }}
-      >
-        <canvas
-          ref={cv}
-          style={full ? { width: "100%", height: "100%", imageRendering: "pixelated" } : { width: SIZE, height: SIZE }}
-          className="block rounded border border-neutral-500"
+      <div className="w-full rounded-2xl border border-[var(--desk-border)] bg-[var(--desk-surface)] p-4 shadow-lg backdrop-blur-md">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="flex items-center gap-1.5 text-[0.625rem] font-bold uppercase tracking-widest text-[var(--desk-muted)]">
+            <FileText className="h-3.5 w-3.5 text-amber-500" />
+            Заметки
+          </span>
+          <span className="text-[0.625rem] text-[var(--desk-muted)]">автосохранение</span>
+        </div>
+        <textarea
+          value={noteText}
+          onChange={(e) => updateNote(e.target.value)}
+          rows={3}
+          placeholder="Запишите мысль или задачу…"
+          className="w-full resize-none rounded-xl border border-[var(--desk-border)] bg-[var(--desk-surface-2)] p-2.5 text-xs text-[var(--desk-fg)] outline-none placeholder:text-[var(--desk-muted)] focus:border-[var(--desk-accent)]"
         />
-        {over && (
-          <div className="absolute inset-0 grid place-items-center rounded bg-black/70 text-center text-white">
-            <div>
-              <p className="text-base font-bold">Игра окончена</p>
-              <p className="mt-1 text-xs text-white/70">Счёт: {score}</p>
-              <button
-                type="button"
-                onClick={restart}
-                className="mt-3 rounded bg-white px-3 py-1 text-xs font-bold text-neutral-900"
-              >
-                Ещё раз
-              </button>
-            </div>
+      </div>
+
+      <div className="flex w-full items-center justify-between rounded-2xl border border-[var(--desk-border)] bg-[var(--desk-surface)] p-3.5 shadow-lg backdrop-blur-md">
+        <div className="flex items-center gap-2.5">
+          <span style={tileStyle("#8b5cf6")} className="grid h-9 w-9 place-items-center rounded-xl border">
+            <Music className="h-4 w-4" />
+          </span>
+          <div>
+            <div className="text-xs font-bold text-[var(--desk-fg)]">Soundscape</div>
+            <div className="text-[0.6875rem] text-[var(--desk-muted)]">Web Audio Synth</div>
           </div>
-        )}
-      </div>
-
-      <p className="mt-2 text-center text-[0.6875rem] text-neutral-500 max-md:hidden [@media(pointer:coarse)]:hidden">
-        Стрелки или WASD
-      </p>
-      <div className="mt-2 hidden grid-cols-3 gap-1 max-md:grid [@media(pointer:coarse)]:grid">
-        <span />
-        {pad(0, -1, "Вверх", "▲")}
-        <span />
-        {pad(-1, 0, "Влево", "◀")}
-        <span />
-        {pad(1, 0, "Вправо", "▶")}
-        <span />
-        {pad(0, 1, "Вниз", "▼")}
-        <span />
-      </div>
-    </div>
-  );
-}
-
-/* -------------------------------- дракончик -------------------------------- */
-
-// Flappy на канве в той же стилистике, что змейка: тёмная вода, пиксельная
-// рисовка. Дракончик летит между колоннами ламинаций — в тему сайта.
-// Управление: пробел/стрелка вверх/клик на столе, тап — на айфоне.
-const DW = 288;
-const DH = 384;
-const GROUND = 16;
-const GRAV = 1400;
-const JUMP = -360;
-const PIPE_W = 46;
-const GAP = 128;
-const SPEED = 130;
-const SPACING = 178;
-const DX = 66; // x дракончика
-const R = 9; // радиус для столкновений
-
-type Pipe = { x: number; gap: number; scored: boolean };
-
-// Схема та же, что у змейки: «Заново» перемонтирует небо по key.
-function Dragon({ full }: { full?: boolean }) {
-  const [run, setRun] = useState(0);
-  return <Sky key={run} restart={() => setRun((r) => r + 1)} full={full} />;
-}
-
-function Sky({ restart, full }: { restart: () => void; full?: boolean }) {
-  const cv = useRef<HTMLCanvasElement>(null);
-  const flap = useRef<() => void>(() => {});
-  const [score, setScore] = useState(0);
-  const [over, setOver] = useState(false);
-  const [ready, setReady] = useState(true);
-
-  useEffect(() => {
-    const c = cv.current!;
-    const ctx = c.getContext("2d")!;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    c.width = DW * dpr;
-    c.height = DH * dpr;
-    ctx.scale(dpr, dpr);
-
-    let y = DH * 0.42;
-    let vy = 0;
-    let run = false;
-    let dead = false;
-    let pts = 0;
-    let pipes: Pipe[] = [];
-    const bubbles = Array.from({ length: 9 }, () => ({
-      x: Math.random() * DW,
-      y: Math.random() * DH,
-      r: 1 + Math.random() * 2.4,
-      s: 10 + Math.random() * 24,
-    }));
-
-    const spawn = () => {
-      const top = GAP / 2 + 26;
-      const bot = DH - GROUND - GAP / 2 - 26;
-      pipes.push({ x: DW + 20, gap: top + Math.random() * (bot - top), scored: false });
-    };
-
-    const die = () => {
-      dead = true;
-      setOver(true);
-    };
-
-    // Круг дракончика против прямоугольника ламинарии.
-    const hits = (px: number, py: number, w: number, h: number) => {
-      const nx = Math.max(px, Math.min(DX, px + w));
-      const ny = Math.max(py, Math.min(y, py + h));
-      return (DX - nx) ** 2 + (y - ny) ** 2 < R * R;
-    };
-
-    const drawKelp = (p: Pipe) => {
-      const top = p.gap - GAP / 2;
-      const bot = p.gap + GAP / 2;
-      ctx.fillStyle = "#166534";
-      ctx.fillRect(p.x, 0, PIPE_W, top);
-      ctx.fillRect(p.x, bot, PIPE_W, DH - GROUND - bot);
-      ctx.fillStyle = "#22c55e";
-      ctx.fillRect(p.x + 5, 0, PIPE_W - 14, Math.max(0, top - 6));
-      ctx.fillRect(p.x + 5, bot + 6, PIPE_W - 14, DH - GROUND - bot - 6);
-      // шапочки-концы и листики по бокам
-      ctx.fillRect(p.x + 2, top - 7, PIPE_W - 4, 7);
-      ctx.fillRect(p.x + 2, bot, PIPE_W - 4, 7);
-      for (let yy = 10; yy < top - 12; yy += 18) {
-        ctx.fillRect(p.x - 4, yy, 6, 4);
-        ctx.fillRect(p.x + PIPE_W - 2, yy + 9, 6, 4);
-      }
-      for (let yy = bot + 12; yy < DH - GROUND - 10; yy += 18) {
-        ctx.fillRect(p.x + PIPE_W - 2, yy, 6, 4);
-        ctx.fillRect(p.x - 4, yy + 9, 6, 4);
-      }
-    };
-
-    const drawDragon = (wingUp: boolean) => {
-      const x = DX;
-      ctx.fillStyle = "#ea580c";
-      ctx.fillRect(x - 16, y - 2, 5, 4); // кончик хвоста
-      ctx.fillStyle = "#fb923c";
-      ctx.fillRect(x - 12, y - 4, 5, 8); // основание хвоста
-      ctx.fillRect(x - 8, y - 6, 14, 12); // тело
-      ctx.fillRect(x + 5, y - 8, 9, 9); // голова
-      ctx.fillRect(x + 14, y - 4, 4, 4); // морда
-      ctx.fillStyle = "#fde68a";
-      ctx.fillRect(x - 6, y + 2, 10, 3); // брюшко
-      ctx.fillRect(x + 7, y - 12, 3, 5); // рожка
-      ctx.fillStyle = "#ea580c";
-      if (wingUp) ctx.fillRect(x - 3, y - 14, 7, 9);
-      else ctx.fillRect(x - 4, y - 8, 8, 5);
-      ctx.fillStyle = "#fff";
-      ctx.fillRect(x + 10, y - 6, 3, 3); // глаз
-      ctx.fillStyle = "#0f172a";
-      ctx.fillRect(x + 11, y - 5, 2, 2); // зрачок
-    };
-
-    const draw = (t: number) => {
-      ctx.fillStyle = "#0f172a";
-      ctx.fillRect(0, 0, DW, DH);
-      ctx.fillStyle = "rgba(125,211,252,.14)";
-      for (const b of bubbles) {
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      for (const p of pipes) drawKelp(p);
-      ctx.fillStyle = "#1e293b";
-      ctx.fillRect(0, DH - GROUND, DW, GROUND);
-      ctx.fillStyle = "#334155";
-      ctx.fillRect(0, DH - GROUND, DW, 2);
-      drawDragon(!dead && (run ? vy < 40 : Math.sin(t / 300) > 0));
-    };
-
-    let raf = 0;
-    let last = performance.now();
-    const step = (now: number) => {
-      const dt = Math.min((now - last) / 1000, 0.033);
-      last = now;
-      for (const b of bubbles) {
-        b.y -= b.s * dt;
-        if (b.y < -4) {
-          b.y = DH + 4;
-          b.x = Math.random() * DW;
-        }
-      }
-      if (dead) {
-        // после столкновения дракончик падает на дно и замирает
-        if (y + R < DH - GROUND) {
-          vy = Math.min(vy + GRAV * dt, 520);
-          y = Math.min(y + vy * dt, DH - GROUND - R);
-        }
-      } else if (run) {
-        vy = Math.min(vy + GRAV * dt, 480);
-        y += vy * dt;
-        if (y < R + 2) {
-          y = R + 2;
-          vy = 0;
-        }
-        for (const p of pipes) p.x -= SPEED * dt;
-        if (!pipes.length || pipes[pipes.length - 1].x < DW + 20 - SPACING) spawn();
-        pipes = pipes.filter((p) => p.x > -PIPE_W - 8);
-        for (const p of pipes) {
-          if (!p.scored && p.x + PIPE_W < DX) {
-            p.scored = true;
-            setScore(++pts);
-          }
-          if (
-            hits(p.x, 0, PIPE_W, p.gap - GAP / 2) ||
-            hits(p.x, p.gap + GAP / 2, PIPE_W, DH - GROUND - p.gap - GAP / 2)
-          )
-            die();
-        }
-        if (y + R >= DH - GROUND) die();
-      } else {
-        y = DH * 0.42 + Math.sin((now / 1000) * 2.6) * 7;
-      }
-      draw(now);
-      raf = requestAnimationFrame(step);
-    };
-
-    flap.current = () => {
-      if (dead) return;
-      if (!run) {
-        run = true;
-        spawn();
-        setReady(false);
-      }
-      vy = JUMP;
-    };
-
-    const onKey = (e: KeyboardEvent) => {
-      // Как у змейки: клавиши ловим только пока стол на экране.
-      if (!document.documentElement.classList.contains("desk-on")) return;
-      const k = e.key;
-      if (k !== " " && k !== "ArrowUp" && k.toLowerCase() !== "w" && k.toLowerCase() !== "ц") return;
-      e.preventDefault();
-      if (!e.repeat) flap.current();
-    };
-    window.addEventListener("keydown", onKey);
-
-    raf = requestAnimationFrame(step);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("keydown", onKey);
-    };
-  }, []);
-
-  return (
-    <div className={full ? "flex h-full flex-col p-3" : "p-3"}>
-      <div className="mb-2 flex items-center justify-between text-[0.75rem] font-bold text-neutral-700">
-        <span>Счёт: {score}</span>
+        </div>
         <button
           type="button"
-          onClick={restart}
-          className="rounded border border-neutral-400 bg-neutral-200 px-2 py-0.5 hover:bg-neutral-100"
+          onClick={toggleSound}
+          title={isPlayingSound ? "Пауза" : "Слушать"}
+          className="grid h-8 w-8 place-items-center rounded-full border border-[var(--desk-border)] bg-[var(--desk-surface-2)] text-[var(--desk-fg)] transition-colors hover:bg-[var(--desk-surface-3)] cursor-pointer active:scale-90"
         >
-          Заново
+          {isPlayingSound ? <Pause className="h-3.5 w-3.5" /> : <Play className="ml-0.5 h-3.5 w-3.5" />}
         </button>
       </div>
-
-      <div
-        className={full ? "relative mx-auto aspect-[3/4] w-full min-h-0 flex-1" : "relative"}
-        style={full ? undefined : { width: DW, height: DH }}
-      >
-        <canvas
-          ref={cv}
-          onPointerDown={() => flap.current()}
-          style={full ? { width: "100%", height: "100%", imageRendering: "pixelated" } : { width: DW, height: DH }}
-          className="block cursor-pointer touch-none rounded border border-neutral-500"
-        />
-        {ready && (
-          <div className="pointer-events-none absolute inset-0 grid place-items-center rounded bg-black/55 text-center text-white">
-            <div>
-              <p className="text-base font-bold">Дракончик</p>
-              <p className="mt-1 text-xs text-white/75">Тапни или нажми пробел</p>
-            </div>
-          </div>
-        )}
-        {over && (
-          <div className="absolute inset-0 grid place-items-center rounded bg-black/70 text-center text-white">
-            <div>
-              <p className="text-base font-bold">Игра окончена</p>
-              <p className="mt-1 text-xs text-white/70">Счёт: {score}</p>
-              <button
-                type="button"
-                onClick={restart}
-                className="mt-3 rounded bg-white px-3 py-1 text-xs font-bold text-neutral-900"
-              >
-                Ещё раз
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <p className="mt-2 text-center text-[0.6875rem] text-neutral-500 max-md:hidden [@media(pointer:coarse)]:hidden">
-        Пробел или клик
-      </p>
-    </div>
+    </>
   );
 }
 
-const GAMES: Record<string, React.ComponentType<{ full?: boolean }>> = {
-  snake: Snake,
-  dragon: Dragon,
-};
-
-// Открытое «приложение» на айфоне: шапка с названием, содержимое на весь экран
-// и полоска «домой». Одно на все — и на игры, и на страницы сайта.
-function PhoneApp({ id, onClose }: { id: string; onClose: () => void }) {
-  const G = GAMES[id];
-  return (
-    <div className="ios-open absolute inset-0 z-30 flex flex-col bg-[#f2f2f7]">
-      <div className="flex items-center justify-between border-b border-black/10 px-4 py-3">
-        <span className="text-[0.9375rem] font-semibold text-neutral-900">{TITLES[id]}</span>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Закрыть"
-          className="grid h-7 w-7 place-items-center rounded-full bg-red-500/10 text-red-500 active:bg-red-500/20"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-      <div className="flex flex-1 flex-col overflow-hidden">{G ? <G full /> : <Site id={id} />}</div>
-      <button
-        type="button"
-        aria-label="На главный экран"
-        onClick={onClose}
-        className="mx-auto my-2 h-1 w-32 shrink-0 rounded-full bg-neutral-900/30"
-      />
-    </div>
-  );
-}
-
-/* -------------------------------- рабочий стол ----------------------------- */
+/* ----------------------------- ГЛАВНАЯ КОМПОНЕНТА ----------------------------- */
 
 type WinState = { id: string; min: boolean };
 
 export default function WinDesktop() {
   const secRef = useRef<HTMLElement>(null);
-  const coarse = useRef(false);
-  // Стол внутри окна стола не нужен: если главную открыли в iframe — молчим.
-  const embed = window.self !== window.top;
-  const [sel, setSel] = useState<string | null>(null);
+  const embed = typeof window !== "undefined" && window.self !== window.top;
+
   const [wins, setWins] = useState<WinState[]>([]);
-  const [start, setStart] = useState(false);
-  const [clock, setClock] = useState("");
-  const [showNotice, setShowNotice] = useState(() => {
-    if (typeof window === "undefined") return false;
+  const [maxWins, setMaxWins] = useState<Record<string, boolean>>({});
+  const [sel, setSel] = useState<string | null>(null);
+  const [startOpen, setStartOpen] = useState(false);
+  const [mobileWidgetsOpen, setMobileWidgetsOpen] = useState(false);
+  const [contactsPath, setContactsPath] = useState("/contacts");
+  const [clock, setClock] = useState("--:--");
+  const [dateStr, setDateStr] = useState("");
+
+  const [theme, setTheme] = useState<WallpaperTheme>(() => {
+    if (typeof window === "undefined") return "aurora";
     try {
-      return !sessionStorage.getItem("maetti_notice_seen");
+      const saved = localStorage.getItem("maetti_os_theme") as WallpaperTheme | null;
+      return saved && THEMES[saved] ? saved : "aurora";
     } catch {
-      return false;
+      return "aurora";
     }
   });
 
-  const closeNotice = () => {
-    setShowNotice(false);
+  const changeTheme = useCallback((t: WallpaperTheme) => {
+    sounds.playGlassClick();
+    setTheme(t);
     try {
-      sessionStorage.setItem("maetti_notice_seen", "true");
+      localStorage.setItem("maetti_os_theme", t);
+    } catch {}
+  }, []);
+
+  const [isPlayingSound, setIsPlayingSound] = useState(false);
+  const toggleSound = useCallback(() => {
+    sounds.playGlassClick();
+    setIsPlayingSound((on) => {
+      if (on) sounds.stopAmbient();
+      else sounds.startAmbient(0.08);
+      return !on;
+    });
+  }, []);
+
+  const [noteText, setNoteText] = useState(() => {
+    const def = "Обсудить новый 3D-проект с maeTtI\nСделать невозможное возможным";
+    if (typeof window === "undefined") return def;
+    try {
+      return localStorage.getItem("maetti_glass_note") || def;
+    } catch {
+      return def;
+    }
+  });
+
+  const updateNote = (txt: string) => {
+    setNoteText(txt);
+    try {
+      localStorage.setItem("maetti_glass_note", txt);
     } catch {}
   };
 
-  useEffect(() => {
-    if (showNotice) {
-      try {
-        sessionStorage.setItem("maetti_notice_seen", "true");
-      } catch {}
-    }
-  }, [showNotice]);
-  // Компонент грузится только на клиенте (dynamic ssr:false), поэтому ширину
-  // можно спросить сразу — иначе на телефоне мигнёт винда.
-  const [phone, setPhone] = useState(() => matchMedia("(max-width: 767px)").matches);
+  const [showWidgets, setShowWidgets] = useState(true);
+  const [spotlightOpen, setSpotlightOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  const [phone, setPhone] = useState(() => (typeof window !== "undefined" ? matchMedia("(max-width: 767px)").matches : false));
 
   useEffect(() => {
     const mq = matchMedia("(max-width: 767px)");
@@ -810,16 +496,12 @@ export default function WinDesktop() {
     return () => mq.removeEventListener("change", on);
   }, []);
 
-  // Пока стол занимает экран целиком — прячем шапку и водолаза.
+  // Пока стол занимает экран, прячем шапку сайта
   useEffect(() => {
     if (embed) return;
-    coarse.current = matchMedia("(pointer: coarse)").matches;
     const root = document.documentElement;
-    const io = new IntersectionObserver(
-      ([e]) => root.classList.toggle("desk-on", e.intersectionRatio >= 0.85),
-      { threshold: 0.85 },
-    );
-    io.observe(secRef.current!);
+    const io = new IntersectionObserver(([e]) => root.classList.toggle("desk-on", e.intersectionRatio >= 0.85), { threshold: 0.85 });
+    if (secRef.current) io.observe(secRef.current);
     return () => {
       io.disconnect();
       root.classList.remove("desk-on");
@@ -827,478 +509,716 @@ export default function WinDesktop() {
   }, [embed]);
 
   useEffect(() => {
-    const tick = () =>
-      setClock(new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }));
+    const tick = () => {
+      const d = new Date();
+      setClock(d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }));
+      setDateStr(d.toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long" }));
+    };
     tick();
-    const t = setInterval(tick, 20000);
+    const t = setInterval(tick, 1000);
     return () => clearInterval(t);
   }, []);
 
-  const open = (id: string) => {
-    setStart(false);
-    if (id === "info") {
-      setShowNotice(true);
-      return;
-    }
+  const openApp = useCallback((id: string) => {
+    if (!APPS.some((a) => a.id === id)) return;
+    sounds.playGlassClick();
+    setStartOpen(false);
+    setSpotlightOpen(false);
+    setSel(id);
     setWins((w) => [...w.filter((x) => x.id !== id), { id, min: false }]);
-    // Окно живёт внутри секции: если стол виден лишь наполовину, окно срежет
-    // краем экрана. Поэтому на открытии доводим стол до полного кадра —
-    // руками, а не scrollIntoView: у html есть scroll-padding под шапку, и
-    // из-за него стол вставал на 100px ниже, теряя низ окна.
-    const el = secRef.current;
-    if (el) scrollTo({ top: el.getBoundingClientRect().top + scrollY });
-  };
-  const close = (id: string) => setWins((w) => w.filter((x) => x.id !== id));
-  const focus = (id: string) =>
-    setWins((w) => [...w.filter((x) => x.id !== id), { id, min: false }]);
-  const minimize = (id: string) =>
-    setWins((w) => w.map((x) => (x.id === id ? { ...x, min: true } : x)));
 
-  // Кнопка в панели задач: активное окно сворачивает, любое другое — поднимает.
-  const task = (id: string) =>
+    const el = secRef.current;
+    if (el && typeof window !== "undefined") {
+      window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY, behavior: "smooth" });
+    }
+  }, []);
+
+  const closeWin = (id: string) => {
+    sounds.playGlassClick();
+    setWins((w) => w.filter((x) => x.id !== id));
+    setMaxWins((m) => {
+      const next = { ...m };
+      delete next[id];
+      return next;
+    });
+  };
+  const focusWin = (id: string) => {
+    setWins((w) => [...w.filter((x) => x.id !== id), { id, min: false }]);
+  };
+  const minWin = (id: string) => {
+    sounds.playGlassClick();
+    setWins((w) => w.map((x) => (x.id === id ? { ...x, min: true } : x)));
+  };
+  const toggleTask = (id: string) => {
+    sounds.playGlassClick();
     setWins((w) => {
-      const it = w.find((x) => x.id === id)!;
+      const it = w.find((x) => x.id === id);
+      if (!it) return w;
       return w[w.length - 1].id === id && !it.min
         ? w.map((x) => (x.id === id ? { ...x, min: true } : x))
         : [...w.filter((x) => x.id !== id), { id, min: false }];
     });
+  };
 
-  // Ярлык страницы никуда не уводит: страница открывается окном здесь же.
-  // Ctrl/⌘/Shift оставляем браузеру — ссылка настоящая, пусть откроет вкладку.
-  const nav = (e: React.MouseEvent, id: string) => {
-    if (id === "info") {
-      e.preventDefault();
-      setShowNotice(true);
-      return;
-    }
-    if (SITE[id] && (e.metaKey || e.ctrlKey || e.shiftKey)) return;
+  const handleCalcContact = (data: { tier: string; budget: number; days: number; addons: string[] }) => {
+    sounds.playGlassClick();
+    const qs = new URLSearchParams({
+      tier: data.tier,
+      budget: String(data.budget),
+      days: String(data.days),
+    }).toString();
+    const fullPath = `/contacts?${qs}`;
+    setContactsPath(fullPath);
+    try {
+      localStorage.setItem("maetti_calc_brief", JSON.stringify(data));
+    } catch {}
+    openApp("contacts");
+  };
+
+  const allMin = wins.length > 0 && wins.every((x) => x.min);
+
+  // Esc: Виджеты (<1280px) → Spotlight → лаунчер → контекстное меню → свернуть активное окно
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (mobileWidgetsOpen) return setMobileWidgetsOpen(false);
+      if (spotlightOpen) return setSpotlightOpen(false);
+      if (startOpen) return setStartOpen(false);
+      if (menu) return setMenu(null);
+      const top = [...wins].reverse().find((w) => !w.min);
+      if (top) minWin(top.id);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileWidgetsOpen, spotlightOpen, startOpen, menu, wins]);
+
+  // Закрытие меню «Пуск» и контекстного меню при клике вне их области
+  useEffect(() => {
+    if (!startOpen && !menu) return;
+    const handlePointerDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      if (startOpen && !target.closest("[data-start-menu]") && !target.closest("[data-start-btn]")) {
+        setStartOpen(false);
+      }
+      if (menu && !target.closest("[data-context-menu]")) {
+        setMenu(null);
+      }
+    };
+    window.addEventListener("pointerdown", handlePointerDown);
+    return () => window.removeEventListener("pointerdown", handlePointerDown);
+  }, [startOpen, menu]);
+
+  const results = APPS.filter((a) => {
+    const q = query.trim().toLowerCase();
+    return !q || a.label.toLowerCase().includes(q) || a.description.toLowerCase().includes(q);
+  });
+  const [resultIdx, setResultIdx] = useState(0);
+
+  const topWinId = [...wins].reverse().find((w) => !w.min)?.id;
+  const hasMaxWin = wins.some((w) => !w.min && maxWins[w.id]);
+
+  const [topEdgeHovered, setTopEdgeHovered] = useState(false);
+  const [dockEdgeHovered, setDockEdgeHovered] = useState(false);
+  const topLeaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const dockLeaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleTopEnter = useCallback(() => {
+    if (topLeaveTimerRef.current) clearTimeout(topLeaveTimerRef.current);
+    setTopEdgeHovered(true);
+  }, []);
+
+  const handleTopLeave = useCallback(() => {
+    if (topLeaveTimerRef.current) clearTimeout(topLeaveTimerRef.current);
+    topLeaveTimerRef.current = setTimeout(() => {
+      setTopEdgeHovered(false);
+    }, 120);
+  }, []);
+
+  const handleDockEnter = useCallback(() => {
+    if (dockLeaveTimerRef.current) clearTimeout(dockLeaveTimerRef.current);
+    setDockEdgeHovered(true);
+  }, []);
+
+  const handleDockLeave = useCallback(() => {
+    if (dockLeaveTimerRef.current) clearTimeout(dockLeaveTimerRef.current);
+    dockLeaveTimerRef.current = setTimeout(() => {
+      setDockEdgeHovered(false);
+    }, 120);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (topLeaveTimerRef.current) clearTimeout(topLeaveTimerRef.current);
+      if (dockLeaveTimerRef.current) clearTimeout(dockLeaveTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasMaxWin) return;
+    const onMove = (e: PointerEvent) => {
+      // Верхняя зона триггера: отступ 300px слева и 300px справа, высота 52px
+      const inTopTriggerZone =
+        e.clientY <= 52 &&
+        e.clientX >= 300 &&
+        e.clientX <= window.innerWidth - 300;
+
+      if (inTopTriggerZone) {
+        handleTopEnter();
+      } else if (!startOpen && !spotlightOpen && !mobileWidgetsOpen) {
+        // Если панель опустилась — не поднимать, пока курсор не уведут с неё вниз (y > 52)
+        if (e.clientY > 52) {
+          handleTopLeave();
+        }
+      }
+
+      // Нижняя зона триггера: по центру экрана (±290px), высота 80px от низа
+      const inBottomZone =
+        e.clientY >= window.innerHeight - 80 &&
+        Math.abs(e.clientX - window.innerWidth / 2) <= 290;
+
+      if (inBottomZone) {
+        handleDockEnter();
+      } else if (!startOpen) {
+        if (e.clientY < window.innerHeight - 85 || Math.abs(e.clientX - window.innerWidth / 2) > 300) {
+          handleDockLeave();
+        }
+      }
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    return () => window.removeEventListener("pointermove", onMove);
+  }, [hasMaxWin, startOpen, spotlightOpen, mobileWidgetsOpen, handleTopEnter, handleTopLeave, handleDockEnter, handleDockLeave]);
+
+  const topBarVisible = !hasMaxWin || topEdgeHovered || startOpen || spotlightOpen || mobileWidgetsOpen;
+  const dockVisible = !hasMaxWin || dockEdgeHovered || startOpen;
+
+  const openWallpaperMenu = (e: React.MouseEvent) => {
     e.preventDefault();
-    open(id);
+    const rect = secRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setMenu({
+      x: Math.max(8, Math.min(e.clientX - rect.left, rect.width - 232)),
+      y: Math.max(8, Math.min(e.clientY - rect.top, rect.height - 300)),
+    });
   };
 
-  // Мышью как в винде: первый клик выделяет, открывает второй. На айфоне и
-  // вообще на тач-экране двойного тапа никто не ждёт — там открываем сразу.
-  const hit = (e: React.MouseEvent, it: Item) => {
-    setSel(it.id);
-    if (it.id === "info") {
-      e.preventDefault();
-      setShowNotice(true);
-      return;
-    }
-    if (!phone && !coarse.current && e.detail < 2) {
-      e.preventDefault();
-      return;
-    }
-    nav(e, it.id);
-  };
-
-  const label = (it: Item) => IOS[it.id]?.label ?? it.label;
-  const app = (it: Item) => (
-    <span
-      className={`grid h-14 w-14 place-items-center rounded-[18px] bg-gradient-to-br ${it.tint} shadow-lg ring-1 ring-white/30 transition-transform active:scale-90`}
-    >
-      <it.Icon className="h-7 w-7 text-white drop-shadow" />
-    </span>
-  );
-
-  // ------------------------------- айфон -------------------------------
-  const top = wins[wins.length - 1];
-  const iphone = (
-    <div className="ios-ui desk-shell absolute inset-0 flex flex-col bg-gradient-to-b from-[#16307a] via-[#3f6fd8] to-[#9ec6f2]">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-16 top-[18%] h-56 w-56 rounded-full bg-fuchsia-400/30 blur-3xl" />
-        <div className="absolute -right-12 top-1/2 h-56 w-56 rounded-full bg-cyan-300/35 blur-3xl" />
-      </div>
-
-      {/* строка состояния */}
-      <div className="relative flex items-center justify-between px-6 pt-3 text-[0.8125rem] font-semibold text-white">
-        <span className="tabular-nums">{clock}</span>
-        <span className="flex items-center gap-1.5">
-          <SignalHigh className="h-4 w-4" />
-          <Wifi className="h-4 w-4" />
-          <BatteryFull className="h-4 w-4" />
-        </span>
-      </div>
-
-      {/* сетка приложений */}
-      <div className="relative grid grid-cols-4 gap-x-2 gap-y-5 px-4 pt-8">
-        {ICONS.map((it) => (
-          <Hit
-            key={it.id}
-            href={it.href}
-            label={label(it)}
-            onClick={(e) => hit(e, it)}
-            className="flex flex-col items-center gap-1.5 outline-none"
-          >
-            {app(it)}
-            <span className="text-[0.6875rem] leading-tight text-white [text-shadow:0_1px_2px_rgba(0,0,0,.6)]">
-              {label(it)}
-            </span>
-          </Hit>
-        ))}
-      </div>
-
-      {/* точки страниц, док и полоска «домой» */}
-      <div className="relative mt-auto px-3 pb-2">
-        <div className="mb-3 flex justify-center gap-1.5">
-          <i className="h-1.5 w-1.5 rounded-full bg-white" />
-          <i className="h-1.5 w-1.5 rounded-full bg-white/40" />
-        </div>
-        <div className="flex justify-around rounded-[26px] bg-white/20 p-3 backdrop-blur-md">
-          {ICONS.filter((it) => it.href).map((it) => (
-            <Hit key={it.id} href={it.href} label={it.label} onClick={(e) => hit(e, it)} className="outline-none">
-              {app(it)}
-            </Hit>
-          ))}
-        </div>
-        <div className="mx-auto mt-3 h-1 w-32 rounded-full bg-white/80" />
-      </div>
-
-      {/* Информационная плашка (iOS стиль) */}
-      {showNotice && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/55 backdrop-blur-md px-5 select-none">
-          <div className="ios-open w-full max-w-[21.5rem] overflow-hidden rounded-[28px] bg-white/95 text-center shadow-2xl backdrop-blur-2xl border border-white/60 p-5">
-            {/* Иконка */}
-            <div className="mx-auto mb-3.5 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-blue-600 shadow-lg ring-4 ring-blue-500/20 text-white">
-              <Sparkles className="h-7 w-7 text-amber-300 animate-pulse" />
-            </div>
-
-            <span className="inline-block rounded-full bg-blue-100 px-3 py-0.5 text-[0.6875rem] font-bold text-blue-700 uppercase tracking-wider mb-1.5">
-              Интерактивный концепт
-            </span>
-            <h3 className="text-[1.125rem] font-bold text-neutral-900 leading-snug">
-              Добро пожаловать в maeTtI!
-            </h3>
-
-            <p className="mt-2 text-[0.8125rem] leading-relaxed text-neutral-600">
-              Этот сайт и операционная система созданы, чтобы наглядно показать наши технические возможности и нестандартный подход к разработке.
-            </p>
-
-            <div className="mt-3.5 space-y-2 text-left rounded-2xl bg-neutral-100/90 p-3 text-[0.75rem]">
-              <div className="flex items-start gap-2">
-                <span className="text-base leading-none">📱</span>
-                <span className="text-neutral-700 leading-snug">
-                  <strong className="text-neutral-900">Разделы сайта:</strong> открывайте «Услуги», «Кейсы», «Команду» и «Контакты» прямо в приложениях.
-                </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-base leading-none">🕹️</span>
-                <span className="text-neutral-700 leading-snug">
-                  <strong className="text-neutral-900">Мини-игры:</strong> запускайте «Змейку» и «Дракончика» прямо с экрана.
-                </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-base leading-none">✨</span>
-                <span className="text-neutral-700 leading-snug">
-                  <strong className="text-neutral-900">Интерактивность:</strong> тапайте по ярлыкам и исследуйте интерфейс!
-                </span>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={closeNotice}
-              className="mt-4.5 w-full rounded-2xl bg-blue-600 py-3 text-[0.9375rem] font-bold text-white shadow-lg shadow-blue-600/30 active:scale-95 transition-transform cursor-pointer"
-            >
-              Понял!
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* открытое «приложение»: игры и страницы на весь экран, остальное — алерт */}
-      {top &&
-        (GAMES[top.id] || SITE[top.id] ? (
-          <PhoneApp id={top.id} onClose={() => close(top.id)} />
-        ) : (
-          <div
-            onClick={() => close(top.id)}
-            className="absolute inset-0 z-30 grid place-items-center bg-black/40 px-8 backdrop-blur-[2px]"
-          >
-            <div className="ios-open w-[16.875rem] overflow-hidden rounded-2xl bg-white/85 text-center backdrop-blur-xl">
-              <div className="px-5 py-4">
-                <p className="text-[1.0625rem] font-semibold text-neutral-900">
-                  {(IOS[top.id] ?? ERRORS[top.id]).head}
-                </p>
-                <p className="mt-1 text-[0.8125rem] leading-snug text-neutral-700">
-                  {(IOS[top.id] ?? ERRORS[top.id]).body}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => close(top.id)}
-                className="w-full border-t border-black/10 py-2.5 text-[1.0625rem] font-semibold text-blue-600"
-              >
-                OK
-              </button>
-            </div>
-          </div>
-        ))}
-    </div>
-  );
+  const iconBtn =
+    "grid h-8 w-8 place-items-center rounded-lg border border-[var(--desk-border)] bg-[var(--desk-surface-2)] text-[var(--desk-muted)] transition-colors hover:bg-[var(--desk-surface-3)] hover:text-[var(--desk-fg)] cursor-pointer active:scale-95";
 
   if (embed) return null;
 
   return (
     <section
       ref={secRef}
-      aria-label={phone ? "Домашний экран" : "Рабочий стол"}
-      className="desk-shell relative h-[100svh] w-full shrink-0 select-none"
+      aria-label="maeTtI OS — интерактивный рабочий стол"
+      style={{ ...(THEMES[theme].vars as CSSProperties), background: THEMES[theme].wall }}
+      className="desk-shell relative h-[100svh] w-full shrink-0 select-none overflow-hidden font-sans transition-[background] duration-700 text-[var(--desk-fg)]"
     >
-      {phone ? (
-        iphone
-      ) : (
-        <div className="win-ui absolute inset-0">
-          {/* обои + клик по пустому месту снимает выделение */}
+      {/* ЖИВЫЕ ОБОИ: два медленно дрейфующих орба */}
+      <div
+        className="absolute inset-0"
+        onClick={() => {
+          setSel(null);
+          setStartOpen(false);
+          setSpotlightOpen(false);
+          setMenu(null);
+        }}
+        onContextMenu={openWallpaperMenu}
+      >
+        {THEMES[theme].orbs.map((orb, i) => (
           <div
-            onClick={() => {
-              setSel(null);
-              setStart(false);
-            }}
-            className="absolute inset-0 bg-gradient-to-b from-[#1a4f8a] via-[#3f8fd0] to-[#a9dbf5]"
-          >
-            <div className="absolute -bottom-[10%] -left-[10%] h-[46%] w-[120%] rounded-[50%] bg-gradient-to-b from-[#86c94a] to-[#3f7d24]" />
-          </div>
+            key={i}
+            aria-hidden
+            className={`desk-orb pointer-events-none absolute rounded-full blur-[110px] ${orb.pos}`}
+            style={
+              {
+                background: `radial-gradient(circle, ${orb.color} 0%, transparent 65%)`,
+                "--dx": `${orb.dx}px`,
+                "--dy": `${orb.dy}px`,
+                "--dur": `${orb.dur}s`,
+              } as CSSProperties
+            }
+          />
+        ))}
+      </div>
 
-          {/* ярлыки: строго в один вертикальный столбик */}
-          <div className="absolute left-3 top-3 z-10 flex flex-col gap-2.5">
-            {ICONS.map((it) => (
-              <Hit
-                key={it.id}
-                href={it.href}
-                label={it.label}
-                onClick={(e) => hit(e, it)}
-                className={`flex w-[5.5rem] flex-col items-center gap-1.5 rounded-xl p-2 text-center outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-white ${
-                  sel === it.id ? "bg-white/30 backdrop-blur-md ring-1 ring-white/80 scale-105 shadow-lg" : "hover:bg-white/20 hover:scale-105"
-                }`}
+      {/* СЕНСОРЫ ДЛЯ АВТОПОЯВЛЕНИЯ ПАНЕЛЕЙ ПРИ ФУЛЛСКРИНЕ */}
+      {hasMaxWin && (
+        <>
+          {/* Верхняя зона триггера: отступ по 300px слева и справа, высота ~52px */}
+          <div
+            aria-hidden
+            onMouseEnter={handleTopEnter}
+            className="absolute left-[300px] right-[300px] top-0 z-[45] h-[3.25rem] cursor-default pointer-events-auto"
+          />
+          {/* Нижняя зона триггера (по центру экрана, ширина ~36rem, высота 80px) */}
+          <div
+            aria-hidden
+            onMouseEnter={handleDockEnter}
+            onMouseLeave={handleDockLeave}
+            className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[36rem] max-w-[94vw] h-20 z-[45] cursor-default pointer-events-auto"
+          />
+        </>
+      )}
+
+      {/* ВЕРХНЯЯ ПАНЕЛЬ */}
+      <nav
+        onMouseEnter={handleTopEnter}
+        onMouseLeave={handleTopLeave}
+        className={`absolute inset-x-0 top-0 z-50 flex h-11 items-center justify-between gap-3 border-b border-[var(--desk-border)] bg-[var(--desk-surface)] px-3 text-[0.8125rem] text-[var(--desk-fg)] backdrop-blur-md sm:px-4 transition-all duration-300 ease-out after:absolute after:-bottom-3 after:inset-x-0 after:h-3 after:content-[''] ${
+          !topBarVisible ? "-translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100 pointer-events-auto shadow-md"
+        }`}
+      >
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playGlassClick();
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            title="Вернуться к началу сайта"
+            className="flex items-center gap-1.5 rounded-lg border border-[var(--desk-border)] bg-[var(--desk-surface-2)] px-2.5 py-1 text-xs font-bold text-[var(--desk-fg)] transition-colors hover:bg-[var(--desk-surface-3)] cursor-pointer active:scale-95"
+          >
+            <ArrowUp className="h-3.5 w-3.5 stroke-[2.5]" />
+            <span className="max-sm:hidden">К сайту</span>
+          </button>
+
+          <button
+            type="button"
+            data-start-btn
+            onClick={() => {
+              sounds.playGlassClick();
+              setStartOpen((s) => !s);
+            }}
+            aria-expanded={startOpen}
+            className="flex items-center gap-1.5 font-black tracking-tight text-[var(--desk-fg)] transition-opacity hover:opacity-80 cursor-pointer"
+          >
+            <span className="h-2.5 w-2.5 rounded-full bg-[var(--desk-accent)]" />
+            maeTtI<span className="text-[var(--desk-muted)]">OS</span>
+          </button>
+
+          <span className="h-4 w-px bg-[var(--desk-border)]" />
+
+          <div className="flex items-center gap-1 max-md:hidden">
+            {APPS.filter((a) => a.href).map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => openApp(a.id)}
+                className="rounded-lg px-2 py-1 text-[0.8125rem] font-medium text-[var(--desk-muted)] transition-colors hover:bg-[var(--desk-surface-2)] hover:text-[var(--desk-fg)] cursor-pointer"
               >
-                <span
-                  className={`relative grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br ${it.tint} shadow-lg ring-1 ring-white/40 transition-transform`}
-                >
-                  <it.Icon className="h-6 w-6 text-white drop-shadow" />
-                  {it.href && (
-                    <span className="absolute -bottom-1 -left-1 grid h-4 w-4 place-items-center rounded-md border border-neutral-300 bg-white/90 shadow-sm">
-                      <ArrowUpRight className="h-3 w-3 text-neutral-700" />
-                    </span>
-                  )}
-                </span>
-                <span className="text-[0.6875rem] font-medium leading-tight text-white drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.9)]">
-                  {it.label}
-                </span>
-              </Hit>
+                {a.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 rounded-full border border-[var(--desk-border)] bg-[var(--desk-surface-2)] p-1">
+            {THEME_ORDER.map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => changeTheme(t)}
+                title={`Тема: ${THEMES[t].name}`}
+                aria-label={`Тема: ${THEMES[t].name}`}
+                style={{ background: THEME_SWATCH[t] }}
+                className={`h-3.5 w-3.5 rounded-full border border-black/10 transition-transform cursor-pointer ${
+                  theme === t ? "scale-110 ring-2 ring-[var(--desk-accent)]" : "opacity-70 hover:opacity-100"
+                }`}
+              />
             ))}
           </div>
 
-          {/* окна */}
-          {wins.map((w, i) => {
-            const G = GAMES[w.id];
-            const site = SITE[w.id];
-            return w.min ? null : (
-              <Win
-                key={w.id}
-                title={
-                  site
-                    ? `maeTtI - ${TITLES[w.id]}`
-                    : w.id === "explorer"
-                      ? "explorer.exe - Ошибка приложения"
-                      : TITLES[w.id]
-                }
-                dialog={!G && !site}
-                size={site ? [820, 580] : undefined}
-                offset={i}
-                z={20 + i}
-                onFocus={() => focus(w.id)}
-                onClose={() => close(w.id)}
-                onMin={() => minimize(w.id)}
-              >
-                {site ? (
-                  <Site id={w.id} />
-                ) : G ? (
-                  <G />
-                ) : (
-                  <div className="w-[min(23.75rem,calc(100vw-2rem))]">
-                    <div className="flex gap-3 p-4">
-                      <TriangleAlert className="h-8 w-8 shrink-0 text-amber-500" />
-                      <div>
-                        <p className="text-[0.8125rem] font-bold text-neutral-900">{ERRORS[w.id].head}</p>
-                        <p className="mt-1 text-[0.75rem] leading-snug text-neutral-700">{ERRORS[w.id].body}</p>
-                      </div>
-                    </div>
-                    <div className="flex justify-end border-t border-black/10 bg-black/5 px-4 py-2.5">
-                      <button
-                        type="button"
-                        onClick={() => close(w.id)}
-                        className="min-w-[4.75rem] rounded border border-neutral-400 bg-neutral-200 px-3 py-1 text-[0.75rem] font-bold text-neutral-800 hover:bg-neutral-100"
-                      >
-                        ОК
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </Win>
-            );
-          })}
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playGlassClick();
+              setSpotlightOpen((s) => !s);
+            }}
+            title="Поиск (Spotlight)"
+            aria-label="Поиск"
+            className={iconBtn}
+          >
+            <Search className="h-4 w-4" />
+          </button>
 
-          {/* Информационная плашка (Windows UI стиль) */}
-          {showNotice && (
-            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-[2px] p-4 select-none">
-              <div className="w-[min(34rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-white/60 bg-[#f8f7f2] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
-                {/* Title bar */}
-                <div className="flex items-center justify-between bg-gradient-to-r from-[#195bb7] via-[#2f79e7] to-[#195bb7] px-3.5 py-2 text-white shadow-inner">
-                  <div className="flex items-center gap-2">
-                    <div className="grid h-5 w-5 place-items-center rounded bg-white/20">
-                      <Sparkles className="h-3.5 w-3.5 text-yellow-300" />
-                    </div>
-                    <span className="text-[0.8125rem] font-bold tracking-wide [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]">
-                      maeTtI OS — Демонстрация возможностей
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={closeNotice}
-                    className="grid h-5 w-5 place-items-center rounded border border-white/40 bg-red-500/90 text-white hover:bg-red-600 active:scale-95 transition-all cursor-pointer"
-                    title="Закрыть"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playGlassClick();
+              setMobileWidgetsOpen((s) => !s);
+            }}
+            title={mobileWidgetsOpen ? "Закрыть виджеты" : "Виджеты"}
+            aria-label="Виджеты"
+            className={`${iconBtn} xl:hidden`}
+          >
+            <Layers className="h-4 w-4" />
+          </button>
 
-                {/* Body */}
-                <div className="p-5 text-neutral-800">
-                  <div className="mb-4 flex items-start gap-3.5">
-                    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md ring-2 ring-blue-400/30">
-                      <Info className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-2.5 py-0.5 text-[0.6875rem] font-bold text-blue-700 uppercase tracking-wider mb-1">
-                        💡 Интерактивный концепт
-                      </span>
-                      <h3 className="text-lg font-black text-neutral-900 leading-tight">
-                        Добро пожаловать в интерактивный стол maeTtI!
-                      </h3>
-                    </div>
-                  </div>
+          <button type="button" onClick={toggleSound} title={isPlayingSound ? "Выключить эмбиент" : "Включить эмбиент"} className={iconBtn}>
+            {isPlayingSound ? <Volume2 className="h-4 w-4 text-[var(--desk-accent)]" /> : <VolumeX className="h-4 w-4" />}
+          </button>
 
-                  <p className="text-[0.8125rem] leading-relaxed text-neutral-600 mb-4">
-                    Весь наш сайт и эта операционная система — живой пример того, как мы умеем воплощать нестандартные цифровые идеи и создавать интерактивный пользовательский опыт.
-                  </p>
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== "undefined" && window.innerWidth < 1280) {
+                sounds.playGlassClick();
+                setMobileWidgetsOpen((s) => !s);
+              }
+            }}
+            title="Виджеты и время"
+            className="flex items-center gap-1.5 font-mono text-xs font-bold tabular-nums sm:text-sm cursor-pointer"
+          >
+            <Clock className="h-3.5 w-3.5 text-[var(--desk-muted)] max-sm:hidden" />
+            {clock}
+          </button>
+        </div>
+      </nav>
 
-                  <div className="space-y-2 rounded-xl bg-white/90 border border-neutral-200/80 p-3.5 text-[0.8125rem] shadow-xs">
-                    <div className="flex items-start gap-2.5">
-                      <span className="text-base leading-none">📂</span>
-                      <p className="text-neutral-700 leading-snug">
-                        <strong className="text-neutral-950">Сайт в формате окон:</strong> открывайте «Услуги», «Кейсы», «Команду» и «Контакты» в отдельных интерактивных окнах.
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-2.5">
-                      <span className="text-base leading-none">🎮</span>
-                      <p className="text-neutral-700 leading-snug">
-                        <strong className="text-neutral-950">Мини-игры:</strong> сыграйте в «Змейку» или «Дракончика», чтобы отвлечься и протестировать отзывчивость.
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-2.5">
-                      <span className="text-base leading-none">🖱️</span>
-                      <p className="text-neutral-700 leading-snug">
-                        <strong className="text-neutral-950">Симуляция ОС:</strong> перемещайте окна, сворачивайте их в панель задач и пробуйте меню «Пуск»!
-                      </p>
-                    </div>
-                  </div>
+      {/* ЯРЛЫКИ: десктоп — колонки слева, мобайл — сетка */}
+      <div className="absolute bottom-24 left-3 top-14 z-10 hidden flex-col flex-wrap content-start gap-1.5 md:flex">
+        {APPS.map((app) => (
+          <AppTile key={app.id} app={app} selected={sel === app.id} onOpen={() => openApp(app.id)} />
+        ))}
+      </div>
 
-                  {/* Footer actions */}
-                  <div className="mt-5 flex items-center justify-between pt-3 border-t border-black/10">
-                    <span className="text-[0.6875rem] text-neutral-500">
-                      Подсказку всегда можно открыть снова через ярлык «Инфо»
-                    </span>
-                    <button
-                      type="button"
-                      onClick={closeNotice}
-                      className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 px-5 py-2 text-[0.8125rem] font-bold text-white shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer ring-2 ring-blue-400/40"
-                    >
-                      <span>Понял!</span>
-                      <ArrowUpRight className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+      <div className="absolute inset-x-3 bottom-24 top-14 z-10 grid grid-cols-4 content-start gap-x-2 gap-y-3 px-1 md:hidden">
+        {APPS.map((app) => (
+          <AppTile key={app.id} app={app} selected={sel === app.id} onOpen={() => openApp(app.id)} />
+        ))}
+      </div>
 
-          {/* меню «Пуск» */}
-          {start && (
-            <div className="absolute bottom-11 left-1.5 z-50 w-56 overflow-hidden rounded-t-lg border border-white/40 bg-white shadow-2xl">
-              <div className="bg-gradient-to-b from-[#4a90e2] to-[#1a56c4] px-3 py-2 text-sm font-bold text-white">
-                maetti
-              </div>
-              <ul className="p-1">
-                {ICONS.map((it) => (
-                  <li key={it.id}>
-                    <Hit
-                      href={it.href}
-                      label={it.label}
-                      onClick={(e) => nav(e, it.id)}
-                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[0.8125rem] text-neutral-800 hover:bg-blue-600 hover:text-white"
-                    >
-                      <it.Icon className="h-4 w-4" />
-                      {it.label}
-                    </Hit>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+      {/* ВИДЖЕТЫ СПРАВА */}
+      {showWidgets && (
+        <aside
+          className={`absolute right-4 top-14 z-10 hidden w-72 flex-col gap-3 xl:flex transition-opacity duration-250 ${
+            hasMaxWin ? "opacity-0 pointer-events-none" : "opacity-100"
+          }`}
+        >
+          <WidgetsContent
+            clock={clock}
+            dateStr={dateStr}
+            noteText={noteText}
+            updateNote={updateNote}
+            isPlayingSound={isPlayingSound}
+            toggleSound={toggleSound}
+            onOpenCalc={() => openApp("calc")}
+          />
+        </aside>
+      )}
 
-          {/* панель задач: пуск с окнами слева, быстрый запуск строго по центру
-              (крайние колонки по 1fr), часы справа */}
-          <div className="absolute inset-x-0 bottom-0 z-40 grid h-11 grid-cols-[1fr_auto_1fr] items-center gap-1.5 border-t border-white/30 bg-gradient-to-b from-[#3a7be0] to-[#1941a5] px-1.5">
-            <div className="flex min-w-0 items-center gap-1.5">
+      {/* МОБИЛЬНАЯ ШТОРКА ВИДЖЕТОВ (<1280px) */}
+      {mobileWidgetsOpen && (
+        <div
+          onClick={() => setMobileWidgetsOpen(false)}
+          className="fixed inset-0 z-[60] flex justify-end bg-[var(--desk-scrim)] backdrop-blur-xs transition-opacity duration-200 xl:hidden"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="desk-pop flex h-full w-80 max-w-[85vw] flex-col border-l border-[var(--desk-border)] bg-[var(--desk-surface)] text-[var(--desk-fg)] shadow-2xl backdrop-blur-xl"
+          >
+            <div className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--desk-border)] px-4">
+              <span className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[var(--desk-fg)]">
+                <Layers className="h-4 w-4 text-[var(--desk-accent)]" />
+                Виджеты maeTtI
+              </span>
               <button
                 type="button"
-                onClick={() => setStart((s) => !s)}
-                className="flex shrink-0 items-center gap-1.5 rounded-md bg-gradient-to-b from-[#6bc257] to-[#2f7c1f] px-3 py-1.5 text-[0.8125rem] font-bold italic text-white shadow ring-1 ring-white/40"
+                onClick={() => setMobileWidgetsOpen(false)}
+                title="Закрыть виджеты"
+                className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--desk-border)] bg-[var(--desk-surface-2)] text-[var(--desk-muted)] transition-colors hover:bg-[var(--desk-surface-3)] hover:text-[var(--desk-fg)] cursor-pointer"
               >
-                <span className="grid h-3.5 w-3.5 grid-cols-2 gap-px">
-                  {[0, 1, 2, 3].map((i) => (
-                    <i key={i} className="rounded-[1px] bg-white/90" />
-                  ))}
-                </span>
-                пуск
+                <X className="h-4 w-4" />
               </button>
+            </div>
+            <div className="desk-scroll flex-1 space-y-3 overflow-y-auto p-4">
+              <WidgetsContent
+                clock={clock}
+                dateStr={dateStr}
+                noteText={noteText}
+                updateNote={updateNote}
+                isPlayingSound={isPlayingSound}
+                toggleSound={toggleSound}
+                onOpenCalc={() => {
+                  setMobileWidgetsOpen(false);
+                  openApp("calc");
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
-              <div className="flex min-w-0 gap-1 overflow-hidden">
-                {wins.map((w) => (
+      {/* ОКНА */}
+      {wins.map((w, i) => (
+        <Win
+          key={w.id}
+          title={TITLES[w.id] || w.id}
+          size={SIZES[w.id] ?? [520, 420]}
+          offset={i}
+          z={30 + i}
+          min={w.min}
+          focused={topWinId === w.id}
+          phone={phone}
+          dialog={w.id === "info"}
+          noMaximize={["snake", "dragon", "info"].includes(w.id)}
+          maximized={!!maxWins[w.id]}
+          onToggleMax={() => {
+            sounds.playGlassClick();
+            setMaxWins((m) => ({ ...m, [w.id]: !m[w.id] }));
+          }}
+          onClose={() => closeWin(w.id)}
+          onMin={() => minWin(w.id)}
+          onFocus={() => focusWin(w.id)}
+        >
+          {APPS.find((a) => a.id === w.id)?.href && (
+            <SiteIframe
+              path={w.id === "contacts" ? contactsPath : APPS.find((a) => a.id === w.id)!.href!}
+              title={TITLES[w.id]}
+            />
+          )}
+          {w.id === "calc" && <ProjectCalculatorApp onContact={handleCalcContact} />}
+          {w.id === "terminal" && (
+            <TerminalApp onThemeChange={changeTheme} onOpenCalc={() => openApp("calc")} onOpenApp={openApp} />
+          )}
+          {w.id === "snake" && <Snake active={topWinId === "snake" && !w.min} />}
+          {w.id === "dragon" && <Dragon active={topWinId === "dragon" && !w.min} />}
+          {w.id === "info" && <InfoApp onClose={() => closeWin("info")} />}
+        </Win>
+      ))}
+
+      {/* ДОК */}
+      <div
+        onMouseEnter={handleDockEnter}
+        onMouseLeave={handleDockLeave}
+        className={`absolute bottom-3 left-1/2 z-50 flex h-14 -translate-x-1/2 max-w-[calc(100vw-1.5rem)] items-center gap-2 overflow-hidden rounded-2xl border border-[var(--desk-border)] bg-[var(--desk-surface)] px-2.5 text-[var(--desk-fg)] shadow-lg backdrop-blur-md transition-all duration-300 ease-out select-none before:absolute before:-bottom-3 before:inset-x-0 before:h-3 before:content-[''] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+          !dockVisible
+            ? "translate-y-[calc(100%+2rem)] opacity-0 pointer-events-none"
+            : "translate-y-0 opacity-100 pointer-events-auto"
+        }`}
+      >
+        <button
+          type="button"
+          data-start-btn
+          onClick={() => {
+            sounds.playGlassClick();
+            setStartOpen((s) => !s);
+          }}
+          aria-expanded={startOpen}
+          className={`flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-3 text-[0.8125rem] font-bold transition-colors cursor-pointer active:scale-95 ${
+            startOpen
+              ? "bg-[var(--desk-accent)] text-[var(--desk-accent-fg)]"
+              : "bg-[var(--desk-surface-2)] text-[var(--desk-fg)] hover:bg-[var(--desk-surface-3)]"
+          }`}
+        >
+          <span className={`h-2 w-2 rounded-full ${startOpen ? "bg-[var(--desk-accent-fg)]" : "bg-[var(--desk-accent)]"}`} />
+          maeTtI
+        </button>
+
+        {wins.length > 0 && (
+          <>
+            <span className="h-6 w-px shrink-0 bg-[var(--desk-border)]" />
+            <div className="flex shrink-0 items-center gap-1.5">
+              {wins.map((w) => {
+                const app = APPS.find((a) => a.id === w.id);
+                if (!app) return null;
+                const Glyph = app.glyph;
+                const isTop = topWinId === w.id;
+                return (
                   <button
                     key={w.id}
                     type="button"
-                    onClick={() => task(w.id)}
-                    className={`max-w-[9.375rem] truncate rounded px-2 py-1 text-[0.75rem] text-white ring-1 ring-white/25 ${
-                      w.min ? "bg-white/10" : "bg-white/25"
-                    }`}
+                    onClick={() => toggleTask(w.id)}
+                    aria-label={TITLES[w.id] || w.id}
+                    title={`${TITLES[w.id] || w.id} — свёрнуть/развернуть`}
+                    style={tileStyle(app.tint)}
+                    className="group relative grid h-10 w-10 shrink-0 place-items-center rounded-xl border transition-all duration-150 hover:scale-105 cursor-pointer active:scale-90"
                   >
-                    {TITLES[w.id]}
+                    <Glyph className="h-5 w-5 stroke-[1.75]" />
+                    <span
+                      className={`absolute bottom-0.5 left-1/2 h-1 -translate-x-1/2 rounded-full transition-all ${
+                        isTop ? "w-4 bg-[var(--desk-accent)]" : w.min ? "w-1 bg-[var(--desk-muted)]" : "w-2 bg-[var(--desk-muted)]"
+                      }`}
+                    />
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
+            <span className="h-6 w-px shrink-0 bg-[var(--desk-border)]" />
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playGlassClick();
+                setWins((w) => w.map((x) => ({ ...x, min: !allMin })));
+              }}
+              title={allMin ? "Развернуть все окна" : "Свернуть все окна"}
+              aria-label={allMin ? "Развернуть все окна" : "Свернуть все окна"}
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--desk-border)] bg-[var(--desk-surface-2)] text-[var(--desk-muted)] transition-colors hover:bg-[var(--desk-surface-3)] hover:text-[var(--desk-fg)] cursor-pointer active:scale-90"
+            >
+              {allMin ? <Maximize2 className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+            </button>
+          </>
+        )}
+      </div>
 
-            <div className="flex items-center gap-1.5 rounded bg-black/15 px-1.5 py-1">
-              {ICONS.filter((it) => it.href).map((it) => (
-                <Link
-                  key={it.id}
-                  href={it.href!}
-                  onClick={(e) => nav(e, it.id)}
-                  aria-label={it.label}
-                  title={it.label}
-                  className={`grid h-7 w-7 place-items-center rounded bg-gradient-to-br ${it.tint} shadow ring-1 ring-white/40 outline-none transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-white`}
+      {/* ЛАУНЧЕР */}
+      {startOpen && (
+        <div
+          data-start-menu
+          onMouseEnter={handleDockEnter}
+          onMouseLeave={handleDockLeave}
+          className="desk-pop absolute bottom-[4.75rem] left-3 z-[55] w-[21rem] rounded-2xl border border-[var(--desk-border)] bg-[var(--desk-surface)] p-4 text-[var(--desk-fg)] shadow-[var(--desk-shadow)] backdrop-blur-md"
+        >
+          <div className="mb-3 flex items-baseline justify-between">
+            <span className="text-sm font-black tracking-tight text-[var(--desk-fg)]">
+              maeTtI<span className="text-[var(--desk-muted)]">OS</span>
+            </span>
+            <span className="text-[0.625rem] font-bold uppercase tracking-widest text-[var(--desk-muted)]">Все приложения</span>
+          </div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {APPS.map((app) => (
+              <button
+                key={app.id}
+                type="button"
+                onClick={() => openApp(app.id)}
+                className="flex flex-col items-center gap-1.5 rounded-xl p-2.5 text-[var(--desk-fg)] transition-colors hover:bg-[var(--desk-surface-2)] cursor-pointer active:scale-95"
+              >
+                <span style={tileStyle(app.tint)} className="grid h-11 w-11 place-items-center rounded-2xl border">
+                  <app.glyph className="h-5 w-5 stroke-[1.75]" />
+                </span>
+                <span className="text-[0.6875rem] font-semibold text-[var(--desk-fg)]">{app.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* SPOTLIGHT */}
+      {spotlightOpen && (
+        <div
+          onClick={() => setSpotlightOpen(false)}
+          className="absolute inset-0 z-[60] flex items-start justify-center bg-[var(--desk-scrim)] pt-24 backdrop-blur-[2px]"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="desk-pop w-full max-w-lg overflow-hidden rounded-2xl border border-[var(--desk-border)] bg-[var(--desk-surface)] shadow-[var(--desk-shadow)] backdrop-blur-md"
+          >
+            <div className="flex items-center gap-2.5 border-b border-[var(--desk-border)] px-4 py-3 text-[var(--desk-fg)]">
+              <Search className="h-4.5 w-4.5 text-[var(--desk-muted)]" />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setResultIdx(0);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    setResultIdx((i) => Math.min(i + 1, results.length - 1));
+                  } else if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    setResultIdx((i) => Math.max(i - 1, 0));
+                  } else if (e.key === "Enter" && results[resultIdx]) {
+                    openApp(results[resultIdx].id);
+                  }
+                }}
+                placeholder="Поиск по столу: услуги, кейсы, игры…"
+                autoFocus
+                className="flex-1 bg-transparent text-sm text-[var(--desk-fg)] outline-none placeholder:text-[var(--desk-muted)]"
+              />
+              <kbd className="rounded-md border border-[var(--desk-border)] bg-[var(--desk-surface-2)] px-1.5 py-0.5 font-mono text-[0.625rem] text-[var(--desk-muted)]">ESC</kbd>
+            </div>
+            <div className="desk-scroll max-h-64 overflow-auto p-1.5">
+              {results.map((a, i) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => openApp(a.id)}
+                  onMouseEnter={() => setResultIdx(i)}
+                  className={`flex w-full items-center gap-3 rounded-xl p-2.5 text-left text-xs transition-colors cursor-pointer ${
+                    i === resultIdx ? "bg-[var(--desk-surface-3)]" : ""
+                  }`}
                 >
-                  <it.Icon className="h-4 w-4 text-white drop-shadow" />
-                </Link>
+                  <span style={tileStyle(a.tint)} className="grid h-7 w-7 shrink-0 place-items-center rounded-lg border">
+                    <a.glyph className="h-4 w-4 stroke-[1.75]" />
+                  </span>
+                  <span className="font-bold text-[var(--desk-fg)]">{a.label}</span>
+                  <span className="truncate text-[0.6875rem] text-[var(--desk-muted)]">{a.description}</span>
+                </button>
               ))}
-            </div>
-
-            <div className="justify-self-end rounded bg-black/15 px-2 py-1 text-[0.75rem] tabular-nums text-white">
-              {clock}
+              {results.length === 0 && (
+                <div className="p-4 text-center text-xs text-[var(--desk-muted)]">Ничего не найдено</div>
+              )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* КОНТЕКСТНОЕ МЕНЮ */}
+      {menu && (
+        <div
+          data-context-menu
+          style={{ left: menu.x, top: menu.y }}
+          onClick={(e) => e.stopPropagation()}
+          className="desk-pop absolute z-[60] w-56 overflow-hidden rounded-2xl border border-[var(--desk-border)] bg-[var(--desk-surface)] p-1.5 text-[var(--desk-fg)] shadow-[var(--desk-shadow)] backdrop-blur-md"
+        >
+          <div className="px-2.5 pb-1 pt-1.5 text-[0.625rem] font-bold uppercase tracking-widest text-[var(--desk-muted)]">
+            Тема обоев
+          </div>
+          <div className="mb-1.5 grid grid-cols-5 gap-1 px-2 py-1">
+            {THEME_ORDER.map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => {
+                  changeTheme(t);
+                  setMenu(null);
+                }}
+                title={THEMES[t].name}
+                aria-label={THEMES[t].name}
+                style={{ background: THEME_SWATCH[t] }}
+                className={`h-6 w-full rounded-lg border border-black/10 transition-transform cursor-pointer ${
+                  theme === t ? "scale-105 ring-2 ring-[var(--desk-accent)]" : "opacity-75 hover:opacity-100"
+                }`}
+              />
+            ))}
+          </div>
+
+          <div className="my-1 h-px bg-[var(--desk-border)]" />
+
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== "undefined" && window.innerWidth < 1280) {
+                setMobileWidgetsOpen((s) => !s);
+              } else {
+                setShowWidgets((s) => !s);
+              }
+              setMenu(null);
+            }}
+            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs text-[var(--desk-fg)] transition-colors hover:bg-[var(--desk-surface-2)] cursor-pointer text-left"
+          >
+            <Layers className="h-3.5 w-3.5 text-[var(--desk-muted)]" />
+            {(typeof window !== "undefined" && window.innerWidth < 1280 ? mobileWidgetsOpen : showWidgets)
+              ? "Скрыть виджеты"
+              : "Показать виджеты"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playGlassClick();
+              setWins((w) => w.map((x) => ({ ...x, min: true })));
+              setMenu(null);
+            }}
+            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs text-[var(--desk-fg)] transition-colors hover:bg-[var(--desk-surface-2)] cursor-pointer text-left"
+          >
+            <Minus className="h-3.5 w-3.5 text-[var(--desk-muted)]" />
+            Свернуть все окна
+          </button>
         </div>
       )}
     </section>
