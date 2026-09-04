@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 
 // Водолаз вместо ползунка прокрутки. Источник правды — нативный скролл
 // документа: колесо, тач и клавиши работают как обычно, водолаза можно
@@ -34,6 +35,9 @@ const BUBBLE_BURST_SIZES = [8, 10, 7, 9];
 export default function DiverScroll() {
   const controllerRef = useRef<HTMLElement>(null);
   const bubbleLayerRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  // Тёмные страницы (контакты): водолаз и пузырьки белые.
+  const dark = pathname === "/contacts";
 
   useEffect(() => {
     const controller = controllerRef.current;
@@ -121,7 +125,7 @@ export default function DiverScroll() {
       progress = clamp01(nextProgress);
       const trackRect = track.getBoundingClientRect();
       let thumbX = 0;
-      let thumbY = progress * trackRect.height;
+      const thumbY = progress * trackRect.height;
       try {
         const ropePoint = rope.getPointAtLength(ropeLength * progress);
         thumbX =
@@ -323,11 +327,12 @@ export default function DiverScroll() {
 
   return (
     <>
-      <div className="bubble-trail" ref={bubbleLayerRef} aria-hidden="true" />
+      <div className="bubble-trail" ref={bubbleLayerRef} aria-hidden="true" data-theme={dark ? "dark" : undefined} />
 
       <aside
         className="dive-controller"
         ref={controllerRef}
+        data-theme={dark ? "dark" : undefined}
         data-active="true"
         data-direction="down"
         data-moving="false"
