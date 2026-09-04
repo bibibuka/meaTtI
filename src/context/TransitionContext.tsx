@@ -7,7 +7,7 @@ import React, {
   useEffect,
   useCallback,
 } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 
 interface TransitionContextType {
@@ -28,7 +28,6 @@ export function TransitionProvider({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [pending, setPending] = useState<{
     href: string;
     from: string;
@@ -55,8 +54,15 @@ export function TransitionProvider({
           if (targetHash) {
             window.location.hash = targetHash;
             window.dispatchEvent(new Event("hashchange"));
+          } else if (window.location.hash) {
+            history.replaceState(null, "", targetPath);
+            window.dispatchEvent(new Event("hashchange"));
           }
         } else {
+          if (window.location.hash) {
+            history.replaceState(null, "", targetPath);
+            window.dispatchEvent(new Event("hashchange"));
+          }
           window.scrollTo({ top: 0, behavior: "smooth" });
         }
         return;

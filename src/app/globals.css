@@ -378,6 +378,21 @@ html::-webkit-scrollbar {
   outline-color: #155dfc;
 }
 
+/* Тёмные страницы (контакты): водолаз и его пузырьки белые.
+   Верёвка пройденного пути белеет сама (currentColor), пунктир
+   нетронутого пути оставляем бледно-синим — он и на тёмном виден. */
+.dive-controller[data-theme="dark"] {
+  color: #ffffff;
+}
+
+.dive-controller[data-theme="dark"] .diver-thumb:focus {
+  outline-color: #ffffff;
+}
+
+.bubble-trail[data-theme="dark"] {
+  color: #ffffff;
+}
+
 .dive-controller[data-dragging="true"] .diver-thumb {
   cursor: grabbing;
 }
@@ -515,8 +530,10 @@ html {
    общие для глобального файла, поэтому всё живёт под .kelp-scene.
    ========================================================= */
 .kelp-strip {
+  /* Оба слоя — синий водолаза (#155dfc): глубину передаёт прозрачность
+     заднего слоя, а не другой оттенок. */
   --kelp-blue: #155dfc;
-  --kelp-pale: #b6d7ff;
+  --kelp-pale: #155dfc;
   position: relative;
   width: 100%;
   height: var(--kelp-h);
@@ -526,34 +543,35 @@ html {
 }
 
 .kelp-strip--invert {
-  --kelp-blue: #38b6ff;
-  --kelp-pale: #60a5fa;
+  --kelp-blue: #ffffff;
+  --kelp-pale: #ffffff;
 }
 
-.kelp-strip--invert .kelp-scene .blade,
-.kelp-strip--invert .kelp-scene .leaf {
-  fill: #ffffff !important;
-}
+/* В инверсии заливка лепестков прозрачная (задаётся пропсом transparentBlades
+   в <KelpFrame/> — CSS до клонов <use> не дотягивается): остаются белые
+   контуры, сквозь которые виден фон страницы. */
 
 .kelp-strip--invert .kelp-layer--rear {
-  color: #60a5fa;
-  stroke: #60a5fa;
-  opacity: 0.85;
+  color: #ffffff;
+  stroke: #ffffff;
+  opacity: 0.55;
 }
 
 .kelp-strip--invert .kelp-layer--front {
-  color: #38b6ff;
-  stroke: #38b6ff;
+  color: #ffffff;
+  stroke: #ffffff;
 }
 
 .kelp-strip--invert .seabed-line--rear {
-  stroke: #3b82f6;
-  stroke-width: 1.6;
+  stroke: #ffffff;
+  stroke-width: 0.7;
+  opacity: 0.5;
 }
 
 .kelp-strip--invert .seabed-line--front {
-  stroke: #38b6ff;
-  stroke-width: 2;
+  stroke: #ffffff;
+  stroke-width: 0.9;
+  opacity: 1;
 }
 
 .kelp-scene {
@@ -563,12 +581,11 @@ html {
   overflow: visible;
 }
 
-/* Цвет кустов отдаётся наследованием от слоя, а не currentColor внутри <defs>.
-   <use> клонирует уже вычисленный стиль оригинала, а currentColor там разрешён
-   по цвету самого <defs> — то есть по тексту страницы. В прототипе цвет текста
-   не задан вовсе, поэтому там это не всплыло, а на сайте body красится в
-   --foreground, и кусты вылезли чёрными. Наследуемый stroke, в отличие от
-   вычисленного currentColor, доезжает до клона от самого <use>. */
+/* Цвет контура кустов наследуется от слоя: клоны <use> не матчатся
+   правилами вида ".kelp-scene .blade", поэтому заливки, толщины и
+   vector-effect заданы presentation-атрибутами прямо в <defs> внутри
+   <KelpFrame/> — атрибуты клонируются всегда. Наследуемый stroke,
+   в отличие от вычисленного currentColor, доезжает до клона от <use>. */
 .kelp-scene .kelp-layer--rear {
   color: var(--kelp-pale);
   stroke: var(--kelp-pale);
@@ -589,6 +606,7 @@ html {
 .kelp-scene .kelp-bubble,
 .kelp-scene .seabed-line {
   vector-effect: non-scaling-stroke;
+  stroke: inherit;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
@@ -596,28 +614,24 @@ html {
 .kelp-scene .blade,
 .kelp-scene .leaf {
   fill: #ffffff;
-  stroke-width: 2.15;
+  stroke-width: 1.075;
 }
 
 .kelp-scene .grass,
 .kelp-scene .stem {
   fill: none;
-  stroke-width: 2.15;
+  stroke-width: 1.075;
 }
 
 .kelp-scene .vein {
   fill: none;
-  stroke-width: 1.15;
+  stroke-width: 0.575;
   opacity: 0.62;
 }
 
 .kelp-scene .holdfast {
   fill: none;
-  stroke-width: 2.15;
-}
-
-.kelp-scene .kelp-anchor {
-  fill: currentColor;
+  stroke-width: 1.075;
 }
 
 .kelp-scene .seabed-line {
@@ -627,13 +641,13 @@ html {
 /* Линии дна лежат прямо в <svg>, а не в слое, поэтому цвет им ставим явно. */
 .kelp-scene .seabed-line--rear {
   stroke: var(--kelp-pale);
-  stroke-width: 1.4;
+  stroke-width: 0.7;
   opacity: 0.7;
 }
 
 .kelp-scene .seabed-line--front {
   stroke: var(--kelp-blue);
-  stroke-width: 1.8;
+  stroke-width: 0.9;
 }
 
 /* Куст качается целиком, каждая лопасть — ещё и сама по себе, в своей фазе. */
@@ -664,14 +678,12 @@ html {
 .kelp-scene .frond--c { animation-name: frond-sway-c; animation-duration: 5s; animation-delay: -5.7s; }
 .kelp-scene .frond--d { animation-name: frond-sway-d; animation-duration: 4.5s; animation-delay: -2.3s; }
 .kelp-scene .frond--e { animation-name: frond-sway-e; animation-duration: 5.1s; animation-delay: -4.6s; }
-.kelp-scene .frond--branch-left { animation-name: branch-sway-left; animation-duration: 4.2s; }
-.kelp-scene .frond--branch-right { animation-name: branch-sway-right; animation-duration: 4.6s; }
 
 .kelp-scene .kelp-bubble {
   --bubble-drift: 4px;
   --bubble-drift-end: 6px;
   fill: #ffffff;
-  stroke-width: 1.45;
+  stroke-width: 0.725;
   opacity: 0;
   transform-box: fill-box;
   transform-origin: center;
@@ -691,30 +703,58 @@ html {
 .kelp-scene .bubble--3 { --bubble-step: 0.36s; --bubble-drift: 2px; --bubble-drift-end: 4px; }
 .kelp-scene .bubble--4 { --bubble-step: 0.54s; --bubble-drift: -2px; --bubble-drift-end: -4px; }
 
+/* Качание — не одна ось, а композиция: куст целиком (наклон + изгиб
+   skewX с промежуточными стопами), каждая лопасть — ещё своя ось
+   наклона и своя ось изгиба в другой фазе. skewX от основания гнёт
+   вершину сильнее, чем низ, поэтому лопасть не ходит «палкой». */
 @keyframes kelp-sway-a {
-  from { transform: translateX(-1.5px) rotate(-1.8deg); }
-  to   { transform: translateX(2px) rotate(2.4deg); }
+  0%   { transform: translateX(-1.5px) rotate(-1.8deg) skewX(1.2deg); }
+  42%  { transform: translateX(0.3px) rotate(0.2deg) skewX(-1.6deg); }
+  100% { transform: translateX(2px) rotate(2.4deg) skewX(1deg); }
 }
 @keyframes kelp-sway-b {
-  from { transform: translateX(1.5px) rotate(2deg); }
-  to   { transform: translateX(-2px) rotate(-2.7deg); }
+  0%   { transform: translateX(1.5px) rotate(2deg) skewX(-1.1deg); }
+  55%  { transform: translateX(-0.6px) rotate(-0.5deg) skewX(1.7deg); }
+  100% { transform: translateX(-2px) rotate(-2.7deg) skewX(-0.9deg); }
 }
 @keyframes kelp-sway-c {
-  from { transform: translateX(-1px) rotate(-1.3deg); }
-  to   { transform: translateX(2.5px) rotate(2.1deg); }
+  0%   { transform: translateX(-1px) rotate(-1.3deg) skewX(1.5deg); }
+  38%  { transform: translateX(1.1px) rotate(0.8deg) skewX(-1.3deg); }
+  100% { transform: translateX(2.5px) rotate(2.1deg) skewX(1.2deg); }
 }
 @keyframes kelp-sway-d {
-  from { transform: translateX(1.2px) rotate(1.6deg); }
-  to   { transform: translateX(-2.2px) rotate(-2.2deg); }
+  0%   { transform: translateX(1.2px) rotate(1.6deg) skewX(-1.4deg); }
+  60%  { transform: translateX(-0.7px) rotate(-0.7deg) skewX(1.6deg); }
+  100% { transform: translateX(-2.2px) rotate(-2.2deg) skewX(-1deg); }
 }
 
-@keyframes frond-sway-a { from { transform: rotate(-9deg); }    to { transform: rotate(10deg); } }
-@keyframes frond-sway-b { from { transform: rotate(9.5deg); }   to { transform: rotate(-10deg); } }
-@keyframes frond-sway-c { from { transform: rotate(-8.5deg); }  to { transform: rotate(10.5deg); } }
-@keyframes frond-sway-d { from { transform: rotate(9.2deg); }   to { transform: rotate(-9.8deg); } }
-@keyframes frond-sway-e { from { transform: rotate(-10.2deg); } to { transform: rotate(8.8deg); } }
-@keyframes branch-sway-left  { from { transform: rotate(-14deg); }   to { transform: rotate(15deg); } }
-@keyframes branch-sway-right { from { transform: rotate(14.5deg); }  to { transform: rotate(-14.5deg); } }
+@keyframes frond-sway-a {
+  0%   { transform: rotate(-9deg) skewX(-3.5deg); }
+  32%  { transform: rotate(-4deg) skewX(4.5deg); }
+  68%  { transform: rotate(4deg) skewX(-3deg); }
+  100% { transform: rotate(10deg) skewX(3deg); }
+}
+@keyframes frond-sway-b {
+  0%   { transform: rotate(9.5deg) skewX(3.2deg); }
+  40%  { transform: rotate(3.5deg) skewX(-4.2deg); }
+  100% { transform: rotate(-10deg) skewX(-2.8deg); }
+}
+@keyframes frond-sway-c {
+  0%   { transform: rotate(-8.5deg) skewX(4deg); }
+  35%  { transform: rotate(-2.5deg) skewX(-4.6deg); }
+  70%  { transform: rotate(4.5deg) skewX(3.2deg); }
+  100% { transform: rotate(10.5deg) skewX(-3deg); }
+}
+@keyframes frond-sway-d {
+  0%   { transform: rotate(9.2deg) skewX(-3.8deg); }
+  45%  { transform: rotate(2deg) skewX(4deg); }
+  100% { transform: rotate(-9.8deg) skewX(3.4deg); }
+}
+@keyframes frond-sway-e {
+  0%   { transform: rotate(-10.2deg) skewX(3.6deg); }
+  50%  { transform: rotate(-3deg) skewX(-4.4deg); }
+  100% { transform: rotate(8.8deg) skewX(-3.2deg); }
+}
 
 @keyframes kelp-bubble-rise {
   0%, 6% {
@@ -766,21 +806,63 @@ html {
   overflow: clip;
 }
 
-.win-ui {
-  font-family: Tahoma, "Segoe UI", Verdana, sans-serif;
-}
-.ios-ui {
-  font-family: -apple-system, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
-}
-
-/* Открытие «приложения» на айфоне: рывок из точки касания. */
-.ios-open {
-  animation: ios-open 260ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
-}
-@keyframes ios-open {
+/* Открытие окон стола: только fade — transform занят позиционированием
+   окна (translate), scale в анимации перекрыл бы его и окно дёргалось
+   бы в центр при каждом открытии. */
+@keyframes desk-fade {
   from {
     opacity: 0;
-    transform: scale(0.88);
+  }
+}
+.desk-fade {
+  animation: desk-fade 180ms ease-out;
+}
+
+/* Появление панелей (лаунчер, Spotlight, контекстное меню): здесь
+   transform свободен, поэтому лёгкий scale уместен. */
+@keyframes desk-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+.desk-pop {
+  animation: desk-pop 180ms cubic-bezier(0.2, 0.8, 0.25, 1);
+}
+
+/* Живые обои: два орба медленно дрейфуют туда-обратно. */
+@keyframes desk-orb {
+  to {
+    transform: translate3d(var(--dx, 40px), var(--dy, 30px), 0);
+  }
+}
+.desk-orb {
+  animation: desk-orb var(--dur, 40s) ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+/* Тонкий скроллбар в тон темы внутри окон и списков стола. */
+.desk-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--desk-border, rgba(148, 163, 184, 0.3)) transparent;
+}
+.desk-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.desk-scroll::-webkit-scrollbar-thumb {
+  background: var(--desk-border, rgba(148, 163, 184, 0.3));
+  border-radius: 999px;
+}
+.desk-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desk-fade,
+  .desk-pop,
+  .desk-orb {
+    animation: none;
   }
 }
 
@@ -806,11 +888,28 @@ html {
   top: 0;
 }
 
-header {
-  transition: transform 350ms cubic-bezier(0.22, 1, 0.36, 1);
+/* Адаптивная оптимизация сетки и отступов для встроенных окон рабочего стола */
+.embed .max-w-7xl {
+  max-width: 100% !important;
 }
-.desk-on header {
-  transform: translateY(-100%);
+
+/* Отключаем перехват событий мыши во фреймах при перетаскивании окон стола */
+.desk-dragging iframe {
+  pointer-events: none !important;
+}
+
+.site-header {
+  transition: transform 350ms cubic-bezier(0.22, 1, 0.36, 1), opacity 350ms ease;
+}
+html.desk-locked,
+body.desk-locked {
+  overflow: hidden !important;
+  touch-action: none;
+}
+.desk-on .site-header {
+  transform: translateY(-100%) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 /* Водолаз и его пузырьки гаснут своим же переходом (см. .dive-controller
    и .bubble-trail выше); ползунку отдельно снимаем клики, иначе он ловит

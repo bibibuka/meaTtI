@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
@@ -40,7 +41,13 @@ export default function RootLayout({
           успеет мигнуть. Любая ссылка изнутри окна выводит на настоящий сайт
           поверх симуляции — перехватываем на capture, до роутера. */}
       <head>
-        <script
+        <link rel="preconnect" href="https://images.unsplash.com" />
+        <link rel="dns-prefetch" href="https://images.unsplash.com" />
+        {/* Сырой <script> в дереве React дает dev-предупреждение "Encountered a script
+            tag" и красный бейдж Issues в dev-оверлее — поэтому через next/script. */}
+        <Script
+          id="embed-detect"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `if(self!==top){document.documentElement.classList.add("embed");addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[href]");if(!a||a.target||a.getAttribute("href").charAt(0)==="#")return;e.preventDefault();top.location.href=a.href},true)}`,
           }}

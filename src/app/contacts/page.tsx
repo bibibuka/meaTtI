@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Send, Terminal, ShieldCheck, RefreshCw } from "lucide-react";
 import { TransitionLink } from "@/context/TransitionContext";
@@ -14,6 +14,26 @@ export default function ContactsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const tier = params.get("tier");
+    const budget = params.get("budget");
+    const days = params.get("days");
+    if (tier || budget || days) {
+      const lines = [
+        "Бриф из калькулятора maeTtI OS:",
+        tier ? `• Тип проекта: ${tier}` : null,
+        budget ? `• Оценка бюджета: ${Number(budget).toLocaleString("ru-RU")} ₽` : null,
+        days ? `• Срок: ~${days} рабочих дней` : null,
+      ].filter(Boolean);
+      const text = lines.join("\n");
+      queueMicrotask(() => {
+        setMessage(text);
+      });
+    }
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

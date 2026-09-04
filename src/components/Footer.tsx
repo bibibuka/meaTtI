@@ -51,7 +51,7 @@ export default function Footer() {
     <div className={`w-full mt-auto flex flex-col ${config.bg}`}>
       {/* Своя зона под ламинарии в потоке между контентом и футером */}
       <div className="w-full">
-        <KelpFrame className={config.kelpInvert ? "kelp-strip--invert" : ""} />
+        <KelpFrame className={config.kelpInvert ? "kelp-strip--invert" : ""} transparentBlades={config.kelpInvert} />
       </div>
 
       {/* Компактный обрезанный футер (1/4 от стандартного) */}
