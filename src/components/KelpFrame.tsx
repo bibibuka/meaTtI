@@ -134,18 +134,14 @@ export default function KelpFrame({
             <path className="holdfast" vectorEffect="non-scaling-stroke" d="M -16 2 Q -10 -12 -3 0 Q 3 -16 8 0 Q 14 -10 19 2" />
           </g>
 
-          <g id="kelp-e-left" transform="scale(.18)" fill="none" strokeWidth="1.075" strokeLinecap="round" strokeLinejoin="round">
-            <path className="stem" vectorEffect="non-scaling-stroke" d="M -4 -65 C -41 -87 -55 -111 -61 -142" />
-            <path className="leaf" fill={bladeFill} vectorEffect="non-scaling-stroke" d="M -25 -83 C -55 -82 -69 -100 -67 -126 C -41 -127 -25 -111 -25 -83 Z" />
-          </g>
-          <g id="kelp-e-right" transform="scale(.18)" fill="none" strokeWidth="1.075" strokeLinecap="round" strokeLinejoin="round">
-            <path className="stem" vectorEffect="non-scaling-stroke" d="M 2 -105 C 38 -127 51 -153 56 -184" />
-            <path className="leaf" fill={bladeFill} vectorEffect="non-scaling-stroke" d="M 21 -121 C 50 -122 68 -140 67 -166 C 40 -167 22 -150 21 -121 Z" />
-          </g>
-          <g id="kelp-e-main" transform="scale(.18)" fill="none" strokeWidth="1.075" strokeLinecap="round" strokeLinejoin="round">
+          <g id="kelp-e" transform="scale(.18)" fill="none" strokeWidth="1.075" strokeLinecap="round" strokeLinejoin="round">
             <path className="stem" vectorEffect="non-scaling-stroke" d="M 0 0 C -15 -79 18 -150 -6 -251" />
             <path className="leaf" fill={bladeFill} vectorEffect="non-scaling-stroke" d="M -10 -181 C -39 -187 -51 -207 -44 -232 C -17 -226 -3 -207 -10 -181 Z" />
             <path className="leaf" fill={bladeFill} vectorEffect="non-scaling-stroke" d="M 0 -216 C 25 -229 38 -252 29 -276 C 4 -264 -7 -241 0 -216 Z" />
+            <path className="stem" vectorEffect="non-scaling-stroke" d="M -4 -65 C -41 -87 -55 -111 -61 -142" />
+            <path className="leaf" fill={bladeFill} vectorEffect="non-scaling-stroke" d="M -25 -83 C -55 -82 -69 -100 -67 -126 C -41 -127 -25 -111 -25 -83 Z" />
+            <path className="stem" vectorEffect="non-scaling-stroke" d="M 2 -105 C 38 -127 51 -153 56 -184" />
+            <path className="leaf" fill={bladeFill} vectorEffect="non-scaling-stroke" d="M 21 -121 C 50 -122 68 -140 67 -166 C 40 -167 22 -150 21 -121 Z" />
           </g>
           <g id="kelp-e-base" transform="scale(.18)" fill="none" strokeWidth="1.075" strokeLinecap="round" strokeLinejoin="round">
             <path className="holdfast" vectorEffect="non-scaling-stroke" d="M -17 2 Q -10 -13 -3 0 Q 3 -17 9 0 Q 14 -11 20 2" />
@@ -243,9 +239,7 @@ export default function KelpFrame({
           </g>
           <g className="kelp-slot" transform="translate(575 425) scale(.9 .78)">
             <g className="kelp-motion motion--d" data-kelp="kelp-e">
-              <use className="frond frond--a frond--branch-left" href="#kelp-e-left" />
-              <use className="frond frond--b frond--branch-right" href="#kelp-e-right" />
-              <use className="frond frond--c" href="#kelp-e-main" />
+              <use className="frond frond--c" href="#kelp-e" />
               <use href="#kelp-e-base" />
             </g>
           </g>

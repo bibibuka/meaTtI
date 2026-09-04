@@ -138,15 +138,7 @@ body {
   animation-delay: -4.6s;
 }
 
-.frond--branch-left {
-  animation-name: branch-sway-left;
-  animation-duration: 4.2s;
-}
 
-.frond--branch-right {
-  animation-name: branch-sway-right;
-  animation-duration: 4.6s;
-}
 
 .kelp-bubble {
   --bubble-drift: 4px;
@@ -334,23 +326,7 @@ body {
   }
 }
 
-@keyframes branch-sway-left {
-  from {
-    transform: rotate(-14deg);
-  }
-  to {
-    transform: rotate(15deg);
-  }
-}
 
-@keyframes branch-sway-right {
-  from {
-    transform: rotate(14.5deg);
-  }
-  to {
-    transform: rotate(-14.5deg);
-  }
-}
 
 @keyframes bubble-rise {
   0%,

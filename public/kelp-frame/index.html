@@ -88,18 +88,14 @@
               <path class="holdfast" d="M -16 2 Q -10 -12 -3 0 Q 3 -16 8 0 Q 14 -10 19 2" />
             </g>
 
-            <g id="kelp-e-left" transform="scale(.18)">
-              <path class="stem" d="M -4 -65 C -41 -87 -55 -111 -61 -142" />
-              <path class="leaf" d="M -25 -83 C -55 -82 -69 -100 -67 -126 C -41 -127 -25 -111 -25 -83 Z" />
-            </g>
-            <g id="kelp-e-right" transform="scale(.18)">
-              <path class="stem" d="M 2 -105 C 38 -127 51 -153 56 -184" />
-              <path class="leaf" d="M 21 -121 C 50 -122 68 -140 67 -166 C 40 -167 22 -150 21 -121 Z" />
-            </g>
-            <g id="kelp-e-main" transform="scale(.18)">
+            <g id="kelp-e" transform="scale(.18)">
               <path class="stem" d="M 0 0 C -15 -79 18 -150 -6 -251" />
               <path class="leaf" d="M -10 -181 C -39 -187 -51 -207 -44 -232 C -17 -226 -3 -207 -10 -181 Z" />
               <path class="leaf" d="M 0 -216 C 25 -229 38 -252 29 -276 C 4 -264 -7 -241 0 -216 Z" />
+              <path class="stem" d="M -4 -65 C -41 -87 -55 -111 -61 -142" />
+              <path class="leaf" d="M -25 -83 C -55 -82 -69 -100 -67 -126 C -41 -127 -25 -111 -25 -83 Z" />
+              <path class="stem" d="M 2 -105 C 38 -127 51 -153 56 -184" />
+              <path class="leaf" d="M 21 -121 C 50 -122 68 -140 67 -166 C 40 -167 22 -150 21 -121 Z" />
             </g>
             <g id="kelp-e-base" transform="scale(.18)">
               <path class="holdfast" d="M -17 2 Q -10 -13 -3 0 Q 3 -17 9 0 Q 14 -11 20 2" />
@@ -188,9 +184,7 @@
             </g>
             <g class="kelp-slot" transform="translate(575 425) scale(.9 .78)">
               <g class="kelp-motion motion--d" data-kelp="kelp-e">
-                <use class="frond frond--a frond--branch-left" href="#kelp-e-left" />
-                <use class="frond frond--b frond--branch-right" href="#kelp-e-right" />
-                <use class="frond frond--c" href="#kelp-e-main" />
+                <use class="frond frond--c" href="#kelp-e" />
                 <use href="#kelp-e-base" />
               </g>
               <circle class="kelp-anchor" r="2.5" />
