@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { motion, useInView, useReducedMotion } from "framer-motion";
 import { ArrowUpRight, MousePointerClick } from "lucide-react";
 import { Unbounded, Onest } from "next/font/google";
@@ -55,13 +55,48 @@ export const SERVICES = [
 const FULL_TEXT =
   "Мы проектируем цифровые экосистемы: освобождаем сотрудников от рутины и делаем их работу удобнее, а бизнесу экономим бюджет и операционные расходы.";
 
+interface CharData {
+  char: string;
+  index: number;
+}
+
+interface WordData {
+  word: string;
+  chars: CharData[];
+  wordStartIndex: number;
+  spaceIndex: number | null;
+}
+
+const WORDS_DATA: WordData[] = (() => {
+  const words = FULL_TEXT.split(" ");
+  let runningIndex = 0;
+  return words.map((word, wIdx) => {
+    const chars = word.split("").map((char, cIdx) => ({
+      char,
+      index: runningIndex + cIdx,
+    }));
+    const wordStartIndex = runningIndex;
+    runningIndex += word.length;
+    const hasSpace = wIdx < words.length - 1;
+    const spaceIndex = hasSpace ? runningIndex : null;
+    if (hasSpace) runningIndex += 1;
+
+    return {
+      word,
+      chars,
+      wordStartIndex,
+      spaceIndex,
+    };
+  });
+})();
+
 const SESSION_KEY = "maetti_services_intro_seen";
 
 const emptySubscribe = () => () => {};
 
 export default function ServicesSection() {
   const sectionRef = useRef<HTMLElement>(null);
-  const isInView = useInView(sectionRef, { once: true, amount: 0.25 });
+  const isInView = useInView(sectionRef, { once: true, amount: 0.05 });
   const shouldReduceMotion = useReducedMotion();
 
   // Read session storage safely without triggering hydration mismatches or cascading setState
@@ -121,7 +156,7 @@ export default function ServicesSection() {
     }, 1200);
   }, []);
 
-  // Typewriter effect (in blue)
+  // Natural typewriter effect with cadence on punctuation
   useEffect(() => {
     if (shouldReduceMotion) {
       queueMicrotask(() => {
@@ -134,50 +169,69 @@ export default function ServicesSection() {
 
     if (!isInView || isSettled) return;
 
-    // Small delay before typing begins
-    const startTimer = setTimeout(() => {
-      let current = 0;
-      const interval = setInterval(() => {
-        current += 1;
-        setCharCount(current);
+    let timeoutId: NodeJS.Timeout;
+    let current = 0;
 
-        if (current >= FULL_TEXT.length) {
-          clearInterval(interval);
-          setIsTyped(true);
-          // Does NOT automatically settle — waits for user click!
-        }
-      }, 17);
+    const typeNext = () => {
+      current += 1;
+      setCharCount(current);
 
-      return () => clearInterval(interval);
-    }, 180);
+      if (current >= FULL_TEXT.length) {
+        setIsTyped(true);
+        return;
+      }
 
-    return () => clearTimeout(startTimer);
-  }, [isInView, shouldReduceMotion, isSettled]);
+      const prevChar = FULL_TEXT[current - 1];
+      let delay = 18;
+      if (prevChar === ":" || prevChar === ".") {
+        delay = 140;
+      } else if (prevChar === ",") {
+        delay = 80;
+      }
 
-  // Handle interaction: click ONLY triggers once typing is completely finished
-  const handleInteraction = (e: React.MouseEvent) => {
-    if (!isTyped || isSettled) return;
-    e.preventDefault();
-    e.stopPropagation();
-    settleSection();
-  };
-
-  // Listen for click anywhere on the page once text has finished typing
-  useEffect(() => {
-    if (!isTyped || isSettled) return;
-
-    const onGlobalClick = (e: MouseEvent | TouchEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      settleSection();
+      timeoutId = setTimeout(typeNext, delay);
     };
 
-    window.addEventListener("click", onGlobalClick, { once: true, capture: true });
-    window.addEventListener("touchstart", onGlobalClick, { once: true, capture: true });
+    const startTimer = setTimeout(typeNext, 180);
+
+    return () => {
+      clearTimeout(startTimer);
+      clearTimeout(timeoutId);
+    };
+  }, [isInView, shouldReduceMotion, isSettled]);
+
+  // Handle interaction: click triggers instant settlement (allows skipping too)
+  const handleInteraction = useCallback((e?: React.MouseEvent) => {
+    if (isSettled) return;
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setCharCount(FULL_TEXT.length);
+    setIsTyped(true);
+    settleSection();
+  }, [isSettled, settleSection]);
+
+  // Listen for click/touch anywhere on the page once text has finished typing
+  useEffect(() => {
+    if (isSettled) return;
+
+    const onGlobalClick = (e: MouseEvent | TouchEvent) => {
+      if (isTyped) {
+        e.preventDefault();
+        e.stopPropagation();
+        settleSection();
+      }
+    };
+
+    if (isTyped) {
+      window.addEventListener("click", onGlobalClick, { once: true, capture: true });
+      window.addEventListener("touchend", onGlobalClick, { once: true, capture: true });
+    }
 
     return () => {
       window.removeEventListener("click", onGlobalClick, { capture: true });
-      window.removeEventListener("touchstart", onGlobalClick, { capture: true });
+      window.removeEventListener("touchend", onGlobalClick, { capture: true });
     };
   }, [isTyped, isSettled, settleSection]);
 
@@ -186,27 +240,34 @@ export default function ServicesSection() {
     if (shouldReduceMotion) return;
     if (!isInView || isSettled) return;
 
-    let lockedY: number | null = null;
+    const el = sectionRef.current;
+    if (!el) return;
 
-    // Smoothly align the entire section into the center of the available space below the fixed header (96px)
-    const alignTimer = setTimeout(() => {
-      const el = sectionRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const HEADER_HEIGHT = 96; // Height of fixed navigation header
-      const availableHeight = window.innerHeight - HEADER_HEIGHT;
-      const targetTop = HEADER_HEIGHT + Math.max(30, (availableHeight - rect.height) / 2);
-      const targetScrollY = Math.max(0, window.scrollY + rect.top - targetTop);
+    const HEADER_HEIGHT = 88;
+    const rect = el.getBoundingClientRect();
+    const availableHeight = window.innerHeight - HEADER_HEIGHT;
+    
+    // Ideal positioning: center the section inside the available height on screen.
+    // On laptops where the section is taller than availableHeight, align section top with comfortable clearance.
+    const targetTop = rect.height <= availableHeight
+      ? HEADER_HEIGHT + Math.max(0, (availableHeight - rect.height) / 2)
+      : HEADER_HEIGHT + 12;
 
-      lockedY = targetScrollY;
+    const sectionDocTop = window.scrollY + rect.top;
+    const targetScrollY = Math.max(0, Math.round(sectionDocTop - targetTop));
 
-      window.scrollTo({
-        top: targetScrollY,
-        behavior: "smooth",
-      });
-    }, 60);
+    // Smoothly glide into position
+    window.scrollTo({
+      top: targetScrollY,
+      behavior: "smooth",
+    });
 
-    // Completely lock wheel, touch and keys until user clicks and it settles
+    let isLocked = false;
+    // Activate position anchor shortly after smooth scroll starts to halt residual trackpad momentum
+    const anchorTimer = setTimeout(() => {
+      isLocked = true;
+    }, 120);
+
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
     };
@@ -222,31 +283,26 @@ export default function ServicesSection() {
     };
 
     const handleScroll = () => {
-      if (lockedY !== null && Math.abs(window.scrollY - lockedY) > 8) {
-        window.scrollTo({ top: lockedY });
+      if (isLocked) {
+        if (Math.abs(window.scrollY - targetScrollY) > 6) {
+          window.scrollTo({ top: targetScrollY });
+        }
       }
     };
 
     window.addEventListener("wheel", handleWheel, { passive: false });
     window.addEventListener("touchmove", handleTouchMove, { passive: false });
     window.addEventListener("keydown", handleKeyDown);
-
-    // Lock position after smooth scroll settles
-    const lockTimer = setTimeout(() => {
-      window.addEventListener("scroll", handleScroll, { passive: true });
-    }, 450);
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
-      clearTimeout(alignTimer);
-      clearTimeout(lockTimer);
+      clearTimeout(anchorTimer);
       window.removeEventListener("wheel", handleWheel);
       window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("scroll", handleScroll);
     };
   }, [isInView, isSettled, shouldReduceMotion]);
-
-  const displayedText = isSettled ? FULL_TEXT : FULL_TEXT.slice(0, charCount);
 
   return (
     <section
@@ -379,42 +435,65 @@ export default function ServicesSection() {
             </motion.div>
           ))}
         </div>
-
-        {/* CENTER TYPING STAGE (shifted 120px higher per user request: +50px) */}
-        {!isSettled && (
-          <div
-            className={`absolute inset-0 -top-[120px] bottom-[120px] flex flex-col items-center justify-center p-6 z-20 ${
-              isTyped ? "cursor-pointer" : "pointer-events-none cursor-default"
-            }`}
-          >
-            <motion.div
-              layoutId="services-statement-box"
-              transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-2xl text-center"
-            >
-              <p className={`text-xl sm:text-2xl md:text-3xl font-semibold text-blue-600 dark:text-blue-500 leading-relaxed tracking-tight ${onest.className}`}>
-                {displayedText}
-                {!isTyped && (
-                  <span className="inline-block w-[2.5px] h-[1.15em] bg-blue-600 dark:bg-blue-400 ml-1.5 align-middle animate-pulse" />
-                )}
-              </p>
-            </motion.div>
-
-            {/* Clean text prompt with Unbounded font and MousePointerClick sticker */}
-            {isTyped && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: 0.1 }}
-                className={`mt-6 inline-flex items-center gap-2 text-xs sm:text-sm font-semibold tracking-wider text-blue-600 dark:text-blue-400 select-none animate-pulse ${unbounded.className}`}
-              >
-                <span>кликните по экрану</span>
-                <MousePointerClick className="w-4 h-4" />
-              </motion.div>
-            )}
-          </div>
-        )}
       </div>
+
+      {/* CENTER TYPING STAGE (Centered across the whole section without vertical layout jumps) */}
+      {!isSettled && (
+        <div
+          onClick={handleInteraction}
+          className="absolute inset-0 flex flex-col items-center justify-center p-6 z-20 cursor-pointer"
+        >
+          <motion.div
+            layoutId="services-statement-box"
+            transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full max-w-2xl text-center"
+          >
+            <p className={`text-xl sm:text-2xl md:text-3xl font-semibold text-blue-600 dark:text-blue-500 leading-relaxed tracking-tight ${onest.className}`}>
+              {charCount === 0 && !isTyped && (
+                <span className="inline-block w-[2.5px] h-[1.15em] bg-blue-600 dark:bg-blue-400 mr-1 align-middle animate-pulse" />
+              )}
+              {WORDS_DATA.map((item, wIdx) => (
+                <Fragment key={wIdx}>
+                  <span className="inline-block whitespace-nowrap">
+                    {item.chars.map(({ char, index }) => {
+                      const isRevealed = index < charCount;
+                      const isCaretHere = index === charCount - 1 && !isTyped;
+                      return (
+                        <span key={index} className="relative inline-block">
+                          <span
+                            className={`transition-opacity duration-150 ${
+                              isRevealed ? "opacity-100" : "opacity-0"
+                            }`}
+                          >
+                            {char}
+                          </span>
+                          {isCaretHere && (
+                            <span className="absolute left-full top-0 w-[2.5px] h-[1.15em] bg-blue-600 dark:bg-blue-400 ml-0.5 align-middle animate-pulse pointer-events-none" />
+                          )}
+                        </span>
+                      );
+                    })}
+                  </span>
+                  {item.spaceIndex !== null && " "}
+                </Fragment>
+              ))}
+            </p>
+          </motion.div>
+
+          {/* Clean text prompt with Unbounded font and MousePointerClick sticker */}
+          {isTyped && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.1 }}
+              className={`mt-6 inline-flex items-center gap-2 text-xs sm:text-sm font-semibold tracking-wider text-blue-600 dark:text-blue-400 select-none animate-pulse ${unbounded.className}`}
+            >
+              <span>кликните по экрану</span>
+              <MousePointerClick className="w-4 h-4" />
+            </motion.div>
+          )}
+        </div>
+      )}
     </section>
   );
 }
