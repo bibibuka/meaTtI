@@ -453,7 +453,7 @@ export default function ServicesPage() {
               <div key={sec.id} id={sec.id} className="py-6 px-4 sm:px-6 rounded-xl transition-all duration-300 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/5 scroll-mt-28 border border-transparent">
                 <button
                   onClick={() => toggleAccordion(sec.id)}
-                  className="w-full text-left flex items-center justify-between gap-4 py-2 group focus:outline-none active:scale-[0.99] transition-transform"
+                  className="w-full text-left flex items-center justify-between gap-4 py-2 group cursor-pointer focus:outline-none active:scale-[0.99] transition-transform"
                   aria-expanded={isOpen}
                 >
                   <div className="flex items-center gap-4 sm:gap-6">
