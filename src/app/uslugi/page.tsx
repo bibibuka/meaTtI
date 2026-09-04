@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useSyncExternalStore } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Send, Plus, Minus } from "lucide-react";
 import { SECTIONS } from "./data";
@@ -285,144 +285,90 @@ const ICON_MAP = {
   automation: AnimatedWorkflowIcon,
 };
 
-const subscribeHash = (cb: () => void) => {
-  window.addEventListener("hashchange", cb);
-  window.addEventListener("popstate", cb);
-  return () => {
-    window.removeEventListener("hashchange", cb);
-    window.removeEventListener("popstate", cb);
-  };
-};
+function isValidSectionId(id: string) {
+  return SECTIONS.some((s) => s.id === id);
+}
 
 export default function ServicesPage() {
   const transition = usePageTransition();
   const isPending = !!transition?.pending;
 
-  // Ссылки с главной ведут на /uslugi#id — эта позиция раскрыта по умолчанию
-  const hash = useSyncExternalStore(
-    subscribeHash,
-    () => (typeof window !== "undefined" ? window.location.hash.slice(1) : ""),
-    () => ""
-  );
-
-  const [clientHash, setClientHash] = useState("");
-
-  useEffect(() => {
-    const update = () => {
-      if (typeof window !== "undefined") {
-        setClientHash(window.location.hash.slice(1));
-      }
-    };
-    update();
-    window.addEventListener("hashchange", update);
-    window.addEventListener("popstate", update);
-    return () => {
-      window.removeEventListener("hashchange", update);
-      window.removeEventListener("popstate", update);
-    };
-  }, []);
-
-  const pendingHash = transition?.pending?.href?.includes("#")
-    ? transition.pending.href.split("#")[1]
-    : "";
-
-  const effectiveHash = pendingHash || clientHash || hash;
-
-  const [prevHash, setPrevHash] = useState(effectiveHash);
-  const [manualSelectedId, setManualSelectedId] = useState<string | null>(null);
-  const [autoOpenedId, setAutoOpenedId] = useState<string | null>(null);
-
-  if (prevHash !== effectiveHash) {
-    setPrevHash(effectiveHash);
-    setManualSelectedId(null);
-    setAutoOpenedId(null);
-  }
-
-  // Целевая плашка: если есть хэш в переходе — берем её, иначе первую
-  const targetId =
-    effectiveHash && SECTIONS.some((s) => s.id === effectiveHash)
-      ? effectiveHash
-      : SECTIONS[0].id;
-
-  // Отложенное раскрытие: сначала переходим на закрытую плашку,
-  // даём пользователю прибыть на страницу (400мс пауза) и плавно раскрываем нужный блок
-  useEffect(() => {
-    if (isPending || !targetId) return;
-    if (manualSelectedId !== null) return;
-
-    const timer = setTimeout(() => {
-      setAutoOpenedId(targetId);
-    }, 400);
-
-    return () => clearTimeout(timer);
-  }, [targetId, isPending, manualSelectedId]);
-
-  const activeId =
-    manualSelectedId === "none"
-      ? null
-      : manualSelectedId ?? autoOpenedId;
-
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [animTrigger, setAnimTrigger] = useState<Record<string, number>>({});
 
-  // Анимация иконки запускается ТОЛЬКО когда блок уже полностью открылся (анимация раскрытия длится 300ms)
+  // URL hash — единственный источник правды: deep-link, назад/вперёд, клик.
+  // Без hash ничего не раскрыто — прошлая ячейка не «запоминается».
+  useEffect(() => {
+    if (isPending) return;
+
+    const sync = () => {
+      const hash = window.location.hash.slice(1);
+      if (hash && isValidSectionId(hash)) {
+        setActiveId(hash);
+      } else {
+        setActiveId(null);
+      }
+    };
+
+    // Первичная синхронизация после прихода на страницу (шторка ушла)
+    const raf = requestAnimationFrame(sync);
+
+    window.addEventListener("hashchange", sync);
+    window.addEventListener("popstate", sync);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("hashchange", sync);
+      window.removeEventListener("popstate", sync);
+    };
+  }, [isPending]);
+
+  // Анимация иконки — только после полного раскрытия (300ms)
   useEffect(() => {
     if (!activeId) return;
-
     const timer = setTimeout(() => {
       setAnimTrigger((prev) => ({ ...prev, [activeId]: (prev[activeId] || 0) + 1 }));
     }, 320);
-
     return () => clearTimeout(timer);
   }, [activeId]);
 
-  // Центрирование при переходе по ссылке/хэшу с главной страницы
+  // Плавный скролл к открытой карточке — после анимации раскрытия.
+  // Работает и на клик, и на переход по ссылке: открылся — уехал в удобную позицию.
   useEffect(() => {
-    if (!targetId || !SECTIONS.some((s) => s.id === targetId)) return;
+    if (!activeId || isPending) return;
+    if (!isValidSectionId(activeId)) return;
 
-    const centerTarget = (smooth: boolean) => {
-      const el = document.getElementById(targetId);
+    const timer = setTimeout(() => {
+      const el = document.getElementById(activeId);
       if (!el) return;
 
       const rect = el.getBoundingClientRect();
       const elementTop = window.scrollY + rect.top;
       const elementHeight = rect.height;
 
-      // Высота плавающей шапки + отступ сверху
-      const headerOffset = 90;
+      const headerOffset = 96; // h-24
       const viewportHeight = window.innerHeight;
       const visibleAreaHeight = viewportHeight - headerOffset;
 
-      // Идеальное центрирование в видимой рабочей области (между шапкой и низом экрана)
       const idealScroll = elementTop + elementHeight / 2 - (headerOffset + visibleAreaHeight / 2);
-
-      // Защита: верх элемента ни при каких условиях не должен уезжать под шапку
       const maxScroll = elementTop - headerOffset - 24;
-
       const targetScroll = Math.max(0, Math.min(idealScroll, maxScroll));
 
-      window.scrollTo({
-        top: targetScroll,
-        behavior: smooth ? "smooth" : "auto",
-      });
-    };
-
-    // Первичная подстройка (пока плашка закрыта) — мгновенно под шторкой
-    centerTarget(!isPending);
-
-    // Мягкая центровка после полного завершения раскрытия плашки (400мс задержка + 320мс анимация)
-    const timer = setTimeout(() => {
-      centerTarget(true);
-    }, 750);
+      // скроллим только если надо (не дергаем если уже в центре)
+      if (Math.abs(window.scrollY - targetScroll) > 8) {
+        window.scrollTo({ top: targetScroll, behavior: "smooth" });
+      }
+    }, 350);
 
     return () => clearTimeout(timer);
-  }, [targetId, isPending]);
+  }, [activeId, isPending]);
 
-  // При клике на самой странице - переключаем активную плашку без скролла и задержек
   const toggleAccordion = (id: string) => {
-    setManualSelectedId((prev) => {
-      const current = prev === "none" ? null : prev ?? autoOpenedId;
-      return current === id ? "none" : id;
-    });
+    if (isPending) return;
+    const next = activeId === id ? null : id;
+    // Обновляем URL и оповещаем сами себя — hash остаётся единственным источником правды
+    const base = window.location.pathname + window.location.search;
+    history.replaceState(null, "", next ? `${base}#${next}` : base);
+    window.dispatchEvent(new Event("hashchange"));
   };
 
   return (
@@ -456,7 +402,7 @@ export default function ServicesPage() {
                   className="w-full text-left flex items-center justify-between gap-4 py-2 group cursor-pointer focus:outline-none active:scale-[0.99] transition-transform"
                   aria-expanded={isOpen}
                 >
-                  <div className="flex items-center gap-4 sm:gap-6">
+                  <div className="flex items-center gap-4 sm:gap-6 min-w-0 flex-1">
                     <span className="text-sm font-mono text-neutral-400 font-semibold min-w-[30px]">
                       [{sec.num}]
                     </span>
@@ -468,8 +414,8 @@ export default function ServicesPage() {
                         : "text-neutral-400 group-hover:text-neutral-700 dark:group-hover:text-neutral-300"
                         }`}
                     />
-                    <div>
-                      <h2 className="text-xl md:text-3xl font-light tracking-tight text-neutral-950 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <div className="min-w-0 flex-1">
+                      <h2 className="text-xl md:text-3xl font-light tracking-tight text-neutral-950 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors break-words">
                         {sec.title}
                       </h2>
                       <p className="text-xs md:text-sm text-neutral-500 dark:text-neutral-400 font-light mt-1 hidden sm:block line-clamp-2">
@@ -497,7 +443,7 @@ export default function ServicesPage() {
                       transition={{ duration: 0.3, ease: "easeInOut" }}
                       className="overflow-hidden"
                     >
-                      <div className="pt-6 pb-4 pl-0 sm:pl-16 grid grid-cols-1 md:grid-cols-12 gap-8 md:items-center">
+                      <div className="pt-6 pb-4 pl-0 sm:pl-16 grid grid-cols-1 md:grid-cols-12 gap-8 md:items-start">
                         <div className="md:col-span-8 space-y-4 max-w-xl">
                           <p className="text-sm text-neutral-500 dark:text-neutral-400 font-light block sm:hidden text-pretty">
                             {sec.subtitle}
@@ -527,8 +473,8 @@ export default function ServicesPage() {
                           </p>
                         </div>
 
-                        <div className="md:col-span-4 self-center">
-                          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 sm:p-8 flex flex-col justify-center gap-5 md:min-h-[420px] transition-all duration-300 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/5">
+                        <div className="md:col-span-4 self-start">
+                          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8 flex flex-col justify-center gap-5 md:min-h-[420px]">
                             <div>
                               <div className="text-xs font-mono text-neutral-400 uppercase tracking-widest mb-1">Стоимость</div>
                               <div className="text-3xl font-light text-blue-600 dark:text-blue-400">{sec.price}</div>
