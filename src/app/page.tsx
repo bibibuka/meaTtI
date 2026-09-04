@@ -9,7 +9,7 @@ import {
 } from "react";
 import dynamic from "next/dynamic";
 import { motion, useReducedMotion } from "framer-motion";
-import { ChevronRight, Layers, Cpu, Award, MousePointerClick } from "lucide-react";
+import { ChevronRight, MousePointerClick } from "lucide-react";
 import WaveRule from "@/components/WaveRule";
 import { TransitionLink } from "@/context/TransitionContext";
 import ServicesSection from "@/components/ServicesSection";
@@ -207,23 +207,37 @@ const WinDesktop = dynamic(() => import("@/components/WinDesktop"), {
 
 
 
-const ADVANTAGES = [
-  {
-    title: "Фокус на окупаемости",
-    desc: "Мы не просто пишем код - мы создаем инструменты для масштабирования вашего бизнеса.",
-    icon: Award,
-  },
-  {
-    title: "Полный цикл разработки",
-    desc: "От предпроектной аналитики и дизайна до выкатки на продакшн и поддержки.",
-    icon: Layers,
-  },
-  {
-    title: "Современный стек",
-    desc: "Используем передовые фреймворки. Никакого легаси-кода - всё летает и легко масштабируется.",
-    icon: Cpu,
-  },
-];
+const ABOUT_PHOTO_EXTS = ["webp", "jpg", "png", "jpeg"];
+
+function AboutPhoto() {
+  const [extIdx, setExtIdx] = useState(0);
+  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
+  const hasMore = extIdx < ABOUT_PHOTO_EXTS.length;
+  const currentSrc = hasMore
+    ? `${base}/about/photo.${ABOUT_PHOTO_EXTS[extIdx]}`
+    : null;
+
+  return (
+    <div className="relative w-full max-w-[77%] mx-auto aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/3] rounded-3xl overflow-hidden border border-neutral-200/80 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 shadow-xl shadow-neutral-200/50 dark:shadow-none group">
+      {currentSrc ? (
+        <img
+          src={currentSrc}
+          alt="Команда MAETTI"
+          loading="lazy"
+          decoding="async"
+          onError={() => setExtIdx((prev) => prev + 1)}
+          className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+        />
+      ) : (
+        <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center text-neutral-400">
+          <p className="text-sm font-medium">Поместите фото в public/about/photo.jpg</p>
+        </div>
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+    </div>
+  );
+}
 
 // Слово-перевертыш: MAETTI, прочитанное наоборот, - это IT TEAM.
 // Каждая буква - отдельный элемент с layout-анимацией, поэтому при смене
@@ -401,24 +415,8 @@ export default function HomePage() {
               <ChevronRight className="w-4 h-4" />
             </TransitionLink>
           </div>
-          <div className="lg:col-span-7 grid grid-cols-1 md:grid-cols-1 gap-6">
-            {ADVANTAGES.map((adv, idx) => {
-              const Icon = adv.icon;
-              return (
-                <div
-                  key={idx}
-                  className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 flex items-start gap-6"
-                >
-                  <div className="p-3.5 bg-blue-600/10 text-blue-600 dark:text-blue-400 rounded-xl">
-                    <Icon className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-foreground mb-1">{adv.title}</h3>
-                    <p className="text-sm text-neutral-500">{adv.desc}</p>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="lg:col-span-7">
+            <AboutPhoto />
           </div>
         </div>
       </section>
