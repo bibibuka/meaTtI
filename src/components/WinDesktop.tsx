@@ -849,9 +849,7 @@ export default function WinDesktop() {
             maeTtI<span className="text-[var(--desk-muted)]">OS</span>
           </button>
 
-          <span className="h-4 w-px bg-[var(--desk-border)]" />
-
-          <div className="flex items-center gap-1 max-md:hidden">
+          <div className="hidden lg:flex items-center gap-1">
             {APPS.filter((a) => a.href).map((a) => (
               <button
                 key={a.id}

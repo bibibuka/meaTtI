@@ -907,9 +907,7 @@ body.desk-locked {
   touch-action: none;
 }
 .desk-on .site-header {
-  transform: translateY(-100%) !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
+  display: none !important;
 }
 /* Водолаз и его пузырьки гаснут своим же переходом (см. .dive-controller
    и .bubble-trail выше); ползунку отдельно снимаем клики, иначе он ловит
