@@ -11,9 +11,9 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 import {
   ArrowUp,
   Briefcase,
-  Calculator,
   Calendar,
   Clock,
+  Disc3,
   FileText,
   Gamepad2,
   Flame,
@@ -22,12 +22,13 @@ import {
   Mail,
   Maximize2,
   Minus,
-  Music,
   Pause,
   Play,
+  Plus,
   Rocket,
   Search,
-  Square,
+  SkipBack,
+  SkipForward,
   Terminal,
   Users,
   Volume2,
@@ -36,7 +37,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { THEMES, THEME_ORDER, THEME_SWATCH, type WallpaperTheme } from "./desk-themes";
-import { Dragon, InfoApp, ProjectCalculatorApp, SiteIframe, Snake, sounds, TerminalApp } from "./win-apps";
+import { Dragon, InfoApp, SiteIframe, Snake, sounds, TerminalApp } from "./win-apps";
+import IosMobileDesktop from "./IosMobileDesktop";
 
 /* ----------------------------- ПРИЛОЖЕНИЯ ----------------------------- */
 
@@ -50,12 +52,11 @@ interface DesktopApp {
 }
 
 const APPS: DesktopApp[] = [
-  { id: "info", label: "Инфо", glyph: Info, tint: "#3b82f6", description: "О системе maeTtI OS" },
+  { id: "info", label: "Инфо", glyph: Info, tint: "#3b82f6", description: "Альтернативная версия взаимодействия с сайтом" },
   { id: "uslugi", label: "Услуги", href: "/uslugi", glyph: Briefcase, tint: "#0ea5e9", description: "Разработка, дизайн, digital" },
   { id: "keysy", label: "Кейсы", href: "/keysy", glyph: Rocket, tint: "#d97706", description: "Наши проекты и результаты" },
   { id: "team", label: "Команда", href: "/team", glyph: Users, tint: "#10b981", description: "Инженеры и разработчики" },
   { id: "contacts", label: "Контакты", href: "/contacts", glyph: Mail, tint: "#f43f5e", description: "Связаться с нами" },
-  { id: "calc", label: "Калькулятор", glyph: Calculator, tint: "#14b8a6", description: "Расчёт бюджета проекта" },
   { id: "terminal", label: "Терминал", glyph: Terminal, tint: "#8b5cf6", description: "Интерактивная консоль" },
   { id: "snake", label: "Змейка", glyph: Gamepad2, tint: "#22c55e", description: "Ретро-аркада на Canvas" },
   { id: "dragon", label: "Дракончик", glyph: Flame, tint: "#ef4444", description: "Аркада Flappy Dragon" },
@@ -67,22 +68,20 @@ const TITLES: Record<string, string> = {
   keysy: "Кейсы",
   team: "Команда",
   contacts: "Контакты",
-  calc: "Калькулятор проекта",
   terminal: "maeTtI Shell",
   snake: "Змейка",
   dragon: "Дракончик",
 };
 
 const SIZES: Record<string, [number, number]> = {
-  uslugi: [880, 620],
-  keysy: [880, 620],
-  team: [880, 620],
-  contacts: [880, 620],
-  calc: [800, 600],
-  terminal: [680, 440],
-  snake: [340, 500],
-  dragon: [340, 560],
-  info: [420, 480],
+  uslugi: [1160, 720],
+  keysy: [1180, 740],
+  team: [1140, 720],
+  contacts: [960, 640],
+  terminal: [720, 460],
+  snake: [360, 430],
+  dragon: [350, 520],
+  info: [580, 490],
 };
 
 const tileStyle = (tint: string): CSSProperties => ({
@@ -100,18 +99,18 @@ function AppTile({ app, onOpen, selected }: { app: DesktopApp; onOpen: () => voi
       type="button"
       onClick={onOpen}
       aria-label={app.label}
-      className="group flex w-[5.5rem] flex-col items-center gap-1.5 rounded-2xl p-1 text-center outline-none transition-transform duration-150 select-none hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-[var(--desk-accent)] cursor-pointer sm:w-24"
+      className="group flex w-[4.75rem] flex-col items-center gap-0.5 rounded-2xl p-0.5 text-center outline-none transition-transform duration-150 select-none hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-[var(--desk-accent)] cursor-pointer sm:w-22 sm:gap-1"
     >
       <span
         style={tileStyle(app.tint)}
-        className={`grid h-12 w-12 place-items-center rounded-2xl border shadow-sm backdrop-blur-sm transition-all duration-150 group-hover:shadow-md group-active:scale-90 sm:h-14 sm:w-14 ${
+        className={`grid h-11 w-11 place-items-center rounded-2xl border shadow-sm backdrop-blur-sm transition-all duration-150 group-hover:shadow-md group-active:scale-90 sm:h-12 sm:w-12 ${
           selected ? "ring-2 ring-[var(--desk-accent)] ring-offset-2 ring-offset-transparent" : ""
         }`}
       >
-        <Glyph className="h-6 w-6 stroke-[1.75] sm:h-7 sm:w-7" />
+        <Glyph className="h-5 w-5 stroke-[1.75] sm:h-6 sm:w-6" />
       </span>
       <span
-        className={`w-full line-clamp-2 px-1 text-[0.6875rem] font-medium leading-tight transition-colors sm:text-xs ${
+        className={`w-full line-clamp-2 px-0.5 text-[0.6875rem] font-medium leading-tight transition-colors sm:text-xs ${
           selected
             ? "rounded-md bg-[var(--desk-accent)] px-1.5 py-0.5 font-bold text-[var(--desk-accent-fg)] shadow-xs"
             : "text-[var(--desk-fg)]"
@@ -138,12 +137,12 @@ function LightBtn({ onClick, type, label }: { onClick: () => void; type: "close"
         onClick();
       }}
       style={{ backgroundColor: bg }}
-      className="group/l relative grid h-3.5 w-3.5 place-items-center rounded-full border border-black/10 text-black/60 shadow-sm transition-transform duration-100 hover:brightness-110 active:scale-90 cursor-pointer after:absolute after:-inset-3 sm:after:hidden"
+      className="group/l relative grid h-3.5 w-3.5 place-items-center rounded-full border border-black/15 text-black/75 shadow-sm transition-transform duration-100 hover:brightness-110 active:scale-90 cursor-pointer after:absolute after:-inset-3 sm:after:hidden"
     >
-      <span className="opacity-0 transition-opacity group-hover/l:opacity-80">
+      <span className="opacity-70 transition-opacity group-hover/l:opacity-100 flex items-center justify-center">
         {type === "close" && <X className="h-2 w-2 stroke-[3.5]" />}
         {type === "min" && <Minus className="h-2 w-2 stroke-[3.5]" />}
-        {type === "max" && <Square className="h-1.5 w-1.5 stroke-[3.5]" />}
+        {type === "max" && <Plus className="h-2 w-2 stroke-[3.5]" />}
       </span>
     </button>
   );
@@ -159,7 +158,6 @@ function Win({
   min,
   focused,
   phone,
-  dialog,
   noMaximize,
   maximized,
   onToggleMax,
@@ -175,7 +173,6 @@ function Win({
   min: boolean;
   focused: boolean;
   phone: boolean;
-  dialog?: boolean;
   noMaximize?: boolean;
   maximized?: boolean;
   onToggleMax?: () => void;
@@ -186,8 +183,9 @@ function Win({
 }) {
   const [p, setP] = useState({ x: offset * 26, y: offset * 20 });
   const [internalMax, setInternalMax] = useState(false);
-  const max = maximized !== undefined ? maximized : internalMax;
+  const max = noMaximize ? false : (maximized !== undefined ? maximized : internalMax);
   const toggleMax = () => {
+    if (noMaximize) return;
     sounds.playGlassClick();
     if (onToggleMax) onToggleMax();
     else setInternalMax((m) => !m);
@@ -270,8 +268,8 @@ function Win({
       : {
           left: "50%",
           top: "calc(50% + 0.5rem)",
-          width: `min(${size[0]}px, calc(100vw - 2rem))`,
-          height: `min(${size[1]}px, calc(100svh - 9rem))`,
+          width: `min(calc(${size[0] / 16}rem), calc(100vw - 2rem))`,
+          height: `min(calc(${size[1] / 16}rem), calc(100svh - 9rem))`,
           transform: min
             ? `translate(calc(-50% + ${p.x}px), calc(-50% + ${p.y + 48}px)) scale(0.92)`
             : `translate(calc(-50% + ${p.x}px), calc(-50% + ${p.y}px))`,
@@ -300,7 +298,7 @@ function Win({
       <div
         onPointerDown={grab}
         onDoubleClick={() => {
-          if (!dialog && !phone && !noMaximize) {
+          if (!phone && !noMaximize) {
             toggleMax();
           }
         }}
@@ -310,11 +308,14 @@ function Win({
       >
         <span onPointerDown={(e) => e.stopPropagation()} className="flex shrink-0 items-center gap-2">
           <LightBtn onClick={onClose} type="close" label="Закрыть" />
-          {!dialog && (
-            <>
-              <LightBtn onClick={onMin} type="min" label="Свернуть" />
-              {!noMaximize && <LightBtn onClick={toggleMax} type="max" label={max ? "Восстановить" : "Развернуть"} />}
-            </>
+          <LightBtn onClick={onMin} type="min" label="Свернуть" />
+          {!noMaximize ? (
+            <LightBtn onClick={toggleMax} type="max" label={max ? "Восстановить" : "Развернуть"} />
+          ) : (
+            <span
+              className="grid h-3.5 w-3.5 place-items-center rounded-full border border-black/15 bg-black/10 text-transparent opacity-40 cursor-not-allowed"
+              title="Развертывание недоступно"
+            />
           )}
         </span>
 
@@ -324,12 +325,57 @@ function Win({
         <span className="w-14 shrink-0" />
       </div>
 
-      <div className="desk-scroll relative min-h-0 flex-1 overflow-auto">
+      <div className="desk-scroll relative min-h-0 flex-1 flex flex-col overflow-auto">
         {dragging && <div className="absolute inset-0 z-50 pointer-events-none" />}
         {children}
       </div>
     </div>
   );
+}
+
+/* ----------------------------- МУЗЫКАЛЬНЫЕ ТРЕКИ ----------------------------- */
+
+interface Track {
+  id: string;
+  title: string;
+  artist: string;
+  type: "audio" | "synth";
+  src?: string;
+  startTime?: number;
+}
+
+const TRACKS: Track[] = [
+  {
+    id: "sinyaya-vechnost",
+    title: "Синяя вечность",
+    artist: "Муслим Магомаев",
+    type: "audio",
+    src: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/audio/sinyaya-vechnost.mp3`,
+    startTime: 51,
+  },
+  {
+    id: "luchshij-gorod",
+    title: "Лучший город земли",
+    artist: "Муслим Магомаев",
+    type: "audio",
+    src: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/audio/luchshij-gorod-zemli.mp3`,
+    startTime: 0,
+  },
+  {
+    id: "koroleva-krasoty",
+    title: "Королева красоты",
+    artist: "Муслим Магомаев",
+    type: "audio",
+    src: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/audio/koroleva-krasoty.mp3`,
+    startTime: 0,
+  },
+];
+
+function formatTime(sec: number): string {
+  if (!sec || isNaN(sec) || !isFinite(sec) || sec < 0) return "0:00";
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${s < 10 ? "0" : ""}${s}`;
 }
 
 /* ----------------------------- СОДЕРЖИМОЕ ВИДЖЕТОВ ----------------------------- */
@@ -339,49 +385,42 @@ function WidgetsContent({
   dateStr,
   noteText,
   updateNote,
+  currentTrack,
   isPlayingSound,
   toggleSound,
-  onOpenCalc,
+  nextTrack,
+  prevTrack,
+  currentTime,
+  duration,
+  onSeek,
+  onDragStart,
 }: {
   clock: string;
   dateStr: string;
   noteText: string;
   updateNote: (t: string) => void;
+  currentTrack: Track;
   isPlayingSound: boolean;
   toggleSound: () => void;
-  onOpenCalc: () => void;
+  nextTrack: () => void;
+  prevTrack: () => void;
+  currentTime: number;
+  duration: number;
+  onSeek: (time: number) => void;
+  onDragStart?: () => void;
 }) {
   return (
     <>
-      <div className="w-full rounded-2xl border border-[var(--desk-border)] bg-[var(--desk-surface)] p-4 shadow-lg backdrop-blur-md">
+      <div className="w-full rounded-2xl border border-[var(--desk-border)] bg-[var(--desk-surface)] p-3 sm:p-4 shadow-lg backdrop-blur-md">
         <span className="text-[0.625rem] font-bold uppercase tracking-widest text-[var(--desk-muted)]">Местное время</span>
-        <div className="mt-0.5 font-mono text-4xl font-black tabular-nums tracking-tight text-[var(--desk-fg)]">{clock}</div>
+        <div className="mt-0.5 font-mono text-3xl sm:text-4xl font-black tabular-nums tracking-tight text-[var(--desk-fg)]">{clock}</div>
         <div className="mt-2 flex items-center gap-1.5 border-t border-[var(--desk-border)] pt-2 text-xs font-medium text-[var(--desk-muted)]">
           <Calendar className="h-3.5 w-3.5" />
           <span className="first-letter:uppercase">{dateStr}</span>
         </div>
       </div>
 
-      <div className="w-full rounded-2xl border border-[var(--desk-border)] bg-[var(--desk-surface)] p-4 shadow-lg backdrop-blur-md">
-        <div className="flex items-center gap-2.5">
-          <span style={tileStyle("#14b8a6")} className="grid h-8 w-8 place-items-center rounded-xl border">
-            <Calculator className="h-4 w-4" />
-          </span>
-          <div className="min-w-0">
-            <div className="text-xs font-bold text-[var(--desk-fg)]">Калькулятор проекта</div>
-            <div className="text-[0.6875rem] text-[var(--desk-muted)]">Расчёт за минуту</div>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={onOpenCalc}
-          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-[var(--desk-accent)] py-2.5 text-xs font-bold text-[var(--desk-accent-fg)] transition-all hover:brightness-110 active:scale-[0.98] cursor-pointer shadow-xs"
-        >
-          Открыть
-        </button>
-      </div>
-
-      <div className="w-full rounded-2xl border border-[var(--desk-border)] bg-[var(--desk-surface)] p-4 shadow-lg backdrop-blur-md">
+      <div className="w-full rounded-2xl border border-[var(--desk-border)] bg-[var(--desk-surface)] p-3 sm:p-4 shadow-lg backdrop-blur-md">
         <div className="mb-2 flex items-center justify-between">
           <span className="flex items-center gap-1.5 text-[0.625rem] font-bold uppercase tracking-widest text-[var(--desk-muted)]">
             <FileText className="h-3.5 w-3.5 text-amber-500" />
@@ -398,24 +437,87 @@ function WidgetsContent({
         />
       </div>
 
-      <div className="flex w-full items-center justify-between rounded-2xl border border-[var(--desk-border)] bg-[var(--desk-surface)] p-3.5 shadow-lg backdrop-blur-md">
-        <div className="flex items-center gap-2.5">
-          <span style={tileStyle("#8b5cf6")} className="grid h-9 w-9 place-items-center rounded-xl border">
-            <Music className="h-4 w-4" />
-          </span>
-          <div>
-            <div className="text-xs font-bold text-[var(--desk-fg)]">Soundscape</div>
-            <div className="text-[0.6875rem] text-[var(--desk-muted)]">Web Audio Synth</div>
+      <div className="flex w-full flex-col gap-2 rounded-2xl border border-[var(--desk-border)] bg-[var(--desk-surface)] p-3 sm:p-3.5 shadow-lg backdrop-blur-md">
+        <div className="flex w-full items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">
+            <span
+              style={tileStyle("#0284c7")}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border"
+            >
+              <Disc3 className={`h-4 w-4 ${isPlayingSound ? "animate-spin [animation-duration:4s]" : ""}`} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-xs font-bold text-[var(--desk-fg)]" title={currentTrack.title}>
+                {currentTrack.title}
+              </div>
+              <div className="truncate text-[0.6875rem] text-[var(--desk-muted)]" title={currentTrack.artist}>
+                {currentTrack.artist}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={prevTrack}
+              title="Предыдущий трек"
+              aria-label="Предыдущий трек"
+              className="grid h-7 w-7 place-items-center rounded-full text-[var(--desk-muted)] transition-colors hover:bg-[var(--desk-surface-2)] hover:text-[var(--desk-fg)] cursor-pointer active:scale-90"
+            >
+              <SkipBack className="h-3 w-3 stroke-[2.5]" />
+            </button>
+
+            <button
+              type="button"
+              onClick={toggleSound}
+              title={isPlayingSound ? "Пауза" : "Слушать"}
+              aria-label={isPlayingSound ? "Пауза" : "Слушать"}
+              className="grid h-8 w-8 place-items-center rounded-full border border-[var(--desk-border)] bg-[var(--desk-surface-2)] text-[var(--desk-fg)] transition-colors hover:bg-[var(--desk-surface-3)] cursor-pointer active:scale-90"
+            >
+              {isPlayingSound ? <Pause className="h-3.5 w-3.5" /> : <Play className="ml-0.5 h-3.5 w-3.5" />}
+            </button>
+
+            <button
+              type="button"
+              onClick={nextTrack}
+              title="Следующий трек"
+              aria-label="Следующий трек"
+              className="grid h-7 w-7 place-items-center rounded-full text-[var(--desk-muted)] transition-colors hover:bg-[var(--desk-surface-2)] hover:text-[var(--desk-fg)] cursor-pointer active:scale-90"
+            >
+              <SkipForward className="h-3 w-3 stroke-[2.5]" />
+            </button>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={toggleSound}
-          title={isPlayingSound ? "Пауза" : "Слушать"}
-          className="grid h-8 w-8 place-items-center rounded-full border border-[var(--desk-border)] bg-[var(--desk-surface-2)] text-[var(--desk-fg)] transition-colors hover:bg-[var(--desk-surface-3)] cursor-pointer active:scale-90"
-        >
-          {isPlayingSound ? <Pause className="h-3.5 w-3.5" /> : <Play className="ml-0.5 h-3.5 w-3.5" />}
-        </button>
+
+        {/* Таймлайн с возможностью перетаскивания (для аудио-треков) */}
+        {currentTrack.type === "audio" && (
+          <div className="flex flex-col gap-1 border-t border-[var(--desk-border)]/60 pt-2">
+            <div className="relative flex items-center">
+              <input
+                type="range"
+                min={0}
+                max={duration > 0 ? duration : 100}
+                step={0.5}
+                value={currentTime}
+                onPointerDown={onDragStart}
+                onChange={(e) => onSeek(parseFloat(e.target.value))}
+                aria-label="Перемотка трека"
+                className="h-1.5 w-full appearance-none rounded-full bg-[var(--desk-surface-2)] outline-none cursor-pointer [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--desk-accent)] [&::-webkit-slider-thumb]:shadow-xs [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-125 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[var(--desk-accent)] [&::-moz-range-thumb]:border-0"
+                style={{
+                  background: `linear-gradient(to right, var(--desk-accent) ${
+                    duration > 0 ? Math.min(100, Math.max(0, (currentTime / duration) * 100)) : 0
+                  }%, var(--desk-surface-2) ${
+                    duration > 0 ? Math.min(100, Math.max(0, (currentTime / duration) * 100)) : 0
+                  }%)`,
+                }}
+              />
+            </div>
+            <div className="flex justify-between font-mono text-[0.625rem] text-[var(--desk-muted)] tabular-nums select-none">
+              <span>{formatTime(currentTime)}</span>
+              <span>{formatTime(duration)}</span>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
@@ -429,12 +531,23 @@ export default function WinDesktop() {
   const secRef = useRef<HTMLElement>(null);
   const embed = typeof window !== "undefined" && window.self !== window.top;
 
-  const [wins, setWins] = useState<WinState[]>([]);
+  const [wins, setWins] = useState<WinState[]>(() => {
+    if (typeof window === "undefined") return [];
+    if (window.innerWidth < 768) return [];
+    try {
+      const seen = sessionStorage.getItem("maetti_info_seen");
+      if (!seen) {
+        sessionStorage.setItem("maetti_info_seen", "true");
+        return [{ id: "info", min: false }];
+      }
+    } catch {}
+    return [];
+  });
   const [maxWins, setMaxWins] = useState<Record<string, boolean>>({});
   const [sel, setSel] = useState<string | null>(null);
   const [startOpen, setStartOpen] = useState(false);
   const [mobileWidgetsOpen, setMobileWidgetsOpen] = useState(false);
-  const [contactsPath, setContactsPath] = useState("/contacts");
+  const contactsPath = "/contacts";
   const [clock, setClock] = useState("--:--");
   const [dateStr, setDateStr] = useState("");
 
@@ -456,14 +569,180 @@ export default function WinDesktop() {
     } catch {}
   }, []);
 
+  const [trackIdx, setTrackIdx] = useState(0);
+  const trackIdxRef = useRef(0);
+  useEffect(() => {
+    trackIdxRef.current = trackIdx;
+  }, [trackIdx]);
+
   const [isPlayingSound, setIsPlayingSound] = useState(false);
+  const [currentTime, setCurrentTime] = useState(TRACKS[0].startTime ?? 0);
+  const [duration, setDuration] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const isDraggingRef = useRef(false);
+
+  const currentTrack = TRACKS[trackIdx];
+
+  // Сброс состояния перетаскивания при отпускании мыши/пальца в любой точке экрана
+  useEffect(() => {
+    const onUp = () => {
+      isDraggingRef.current = false;
+    };
+    window.addEventListener("pointerup", onUp);
+    return () => window.removeEventListener("pointerup", onUp);
+  }, []);
+
+  // Инициализация HTMLAudioElement с предзагрузкой метаданных для отображения длительности
+  useEffect(() => {
+    if (typeof Audio === "undefined") return;
+    const a = new Audio();
+    a.preload = "metadata";
+    audioRef.current = a;
+
+    const onTimeUpdate = () => {
+      if (!isDraggingRef.current) {
+        setCurrentTime(a.currentTime);
+      }
+    };
+    const onLoadedMetadata = () => {
+      if (a.duration && !isNaN(a.duration) && isFinite(a.duration)) {
+        setDuration(a.duration);
+      }
+      const initialStart = TRACKS[trackIdxRef.current]?.startTime ?? 0;
+      if (a.currentTime === 0 && initialStart > 0) {
+        a.currentTime = initialStart;
+        setCurrentTime(initialStart);
+      }
+    };
+    const onDurationChange = () => {
+      if (a.duration && !isNaN(a.duration) && isFinite(a.duration)) {
+        setDuration(a.duration);
+      }
+    };
+    const onEnded = () => {
+      setIsPlayingSound(false);
+      const start = TRACKS[trackIdxRef.current]?.startTime ?? 0;
+      a.currentTime = start;
+      setCurrentTime(start);
+    };
+
+    a.addEventListener("timeupdate", onTimeUpdate);
+    a.addEventListener("loadedmetadata", onLoadedMetadata);
+    a.addEventListener("durationchange", onDurationChange);
+    a.addEventListener("ended", onEnded);
+
+    if (TRACKS[0].type === "audio" && TRACKS[0].src) {
+      a.src = TRACKS[0].src;
+    }
+
+    return () => {
+      a.removeEventListener("timeupdate", onTimeUpdate);
+      a.removeEventListener("loadedmetadata", onLoadedMetadata);
+      a.removeEventListener("durationchange", onDurationChange);
+      a.removeEventListener("ended", onEnded);
+      a.pause();
+      sounds.stopAmbient();
+    };
+  }, []);
+
+  const handleSeek = useCallback((time: number) => {
+    setCurrentTime(time);
+    if (audioRef.current && currentTrack.type === "audio") {
+      audioRef.current.currentTime = time;
+    }
+  }, [currentTrack]);
+
+  const stopAllAudio = useCallback(() => {
+    sounds.stopAmbient();
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+  }, []);
+
+  const playCurrentTrack = useCallback((t: Track) => {
+    if (t.type === "synth") {
+      if (audioRef.current) audioRef.current.pause();
+      sounds.startAmbient(0.08);
+      setIsPlayingSound(true);
+    } else if (t.type === "audio" && t.src) {
+      sounds.stopAmbient();
+      const a = audioRef.current;
+      if (a) {
+        const start = t.startTime ?? 0;
+        if (!a.src.includes(t.src)) {
+          a.src = t.src;
+          a.currentTime = start;
+          setCurrentTime(start);
+        } else if (a.currentTime === 0 && start > 0) {
+          a.currentTime = start;
+          setCurrentTime(start);
+        }
+        a.play().then(() => {
+          setIsPlayingSound(true);
+        }).catch(() => {
+          setIsPlayingSound(false);
+        });
+      }
+    }
+  }, []);
+
   const toggleSound = useCallback(() => {
     sounds.playGlassClick();
-    setIsPlayingSound((on) => {
-      if (on) sounds.stopAmbient();
-      else sounds.startAmbient(0.08);
-      return !on;
-    });
+    if (isPlayingSound) {
+      stopAllAudio();
+      setIsPlayingSound(false);
+    } else {
+      playCurrentTrack(currentTrack);
+    }
+  }, [isPlayingSound, currentTrack, playCurrentTrack, stopAllAudio]);
+
+  const nextTrack = useCallback(() => {
+    sounds.playGlassClick();
+    const wasPlaying = isPlayingSound;
+    stopAllAudio();
+    const nextIdx = (trackIdx + 1) % TRACKS.length;
+    setTrackIdx(nextIdx);
+    const nextT = TRACKS[nextIdx];
+    if (nextT.type === "audio" && nextT.src && audioRef.current) {
+      const start = nextT.startTime ?? 0;
+      if (!audioRef.current.src.includes(nextT.src)) {
+        audioRef.current.src = nextT.src;
+        audioRef.current.currentTime = start;
+        setCurrentTime(start);
+      }
+    }
+    if (wasPlaying) {
+      playCurrentTrack(nextT);
+    }
+  }, [isPlayingSound, playCurrentTrack, stopAllAudio, trackIdx]);
+
+  const prevTrack = useCallback(() => {
+    sounds.playGlassClick();
+    const wasPlaying = isPlayingSound;
+    stopAllAudio();
+    const pIdx = (trackIdx - 1 + TRACKS.length) % TRACKS.length;
+    setTrackIdx(pIdx);
+    const prevT = TRACKS[pIdx];
+    if (prevT.type === "audio" && prevT.src && audioRef.current) {
+      const start = prevT.startTime ?? 0;
+      if (!audioRef.current.src.includes(prevT.src)) {
+        audioRef.current.src = prevT.src;
+        audioRef.current.currentTime = start;
+        setCurrentTime(start);
+      }
+    }
+    if (wasPlaying) {
+      playCurrentTrack(prevT);
+    }
+  }, [isPlayingSound, playCurrentTrack, stopAllAudio, trackIdx]);
+
+  useEffect(() => {
+    return () => {
+      sounds.stopAmbient();
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
   }, []);
 
   const [noteText, setNoteText] = useState(() => {
@@ -496,17 +775,98 @@ export default function WinDesktop() {
     return () => mq.removeEventListener("change", on);
   }, []);
 
-  // Пока стол занимает экран, прячем шапку сайта
+  const [isDeskActive, setIsDeskActive] = useState(false);
+  const isDeskActiveRef = useRef(false);
+  const userExitedRef = useRef(false);
+
+  useEffect(() => {
+    isDeskActiveRef.current = isDeskActive;
+  }, [isDeskActive]);
+
+  // Гарантированное добавление/удаление классов desk-on и desk-locked
   useEffect(() => {
     if (embed) return;
+    const isMobile = window.innerWidth < 768;
     const root = document.documentElement;
-    const io = new IntersectionObserver(([e]) => root.classList.toggle("desk-on", e.intersectionRatio >= 0.85), { threshold: 0.85 });
-    if (secRef.current) io.observe(secRef.current);
+    if (isDeskActive && !isMobile) {
+      root.classList.add("desk-on", "desk-locked");
+      document.body.classList.add("desk-locked");
+    } else {
+      root.classList.remove("desk-on", "desk-locked");
+      document.body.classList.remove("desk-locked");
+    }
     return () => {
-      io.disconnect();
-      root.classList.remove("desk-on");
+      root.classList.remove("desk-on", "desk-locked");
+      document.body.classList.remove("desk-locked");
     };
+  }, [isDeskActive, embed]);
+
+  // Магнитный доводчик к столу при прокрутке до середины (>= 45%)
+  useEffect(() => {
+    if (embed) return;
+    if (window.innerWidth < 768) return; // Не блокируем скролл на мобильных устройствах
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        const ratio = entry.intersectionRatio;
+
+        // Сброс блокировки повторного захода при уходе вверх к началу сайта
+        if (ratio < 0.1) {
+          userExitedRef.current = false;
+        }
+
+        // Если пользователя увлекло до середины стола (>=45%) и он не нажимал "К сайту"
+        if (ratio >= 0.45 && !userExitedRef.current && !isDeskActiveRef.current) {
+          isDeskActiveRef.current = true;
+          setIsDeskActive(true);
+
+          if (secRef.current) {
+            const top = secRef.current.getBoundingClientRect().top + window.scrollY;
+            window.scrollTo({ top, behavior: "smooth" });
+          }
+        }
+      },
+      { threshold: [0.05, 0.45, 0.85] }
+    );
+
+    if (secRef.current) io.observe(secRef.current);
+    return () => io.disconnect();
   }, [embed]);
+
+  // Запрет выхода с рабочего стола скроллом (когда стол активен)
+  useEffect(() => {
+    if (!isDeskActive || embed || window.innerWidth < 768) return;
+
+    const preventOuterScroll = (e: WheelEvent | TouchEvent) => {
+      const target = e.target as HTMLElement | null;
+      // Разрешаем скролл внутри окон, фреймов и скроллируемых областей
+      if (target?.closest(".desk-scroll, iframe, textarea, input, select")) {
+        return;
+      }
+      if (e.cancelable) {
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener("wheel", preventOuterScroll, { passive: false });
+    window.addEventListener("touchmove", preventOuterScroll, { passive: false });
+    return () => {
+      window.removeEventListener("wheel", preventOuterScroll);
+      window.removeEventListener("touchmove", preventOuterScroll);
+    };
+  }, [isDeskActive, embed]);
+
+  // Выход с рабочего стола только по кнопке "К сайту"
+  const handleExitDesk = useCallback(() => {
+    sounds.playGlassClick();
+    userExitedRef.current = true;
+    setIsDeskActive(false);
+
+    document.documentElement.classList.remove("desk-on", "desk-locked");
+    document.body.classList.remove("desk-locked");
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
 
   useEffect(() => {
     const tick = () => {
@@ -535,6 +895,11 @@ export default function WinDesktop() {
 
   const closeWin = (id: string) => {
     sounds.playGlassClick();
+    if (id === "info") {
+      try {
+        sessionStorage.setItem("maetti_info_seen", "true");
+      } catch {}
+    }
     setWins((w) => w.filter((x) => x.id !== id));
     setMaxWins((m) => {
       const next = { ...m };
@@ -560,24 +925,9 @@ export default function WinDesktop() {
     });
   };
 
-  const handleCalcContact = (data: { tier: string; budget: number; days: number; addons: string[] }) => {
-    sounds.playGlassClick();
-    const qs = new URLSearchParams({
-      tier: data.tier,
-      budget: String(data.budget),
-      days: String(data.days),
-    }).toString();
-    const fullPath = `/contacts?${qs}`;
-    setContactsPath(fullPath);
-    try {
-      localStorage.setItem("maetti_calc_brief", JSON.stringify(data));
-    } catch {}
-    openApp("contacts");
-  };
-
   const allMin = wins.length > 0 && wins.every((x) => x.min);
 
-  // Esc: Виджеты (<1280px) → Spotlight → лаунчер → контекстное меню → свернуть активное окно
+  // Esc: Виджеты (<640px) → Spotlight → лаунчер → контекстное меню → свернуть активное окно
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
@@ -707,12 +1057,35 @@ export default function WinDesktop() {
 
   if (embed) return null;
 
+  if (phone) {
+    return (
+      <IosMobileDesktop
+        secRef={secRef}
+        theme={theme}
+        onThemeChange={changeTheme}
+        onExit={handleExitDesk}
+        clock={clock}
+        dateStr={dateStr}
+        currentTrack={currentTrack}
+        isPlayingSound={isPlayingSound}
+        toggleSound={toggleSound}
+        nextTrack={nextTrack}
+        prevTrack={prevTrack}
+        currentTime={currentTime}
+        duration={duration}
+        onSeek={handleSeek}
+        noteText={noteText}
+        updateNote={updateNote}
+      />
+    );
+  }
+
   return (
     <section
       ref={secRef}
       aria-label="maeTtI OS — интерактивный рабочий стол"
       style={{ ...(THEMES[theme].vars as CSSProperties), background: THEMES[theme].wall }}
-      className="desk-shell relative h-[100svh] w-full shrink-0 select-none overflow-hidden font-sans transition-[background] duration-700 text-[var(--desk-fg)]"
+      className="desk-shell relative z-10 isolate h-[100svh] w-full shrink-0 select-none overflow-hidden font-sans transition-[background] duration-700 text-[var(--desk-fg)]"
     >
       {/* ЖИВЫЕ ОБОИ: два медленно дрейфующих орба */}
       <div
@@ -772,10 +1145,7 @@ export default function WinDesktop() {
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <button
             type="button"
-            onClick={() => {
-              sounds.playGlassClick();
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
+            onClick={handleExitDesk}
             title="Вернуться к началу сайта"
             className="flex items-center gap-1.5 rounded-lg border border-[var(--desk-border)] bg-[var(--desk-surface-2)] px-2.5 py-1 text-xs font-bold text-[var(--desk-fg)] transition-colors hover:bg-[var(--desk-surface-3)] cursor-pointer active:scale-95"
           >
@@ -799,7 +1169,7 @@ export default function WinDesktop() {
 
           <span className="h-4 w-px bg-[var(--desk-border)]" />
 
-          <div className="flex items-center gap-1 max-md:hidden">
+          <div className="flex items-center gap-1 max-sm:hidden">
             {APPS.filter((a) => a.href).map((a) => (
               <button
                 key={a.id}
@@ -851,7 +1221,7 @@ export default function WinDesktop() {
             }}
             title={mobileWidgetsOpen ? "Закрыть виджеты" : "Виджеты"}
             aria-label="Виджеты"
-            className={`${iconBtn} xl:hidden`}
+            className={`${iconBtn} sm:hidden`}
           >
             <Layers className="h-4 w-4" />
           </button>
@@ -863,7 +1233,7 @@ export default function WinDesktop() {
           <button
             type="button"
             onClick={() => {
-              if (typeof window !== "undefined" && window.innerWidth < 1280) {
+              if (typeof window !== "undefined" && window.innerWidth < 640) {
                 sounds.playGlassClick();
                 setMobileWidgetsOpen((s) => !s);
               }
@@ -878,13 +1248,13 @@ export default function WinDesktop() {
       </nav>
 
       {/* ЯРЛЫКИ: десктоп — колонки слева, мобайл — сетка */}
-      <div className="absolute bottom-24 left-3 top-14 z-10 hidden flex-col flex-wrap content-start gap-1.5 md:flex">
+      <div className="absolute bottom-16 sm:bottom-18 left-2 sm:left-3 top-14 z-10 hidden flex-col flex-wrap content-start gap-0.5 sm:gap-1 sm:flex">
         {APPS.map((app) => (
           <AppTile key={app.id} app={app} selected={sel === app.id} onOpen={() => openApp(app.id)} />
         ))}
       </div>
 
-      <div className="absolute inset-x-3 bottom-24 top-14 z-10 grid grid-cols-4 content-start gap-x-2 gap-y-3 px-1 md:hidden">
+      <div className="absolute inset-x-3 bottom-24 top-14 z-10 grid grid-cols-4 content-start gap-x-2 gap-y-3 px-1 sm:hidden">
         {APPS.map((app) => (
           <AppTile key={app.id} app={app} selected={sel === app.id} onOpen={() => openApp(app.id)} />
         ))}
@@ -893,7 +1263,7 @@ export default function WinDesktop() {
       {/* ВИДЖЕТЫ СПРАВА */}
       {showWidgets && (
         <aside
-          className={`absolute right-4 top-14 z-10 hidden w-72 flex-col gap-3 xl:flex transition-opacity duration-250 ${
+          className={`absolute right-3 sm:right-4 top-14 z-10 hidden w-60 sm:w-64 xl:w-72 flex-col gap-2.5 sm:gap-3 sm:flex transition-opacity duration-250 ${
             hasMaxWin ? "opacity-0 pointer-events-none" : "opacity-100"
           }`}
         >
@@ -902,18 +1272,24 @@ export default function WinDesktop() {
             dateStr={dateStr}
             noteText={noteText}
             updateNote={updateNote}
+            currentTrack={currentTrack}
             isPlayingSound={isPlayingSound}
             toggleSound={toggleSound}
-            onOpenCalc={() => openApp("calc")}
+            nextTrack={nextTrack}
+            prevTrack={prevTrack}
+            currentTime={currentTime}
+            duration={duration}
+            onSeek={handleSeek}
+            onDragStart={() => { isDraggingRef.current = true; }}
           />
         </aside>
       )}
 
-      {/* МОБИЛЬНАЯ ШТОРКА ВИДЖЕТОВ (<1280px) */}
+      {/* МОБИЛЬНАЯ ШТОРКА ВИДЖЕТОВ (<640px) */}
       {mobileWidgetsOpen && (
         <div
           onClick={() => setMobileWidgetsOpen(false)}
-          className="fixed inset-0 z-[60] flex justify-end bg-[var(--desk-scrim)] backdrop-blur-xs transition-opacity duration-200 xl:hidden"
+          className="fixed inset-0 z-[60] flex justify-end bg-[var(--desk-scrim)] backdrop-blur-xs transition-opacity duration-200 sm:hidden"
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -939,12 +1315,15 @@ export default function WinDesktop() {
                 dateStr={dateStr}
                 noteText={noteText}
                 updateNote={updateNote}
+                currentTrack={currentTrack}
                 isPlayingSound={isPlayingSound}
                 toggleSound={toggleSound}
-                onOpenCalc={() => {
-                  setMobileWidgetsOpen(false);
-                  openApp("calc");
-                }}
+                nextTrack={nextTrack}
+                prevTrack={prevTrack}
+                currentTime={currentTime}
+                duration={duration}
+                onSeek={handleSeek}
+                onDragStart={() => { isDraggingRef.current = true; }}
               />
             </div>
           </div>
@@ -956,16 +1335,16 @@ export default function WinDesktop() {
         <Win
           key={w.id}
           title={TITLES[w.id] || w.id}
-          size={SIZES[w.id] ?? [520, 420]}
+          size={SIZES[w.id] ?? [580, 490]}
           offset={i}
           z={30 + i}
           min={w.min}
           focused={topWinId === w.id}
           phone={phone}
-          dialog={w.id === "info"}
           noMaximize={["snake", "dragon", "info"].includes(w.id)}
-          maximized={!!maxWins[w.id]}
+          maximized={!["snake", "dragon", "info"].includes(w.id) && !!maxWins[w.id]}
           onToggleMax={() => {
+            if (["snake", "dragon", "info"].includes(w.id)) return;
             sounds.playGlassClick();
             setMaxWins((m) => ({ ...m, [w.id]: !m[w.id] }));
           }}
@@ -979,9 +1358,8 @@ export default function WinDesktop() {
               title={TITLES[w.id]}
             />
           )}
-          {w.id === "calc" && <ProjectCalculatorApp onContact={handleCalcContact} />}
           {w.id === "terminal" && (
-            <TerminalApp onThemeChange={changeTheme} onOpenCalc={() => openApp("calc")} onOpenApp={openApp} />
+            <TerminalApp onThemeChange={changeTheme} onOpenApp={openApp} />
           )}
           {w.id === "snake" && <Snake active={topWinId === "snake" && !w.min} />}
           {w.id === "dragon" && <Dragon active={topWinId === "dragon" && !w.min} />}
@@ -1020,29 +1398,44 @@ export default function WinDesktop() {
         {wins.length > 0 && (
           <>
             <span className="h-6 w-px shrink-0 bg-[var(--desk-border)]" />
-            <div className="flex shrink-0 items-center gap-1.5">
+            <div className="flex shrink-0 items-center gap-2">
               {wins.map((w) => {
                 const app = APPS.find((a) => a.id === w.id);
                 if (!app) return null;
                 const Glyph = app.glyph;
                 const isTop = topWinId === w.id;
                 return (
-                  <button
-                    key={w.id}
-                    type="button"
-                    onClick={() => toggleTask(w.id)}
-                    aria-label={TITLES[w.id] || w.id}
-                    title={`${TITLES[w.id] || w.id} — свёрнуть/развернуть`}
-                    style={tileStyle(app.tint)}
-                    className="group relative grid h-10 w-10 shrink-0 place-items-center rounded-xl border transition-all duration-150 hover:scale-105 cursor-pointer active:scale-90"
-                  >
-                    <Glyph className="h-5 w-5 stroke-[1.75]" />
-                    <span
-                      className={`absolute bottom-0.5 left-1/2 h-1 -translate-x-1/2 rounded-full transition-all ${
-                        isTop ? "w-4 bg-[var(--desk-accent)]" : w.min ? "w-1 bg-[var(--desk-muted)]" : "w-2 bg-[var(--desk-muted)]"
-                      }`}
-                    />
-                  </button>
+                  <div key={w.id} className="group relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => toggleTask(w.id)}
+                      aria-label={TITLES[w.id] || w.id}
+                      title={`${TITLES[w.id] || w.id} — свёрнуть/развернуть`}
+                      style={tileStyle(app.tint)}
+                      className="relative grid h-10 w-10 place-items-center rounded-xl border transition-all duration-150 hover:scale-105 cursor-pointer active:scale-90"
+                    >
+                      <Glyph className="h-5 w-5 stroke-[1.75]" />
+                      <span
+                        className={`absolute bottom-0.5 left-1/2 h-1 -translate-x-1/2 rounded-full transition-all ${
+                          isTop ? "w-4 bg-[var(--desk-accent)]" : w.min ? "w-1 bg-[var(--desk-muted)]" : "w-2 bg-[var(--desk-muted)]"
+                        }`}
+                      />
+                    </button>
+
+                    {/* Крестик закрытия приложения */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        closeWin(w.id);
+                      }}
+                      title={`Закрыть ${TITLES[w.id] || w.id}`}
+                      aria-label={`Закрыть ${TITLES[w.id] || w.id}`}
+                      className="absolute -top-1 -right-1 z-10 grid h-4 w-4 place-items-center rounded-full border border-black/15 bg-[#ff5f57] text-white shadow-xs transition-all duration-150 hover:scale-110 hover:brightness-110 active:scale-90 cursor-pointer after:absolute after:-inset-1.5 sm:after:hidden"
+                    >
+                      <X className="h-2.5 w-2.5 stroke-[3]" />
+                    </button>
+                  </div>
                 );
               })}
             </div>
@@ -1192,7 +1585,7 @@ export default function WinDesktop() {
           <button
             type="button"
             onClick={() => {
-              if (typeof window !== "undefined" && window.innerWidth < 1280) {
+              if (typeof window !== "undefined" && window.innerWidth < 640) {
                 setMobileWidgetsOpen((s) => !s);
               } else {
                 setShowWidgets((s) => !s);
@@ -1202,7 +1595,7 @@ export default function WinDesktop() {
             className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs text-[var(--desk-fg)] transition-colors hover:bg-[var(--desk-surface-2)] cursor-pointer text-left"
           >
             <Layers className="h-3.5 w-3.5 text-[var(--desk-muted)]" />
-            {(typeof window !== "undefined" && window.innerWidth < 1280 ? mobileWidgetsOpen : showWidgets)
+            {(typeof window !== "undefined" && window.innerWidth < 640 ? mobileWidgetsOpen : showWidgets)
               ? "Скрыть виджеты"
               : "Показать виджеты"}
           </button>

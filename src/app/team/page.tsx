@@ -76,7 +76,7 @@ function MemberPhoto({
 
   return (
     <div
-      className={`relative w-full aspect-square border-4 border-black dark:border-white mb-5 sm:mb-6 overflow-hidden shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] ${
+      className={`relative w-full aspect-square border-2 sm:border-4 border-black dark:border-white mb-0 sm:mb-6 overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] ${
         step < 1 ? "bg-neutral-100 dark:bg-neutral-800" : color
       }`}
     >
@@ -133,22 +133,27 @@ export default function TeamPage() {
               }}
               className="group relative border-4 border-black dark:border-white bg-white dark:bg-neutral-900 p-5 sm:p-6 transition-all duration-200 shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] sm:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[5px_5px_0px_0px_rgba(255,255,255,0.8)] sm:dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.8)]"
             >
-              {/* Photo / fallback badge */}
-              <MemberPhoto
-                photo={member.photo}
-                name={member.name}
-                color={member.color}
-                emoji={member.avatar}
-              />
+              <div className="flex flex-row gap-4 items-center sm:block sm:gap-0">
+                <div className="w-20 h-20 sm:w-full sm:h-auto shrink-0">
+                  <MemberPhoto
+                    photo={member.photo}
+                    name={member.name}
+                    color={member.color}
+                    emoji={member.avatar}
+                  />
+                </div>
+                <div className="flex-1 min-w-0 sm:mt-0">
+                  <h2 className="text-base sm:text-xl font-black uppercase tracking-tight text-black dark:text-white mb-0.5 sm:mb-1 break-words">
+                    {member.name}
+                  </h2>
+                  <p className="text-xs sm:text-sm font-bold text-black dark:text-white leading-snug mb-0 sm:mb-1.5">
+                    {member.profession}
+                  </p>
+                </div>
+              </div>
 
-              <div>
-                <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight text-black dark:text-white mb-1 break-words whitespace-nowrap">
-                  {member.name}
-                </h2>
-                <p className="text-sm font-bold text-black dark:text-white leading-snug mb-1.5">
-                  {member.profession}
-                </p>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed font-medium text-pretty">
+              <div className="mt-3 sm:mt-0">
+                <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed font-medium text-pretty">
                   {member.desc}
                 </p>
 

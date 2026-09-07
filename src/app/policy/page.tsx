@@ -5,12 +5,12 @@ import WaveRule from "@/components/WaveRule";
 
 export default function PolicyPage() {
   return (
-    <div className="bg-white dark:bg-neutral-950 min-h-screen text-neutral-900 dark:text-neutral-100 font-sans py-16 px-6">
+    <div className="bg-white dark:bg-neutral-950 min-h-screen text-neutral-900 dark:text-neutral-100 font-sans py-10 sm:py-16 px-4 sm:px-6">
       <div className="max-w-3xl mx-auto">
         {/* Back Link */}
         <Link
           href="/contacts"
-          className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-foreground transition-colors mb-12"
+          className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-foreground transition-colors mb-8 sm:mb-12 py-2.5 px-2 -ml-2 rounded-lg active:scale-95 cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Вернуться к контактам</span>

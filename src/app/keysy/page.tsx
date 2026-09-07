@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, MotionConfig } from "framer-motion";
 import {
   ArrowRight,
+  ArrowLeft,
   Send,
   ExternalLink,
   ChevronLeft,
@@ -12,11 +13,12 @@ import {
   Images,
 } from "lucide-react";
 import WaveRule from "@/components/WaveRule";
+import { haptic } from "@/utils/haptics";
 
 export interface Case {
   id: string;
   num: string;
-  groupId: "web" | "bots" | "automation";
+  groupId: "web" | "bots" | "automation" | "software";
   groupTitle: string;
   title: string;
   category: string;
@@ -29,13 +31,13 @@ export interface Case {
   url?: string;
   gallery: {
     url: string;
-    title: string;
-    desc: string;
+    title?: string;
+    desc?: string;
   }[];
 }
 
 export interface CaseGroup {
-  id: "web" | "bots" | "automation";
+  id: "web" | "bots" | "automation" | "software";
   num: string;
   roman: string;
   title: string;
@@ -68,12 +70,47 @@ const GROUPS: CaseGroup[] = [
     subtitle: "Скрипты, API и данные",
     caseIndices: [6],
   },
+  {
+    id: "software",
+    num: "04",
+    roman: "IV",
+    title: "Игры, софт и SaaS",
+    subtitle: "Лаунчеры, десктоп и клиенты",
+    caseIndices: [7, 8],
+  },
 ];
 
 const CASES: Case[] = [
   {
-    id: "academie",
+    id: "barori",
     num: "01",
+    groupId: "web",
+    groupTitle: "Веб-разработка",
+    title: "Федеральный сервис подключения водителей «Барори Парк»",
+    category: "Веб-сервисы & Интеграции",
+    short: "Барори Парк",
+    note: "152-ФЗ • amoCRM • TG-бот",
+    challenge:
+      "Обеспечить высокий поток регистраций водителей и курьеров (Яндекс Такси, Яндекс Смена, Купер) с жестким соблюдением 152-ФЗ, отсевом спам-ботов и мгновенной передачей лидов диспетчерам таксопарка.",
+    solution:
+      "Спроектировали конверсионный веб-сервис с локализацией шрифтов (исключена трансграничная передача IP), отдельным получением согласий на ПДн, защитой Yandex SmartCaptcha и интеграцией с ботом @BaroriPark_Bot и amoCRM.",
+    results: [
+      { metric: "152-ФЗ", label: "Без штрафов" },
+      { metric: "24/7", label: "Заявки даже ночью" },
+      { metric: "+52%", label: "Больше водителей" },
+    ],
+    domain: "baroripark.ru",
+    url: "https://baroripark.ru/",
+    gallery: [
+      { url: "/cases/barori/1.webp" },
+      { url: "/cases/barori/2.webp" },
+      { url: "/cases/barori/3.webp" },
+      { url: "/cases/barori/4.webp" },
+    ],
+  },
+  {
+    id: "academie",
+    num: "02",
     groupId: "web",
     groupTitle: "Веб-разработка",
     title: "Премиальная вокальная академия «Académie des Talents» (Швейцария)",
@@ -85,38 +122,22 @@ const CASES: Case[] = [
     solution:
       "Разработали премиальный мультиязычный сайт (немецкий, английский, русский), внедрили микроразметку Schema.org (LocalBusiness / MusicSchool), форму записи на индивидуальную диагностику и добились 100/100 по Core Web Vitals.",
     results: [
-      { metric: "3 языка", label: "Локализация (DE / EN / RU)" },
-      { metric: "100/100", label: "Скорость и SEO-структура" },
-      { metric: "CHF 190+", label: "Средний чек первого визита" },
+      { metric: "24/7", label: "Запись с сайта" },
+      { metric: "1 клик", label: "До формы диагностики" },
+      { metric: "0", label: "Пропущенных заявок" },
     ],
     domain: "academie-des-talents.com",
     url: "https://academie-des-talents.com/",
     gallery: [
-      {
-        url: "/cases/academie_full.webp",
-        title: "Главный экран и позиционирование в Швейцарии",
-        desc: "Утонченная эстетика, микроразметка Schema.org и адаптивность под любые устройства.",
-      },
-      {
-        url: "/cases/academie.webp",
-        title: "Брендинг и визуальная идентификация",
-        desc: "Премиальное позиционирование услуг вокального коучинга для руководителей.",
-      },
-      {
-        url: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=960&q=60",
-        title: "Акустическое пространство и форматы занятий",
-        desc: "Презентация студии, методологии и индивидуальных программ обучения.",
-      },
-      {
-        url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=960&q=60",
-        title: "Executive Voice Coaching для топ-менеджеров",
-        desc: "Целевые сценарии для бизнес-аудитории и онлайн-запись на персональную диагностику.",
-      },
+      { url: "/cases/academie/1.webp" },
+      { url: "/cases/academie/2.webp" },
+      { url: "/cases/academie/3.webp" },
+      { url: "/cases/academie/4.webp" },
     ],
   },
   {
     id: "alina",
-    num: "02",
+    num: "03",
     groupId: "web",
     groupTitle: "Веб-разработка",
     title: "Личный бренд и портфолио оперной певицы «Alina Zamalieva»",
@@ -128,38 +149,22 @@ const CASES: Case[] = [
     solution:
       "Спроектировали дизайн в эстетике высокого искусства с академической типографикой (Cormorant Garamond + Montserrat), интерактивной афишей концертов, быстрой медиатекой аудио/видео фрагментов и версткой под Retina-экраны.",
     results: [
-      { metric: "3 страны", label: "Охват (CH, DE, RU)" },
-      { metric: "< 1.0 сек", label: "Загрузка медиатеки" },
-      { metric: "100%", label: "Презентация для агентов" },
+      { metric: "1 стр.", label: "Вся карьера и репертуар" },
+      { metric: "100%", label: "Афиша всегда актуальна" },
+      { metric: "1 место", label: "В поиске" },
     ],
     domain: "alinazamalieva.com",
     url: "https://www.alinazamalieva.com/",
     gallery: [
-      {
-        url: "/cases/alina_full.webp",
-        title: "Главный экран и портфолио оперной певицы",
-        desc: "Типографика Cormorant Garamond, медиатека выступлений и афиша концертов.",
-      },
-      {
-        url: "https://www.alinazamalieva.com/images/hero-bg.jpg",
-        title: "Сценический образ и биография",
-        desc: "Презентация репертуара для оперных театров и европейских агентов.",
-      },
-      {
-        url: "https://www.alinazamalieva.com/images/JPF3303.jpg",
-        title: "Репертуарная карта и медиа-материалы",
-        desc: "Фрагменты оперных партий, аудиозаписи и рецензии музыкальных критиков.",
-      },
-      {
-        url: "https://images.unsplash.com/photo-1514306191717-452ec28c7814?auto=format&fit=crop&w=960&q=60",
-        title: "Международная концертная деятельность",
-        desc: "Организация графиков выступлений и прямая связь с продюсерами.",
-      },
+      { url: "/cases/alina/1.webp" },
+      { url: "/cases/alina/2.webp" },
+      { url: "/cases/alina/3.webp" },
+      { url: "/cases/alina/4.webp" },
     ],
   },
   {
     id: "rahim",
-    num: "03",
+    num: "04",
     groupId: "web",
     groupTitle: "Веб-разработка",
     title: "Онлайн-галерея и арт-каталог художника «Rahim El»",
@@ -171,124 +176,22 @@ const CASES: Case[] = [
     solution:
       "Разработали сайт на базе WordPress CMS с кастомной темой (artist-portfolio), настроили кастомные типы записей и полей для картин, внедрили оптимизацию тяжелых изображений без потери резкости мазков и удобную админ-панель.",
     results: [
-      { metric: "0 ₽", label: "Затрат на контент-менеджеров" },
-      { metric: "4K / Retina", label: "Качество отображения картин" },
-      { metric: "100%", label: "Автономное управление в CMS" },
+      { metric: "2 шага", label: "Новая картина на сайте" },
+      { metric: "100%", label: "Управляет сам" },
+      { metric: "0", label: "Ожидания публикации" },
     ],
     domain: "rahimel.com/artworks/",
     url: "https://rahimel.com/artworks/",
     gallery: [
-      {
-        url: "/cases/rahim_full.webp",
-        title: "Каталог произведений современного искусства",
-        desc: "Кастомная тема WordPress с адаптивной сеткой картин и быстрым предпросмотром.",
-      },
-      {
-        url: "https://rahimel.com/wp-content/uploads/2026/07/IMG_4852-1916x2000.jpeg",
-        title: "Оригинальное полотно в высоком разрешении",
-        desc: "Сохранение текстуры мазков и точной цветопередачи на экранах Retina.",
-      },
-      {
-        url: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=960&q=60",
-        title: "Выставочные пространства и кураторские серии",
-        desc: "Структурирование работ по периодам, выставкам и коллекциям.",
-      },
-      {
-        url: "https://images.unsplash.com/photo-1582561424760-0321d75e81fa?auto=format&fit=crop&w=960&q=60",
-        title: "Админ-панель управления экспонатами",
-        desc: "Добавление картин, габаритов, техники и статуса продажи без участия программистов.",
-      },
-    ],
-  },
-  {
-    id: "barori",
-    num: "04",
-    groupId: "web",
-    groupTitle: "Веб-разработка",
-    title: "Федеральный сервис подключения водителей «Барори Парк»",
-    category: "Веб-сервисы & Интеграции",
-    short: "Барори Парк",
-    note: "152-ФЗ • Bitrix • TG-бот",
-    challenge:
-      "Обеспечить высокий поток регистраций водителей и курьеров (Яндекс Такси, Яндекс Смена, Купер) с жестким соблюдением 152-ФЗ, отсевом спам-ботов и мгновенной передачей лидов диспетчерам таксопарка.",
-    solution:
-      "Спроектировали конверсионный веб-сервис с локализацией шрифтов (исключена трансграничная передача IP), отдельным получением согласий на ПДн, защитой Yandex SmartCaptcha и интеграцией с ботом @BaroriPark_Bot и Bitrix.",
-    results: [
-      { metric: "152-ФЗ", label: "Полный юридический комплаенс" },
-      { metric: "24/7", label: "Автоматический прием заявок" },
-      { metric: "+52%", label: "Конверсия в регистрацию водителя" },
-    ],
-    domain: "baroripark.ru",
-    url: "https://baroripark.ru/",
-    gallery: [
-      {
-        url: "/cases/baroripark.webp",
-        title: "Главный экран и калькулятор заработка",
-        desc: "Быстрое подключение к Яндекс Такси, Яндекс Смене и доставке по РФ.",
-      },
-      {
-        url: "https://baroripark.ru/bitrix/templates/barorikorNEW/img/IMG_4314.jfif.jpeg",
-        title: "Условия парка и прозрачные выплаты",
-        desc: "Блок доверия с лицензиями, условиями и поддержкой водителей.",
-      },
-      {
-        url: "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=960&q=60",
-        title: "Мультисервисная интеграция (Такси, Доставка, Купер)",
-        desc: "Маршрутизация заявок исполнителей по направлениям работы.",
-      },
-      {
-        url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=960&q=60",
-        title: "Модуль комплаенса 152-ФЗ и SmartCaptcha",
-        desc: "Хранение данных в РФ, защита от спам-атак и мгновенная отправка в CRM.",
-      },
-    ],
-  },
-  {
-    id: "hr-bot",
-    num: "05",
-    groupId: "bots",
-    groupTitle: "Чат-боты и ИИ",
-    title: "AI-бот рекрутинга полного цикла в Telegram «под ключ»",
-    category: "Telegram-боты & ИИ",
-    short: "AI-Рекрутер",
-    note: "OpenAI • STT • Bitrix24",
-    challenge:
-      "Рекрутеры тратили до 70% рабочего времени на первичную переписку, прослушивание десятков голосовых сообщений соискателей, скрининг анкет и ручное согласование свободного времени первого интервью.",
-    solution:
-      "Разработали автономный Python-бот на OpenAI API с Function Calling: он распознает речь из голосовых (STT), оценивает навыки кандидата по критериям вакансий, бронирует непересекающиеся слоты интервью и синхронизирует всё с Google Таблицами и Bitrix24.",
-    results: [
-      { metric: "-80%", label: "Времени HR на первый скрининг" },
-      { metric: "< 3 сек", label: "Ответ на вопрос или голосовое" },
-      { metric: "0 накладок", label: "Бронирование слотов собеседований" },
-    ],
-    domain: "t.me/hr_recruiter_bot",
-    url: "https://t.me/maetti_agency_stub",
-    gallery: [
-      {
-        url: "/cases/hr_recruiter_bot.webp",
-        title: "Дашборд скоринга кандидатов и чат с ИИ",
-        desc: "Распознавание голосовых сообщений (STT), оценка компетенций и календарь слотов.",
-      },
-      {
-        url: "https://images.unsplash.com/photo-1573497620053-ea5300f94f21?auto=format&fit=crop&w=960&q=60",
-        title: "Квалификационный скрининг соискателей",
-        desc: "Адаптивные системные промпты под каждую вакансию и отработка возражений.",
-      },
-      {
-        url: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=960&q=60",
-        title: "Модуль бронирования слотов интервью",
-        desc: "Исключение овербукинга с синхронизацией календаря рекрутеров.",
-      },
-      {
-        url: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=960&q=60",
-        title: "Двусторонняя интеграция с Bitrix24 и Google Sheets",
-        desc: "Автоматический импорт вакансий и фиксация анкет кандидатов в реальном времени.",
-      },
+      { url: "/cases/rahim/1.webp" },
+      { url: "/cases/rahim/2.webp" },
+      { url: "/cases/rahim/3.webp" },
+      { url: "/cases/rahim/4.webp" },
     ],
   },
   {
     id: "omnichannel",
-    num: "06",
+    num: "05",
     groupId: "bots",
     groupTitle: "Чат-боты и ИИ",
     title: "Омниканальный бот клиентской поддержки «MAX + VK + TG»",
@@ -298,35 +201,40 @@ const CASES: Case[] = [
     challenge:
       "Поступающие сообщения из мессенджера MAX, ВКонтакте и Telegram обрабатывались вручную в разных окнах, что приводило к задержкам ответа до 20 минут, потере контекста переписки и выгоранию службы поддержки.",
     solution:
-      "Создали единый шлюз омниканальной коммуникации (аналог Mao Bot): боты ведут первичный диалог и консультацию во всех 3 каналах, а при сложных вопросах бесшовно передают диалог оператору, работающему из «одного окна» amoCRM.",
+      "Создали единый шлюз омниканальной коммуникации (аналог Mao Bot): боты ведут первичный диалог и консультацию во всех 3 каналах, а при сложных вопросах бесшовно передают диалог оператору, работающему из «одного окна» нашего софта (можно подключить в amoCRM).",
     results: [
-      { metric: "1 окно", label: "Для всех обращений в amoCRM" },
-      { metric: "3 канала", label: "MAX, ВКонтакте и Telegram" },
-      { metric: "x3.5", label: "Скорость обработки обращений" },
+      { metric: "1 окно", label: "Все чаты в amoCRM" },
+      { metric: "3 в 1", label: "MAX, VK и Telegram" },
+      { metric: "x3.5", label: "Быстрее ответов" },
     ],
-    domain: "amo.maetti.agency",
-    url: "https://t.me/maetti_agency_stub",
+    domain: "my.etag.store/baroripark",
+    url: "https://my.etag.store/baroripark",
     gallery: [
-      {
-        url: "/cases/omnichannel_bot.webp",
-        title: "Единое окно оператора amoCRM (MAX + VK + Telegram)",
-        desc: "Объединение всех каналов связи, автоответы ИИ и бесшовный перевод на оператора.",
-      },
-      {
-        url: "https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&w=960&q=60",
-        title: "Быстрый перехват диалога оператором",
-        desc: "Сотрудник видит всю историю диалога с ботом и отвечает прямо из сделки CRM.",
-      },
-      {
-        url: "https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=960&q=60",
-        title: "Автосоздание карточки клиента и тегирование",
-        desc: "Квалификация лида, определение источника рекламы и сохранение контактов.",
-      },
-      {
-        url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=960&q=60",
-        title: "Аналитика времени ответа и качества консультаций",
-        desc: "Контроль нагрузки на операторов и метрик первого ответа (FRT).",
-      },
+      { url: "/cases/omnichannel/1.webp" },
+    ],
+  },
+  {
+    id: "hr-bot",
+    num: "06",
+    groupId: "bots",
+    groupTitle: "Чат-боты и ИИ",
+    title: "AI-бот рекрутинга полного цикла в Telegram «под ключ»",
+    category: "Telegram-боты & ИИ",
+    short: "AI-Рекрутер",
+    note: "GLM • Telegram • Google Sheets • CRM",
+    challenge:
+      "Требовалось автоматизировать привлечение соискателей через регулярную рассылку вакансий по профильным чатам, а также избавить рекрутеров от ручного первичного отсева, подбора позиций под каждого кандидата, долгого анкетирования и переноса данных в таблицы и CRM.",
+    solution:
+      "Разработали интеллектуального Telegram-бота на базе LLM-модели GLM: бот автоматически рассылает актуальные вакансии по чатам, в живом диалоге общается с кандидатами, подбирает вакансию, проводит анкетирование и мгновенно отправляет результаты менеджеру в Telegram, Google Таблицы и CRM.",
+    results: [
+      { metric: "11 ₽", label: "За одного кандидата" },
+      { metric: "-80%", label: "Меньше рутины HR" },
+      { metric: "-20%", label: "Ушедших лидов" },
+    ],
+    domain: "t.me/Violetta_Arbusova",
+    url: "https://t.me/Violetta_Arbusova",
+    gallery: [
+      { url: "/cases/hr-bot/1.webp" },
     ],
   },
   {
@@ -343,74 +251,100 @@ const CASES: Case[] = [
     solution:
       "Разработали специализированный сервис парсинга с гибкой фильтрацией (города, вилки зарплат, минус-слова). Адаптировали логику: прямой сбор номеров телефонов переведен на SuperJob, а с HH выгружаются доступные метаданные с мгновенным экспортом в Excel.",
     results: [
-      { metric: "10x", label: "Ускорение сбора базы контактов" },
-      { metric: "1 клик", label: "Экспорт в Excel и CSV" },
-      { metric: "100%", label: "Работоспособность с SuperJob" },
+      { metric: "10x", label: "Скорость подбора" },
+      { metric: "1 клик", label: "Выгрузка в Excel" },
+      { metric: "100%", label: "Контроля выдачи" },
     ],
     domain: "parsinghh.ru",
-    url: "https://parsinghh.ru/",
     gallery: [
-      {
-        url: "/cases/parsinghh.webp",
-        title: "Интерфейс фильтрации, стоп-слов и выбора площадок",
-        desc: "Управление источниками (HH.ru / SuperJob), городами и исключениями нерелевантных фраз.",
-      },
-      {
-        url: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=960&q=60",
-        title: "Выгрузка прямых телефонных номеров с SuperJob",
-        desc: "Автоматизированное извлечение контактов нанимателей без ручного кликанья.",
-      },
-      {
-        url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=960&q=60",
-        title: "Экспорт и структурирование данных в Excel/CSV",
-        desc: "Формирование готовых списков для холодного и теплого рекрутинга.",
-      },
-      {
-        url: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=960&q=60",
-        title: "Отказоустойчивая архитектура парсинга",
-        desc: "Обход защит, ротация прокси и гибкая реакция на изменение алгоритмов агрегаторов.",
-      },
+      { url: "/cases/parsinghh/1.webp" },
+      { url: "/cases/parsinghh/2.webp" },
+    ],
+  },
+  {
+    id: "lunate",
+    num: "08",
+    groupId: "software",
+    groupTitle: "Игры, софт и SaaS",
+    title: "Игровой комплекс и лаунчер техномагического сервера «Lunate»",
+    category: "Fullstack, Desktop & GameDev",
+    short: "Lunate Server",
+    note: "Minecraft 1.20.1 • Web & Desktop",
+    challenge:
+      "Техномагический сервер объединяет сложную индустриальную автоматизацию и магию. Требовалось исключить ручную установку игроками десятков модов, Java и конфигов, обеспечив вход на сервер за пару кликов как на мощных, так и на слабых ПК.",
+    solution:
+      "Создали комплексную экосистему: веб-портал с интерактивным лором, фазами луны и вики (lunate.lol), а также кастомный десктоп-лаунчер на Electron с фоновой синхронизацией модов, проверкой файлов и профилями сборок MAX/LITE.",
+    results: [
+      { metric: "2 клика", label: "Открыл и играешь" },
+      { metric: "MAX / LITE", label: "Хватит любого ПК" },
+      { metric: "100%", label: "Моды качаются сами" },
+    ],
+    domain: "lunate.lol",
+    url: "https://lunate.lol/",
+    gallery: [
+      { url: "/cases/lunate/header.webp" },
+      { url: "/cases/lunate/launcher_title.webp" },
+      { url: "/cases/lunate/world.webp" },
+      { url: "/cases/lunate/magic.webp" },
+      { url: "/cases/lunate/tech.webp" },
+      { url: "/cases/lunate/launcher_settings.webp" },
+      { url: "/cases/lunate/community.webp" },
+      { url: "/cases/lunate/faq.webp" },
+    ],
+  },
+  {
+    id: "mozority",
+    num: "09",
+    groupId: "software",
+    groupTitle: "Игры, софт и SaaS",
+    title: "Приватный чит для Counter-Strike 2 и SaaS-платформа «Mozority»",
+    category: "C++ Game Cheat & SaaS-платформа",
+    short: "Mozority CS2",
+    note: "C++ • ImGui • HWID Lock • SaaS",
+    challenge:
+      "Разработать приватный чит для Counter-Strike 2 с максимальной оптимизацией (0 просадки FPS и без задержек инпута), полным спектром модулей (Aimbot, ESP, Chams, Skinchanger) и построить защищенную SaaS-инфраструктуру продажи подписок с аппаратной привязкой (HWID Lock).",
+    solution:
+      "Разработали C++/ImGui чит с нулевым влиянием на FPS: визуальный оверлей (ESP), аимбот со сглаживанием Smooth и компенсацией отдачи, цветные чамсы и скинчейнджер. Построили SaaS-экосистему: стильный веб-портал, личный кабинет с автовыдачей ключей, привязкой к железу (HWID) и встроенным чатом.",
+    results: [
+      { metric: "0 FPS drop", label: "Кадры не роняет" },
+      { metric: "HWID Lock", label: "Ключ не перепродать" },
+      { metric: "100%", label: "Ключи выдаются сами" },
+    ],
+    domain: "github.com/bUmmy1337/mozority",
+    url: "https://github.com/bUmmy1337/mozority",
+    gallery: [
+      { url: "/cases/mozority/web_header.webp" },
+      { url: "/cases/mozority/esp.webp" },
+      { url: "/cases/mozority/cabinet.webp" },
+      { url: "/cases/mozority/aimbot.webp" },
+      { url: "/cases/mozority/chams.webp" },
+      { url: "/cases/mozority/nightmode.webp" },
+      { url: "/cases/mozority/skinchanger.webp" },
+      { url: "/cases/mozority/cabinet_chat.webp" },
     ],
   },
 ];
 
-/* 1 тик колеса ≈ 100px. Длина скролла увеличена в 1.3 раза (6.5 тиков = 650px на кейс), потом открепление. */
+/* 1 тик колеса ≈ 100px. Длина скролла: 6.5 тиков = 650px на кейс + буфер на финальном кейсе перед откреплением. */
 const TICK_PX = 100;
 const TICKS_PER_SLIDE = 6.5;
 const SLIDE_PX = Math.round(TICK_PX * TICKS_PER_SLIDE);
-const PIN_EXTRA_PX = SLIDE_PX * CASES.length;
+const END_BUFFER_PX = 350;
+const PIN_EXTRA_PX = SLIDE_PX * CASES.length + END_BUFFER_PX;
 
-/* Кэш метрик пина: getComputedStyle на каждый scroll-кадр форсит рефлоу. */
-const pinMetricsCache = new WeakMap<
-  HTMLElement,
-  { top: number; extra: number }
->();
-
-function pinProgressPx(track: HTMLElement): number {
-  let m = pinMetricsCache.get(track);
-  if (!m) {
-    const sticky = track.firstElementChild as HTMLElement | null;
-    const top = sticky ? parseFloat(getComputedStyle(sticky).top) || 0 : 0;
-    const extra = sticky
-      ? Math.max(0, track.offsetHeight - sticky.offsetHeight)
-      : 0;
-    m = { top, extra };
-    pinMetricsCache.set(track, m);
-  }
-  if (m.extra === 0 || track.offsetHeight === 0) return 0;
-  const scrolled = m.top - track.getBoundingClientRect().top;
-  return Math.min(m.extra, Math.max(0, scrolled));
+function pinProgressPx(track: HTMLElement, stickyTop = 80): number {
+  const scrolled = stickyTop - track.getBoundingClientRect().top;
+  return Math.min(PIN_EXTRA_PX, Math.max(0, scrolled));
 }
 
 function slideIndexFromProgress(progress: number): number {
-  if (progress >= PIN_EXTRA_PX) return CASES.length - 1;
+  if (progress >= (CASES.length - 1) * SLIDE_PX) {
+    return CASES.length - 1;
+  }
   return Math.min(CASES.length - 1, Math.max(0, Math.floor(progress / SLIDE_PX)));
 }
 
-function scrollTrackToProgress(track: HTMLElement, progress: number) {
-  const sticky = track.firstElementChild as HTMLElement | null;
-  if (!sticky) return;
-  const stickyTop = parseFloat(getComputedStyle(sticky).top) || 0;
+function scrollTrackToProgress(track: HTMLElement, progress: number, stickyTop = 80) {
   const targetTrackTop = stickyTop - progress;
   const delta = track.getBoundingClientRect().top - targetTrackTop;
   window.scrollTo({ top: window.scrollY + delta, behavior: "smooth" });
@@ -431,9 +365,6 @@ function CaseDetail({
     <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm flex flex-col justify-between px-6 sm:px-8 py-5 sm:py-6 transition-all duration-300 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/5">
       {/* 1. Header */}
       <div className="border-b border-neutral-100 dark:border-neutral-800 pb-3 mb-4">
-        <span className="text-xs font-mono text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wider block mb-1.5">
-          {c.category}
-        </span>
         <h2 className="text-xl sm:text-2xl font-normal tracking-tight text-neutral-950 dark:text-white leading-snug">
           {c.title}
         </h2>
@@ -468,10 +399,10 @@ function CaseDetail({
 
         {/* Правый верхний: ТЕКСТ (Метрики просто текстом без плашки) */}
         <div className="h-full flex flex-col justify-center self-center py-2">
-          <div className="grid grid-cols-3 gap-3 sm:gap-4 text-left">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 text-left">
             {c.results.map((res, rIdx) => (
               <div key={rIdx} className="flex flex-col">
-                <div className="text-2xl sm:text-3xl font-light text-blue-600 dark:text-blue-400 tracking-tight">
+                <div className="text-xl sm:text-2xl md:text-3xl font-light text-blue-600 dark:text-blue-400 tracking-tight">
                   {res.metric}
                 </div>
                 <div className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1 leading-snug">
@@ -521,7 +452,15 @@ function CaseDetail({
               rel="noopener noreferrer"
               className="w-full sm:w-auto justify-center inline-flex items-center gap-1.5 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 px-3.5 py-2.5 rounded-lg hover:border-neutral-400 dark:hover:border-neutral-500 text-xs sm:text-sm font-medium transition-colors"
             >
-              <span>На сайт</span>
+              <span>
+                {c.url.includes("github.com")
+                  ? "GitHub"
+                  : c.url.includes("t.me")
+                  ? "Открыть бота"
+                  : c.id === "omnichannel"
+                  ? "Живое демо"
+                  : "На сайт"}
+              </span>
               <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
             </a>
           )}
@@ -550,30 +489,50 @@ export default function CasesPage() {
   const ignoreScrollRef = useRef(false);
   const unlockTimerRef = useRef<number>(0);
   const clickGenRef = useRef(0);
+  const stickyTopRef = useRef<number>(80);
 
   // Modal Lightbox Gallery State
   const [galleryCase, setGalleryCase] = useState<Case | null>(null);
   const [photoIndex, setPhotoIndex] = useState(0);
 
   const handleOpenGallery = (c: Case, idx = 0) => {
+    haptic.toggle();
     setGalleryCase(c);
     setPhotoIndex(idx);
   };
 
   const handleCloseGallery = () => {
+    haptic.toggle();
     setGalleryCase(null);
   };
 
   const handleNextPhoto = () => {
     if (!galleryCase) return;
+    haptic.tick();
     setPhotoIndex((prev) => (prev + 1) % galleryCase.gallery.length);
   };
 
   const handlePrevPhoto = () => {
     if (!galleryCase) return;
+    haptic.tick();
     setPhotoIndex(
       (prev) => (prev - 1 + galleryCase.gallery.length) % galleryCase.gallery.length
     );
+  };
+
+  const touchStartXRef = useRef<number | null>(null);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartXRef.current = e.touches[0].clientX;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartXRef.current === null) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartXRef.current;
+    touchStartXRef.current = null;
+    if (deltaX > 45) {
+      handlePrevPhoto();
+    } else if (deltaX < -45) {
+      handleNextPhoto();
+    }
   };
 
   // Предзагрузка соседних фото галереи, чтобы листалось без задержек
@@ -608,6 +567,14 @@ export default function CasesPage() {
     if (!track) return;
     let ticking = false;
 
+    const sticky = track.firstElementChild as HTMLElement | null;
+    const updateStickyTop = () => {
+      if (sticky) {
+        stickyTopRef.current = parseFloat(getComputedStyle(sticky).top) || 80;
+      }
+    };
+    updateStickyTop();
+
     // rAF-throttle: scroll фаерит десятки раз за кадр, setState нужен 1 раз.
     const sync = () => {
       if (ticking) return;
@@ -615,7 +582,7 @@ export default function CasesPage() {
       requestAnimationFrame(() => {
         ticking = false;
         if (ignoreScrollRef.current || track.offsetHeight === 0) return;
-        const nextIdx = slideIndexFromProgress(pinProgressPx(track));
+        const nextIdx = slideIndexFromProgress(pinProgressPx(track, stickyTopRef.current));
         if (nextIdx !== prevActiveRef.current) {
           prevActiveRef.current = nextIdx;
           setActive(nextIdx);
@@ -623,7 +590,7 @@ export default function CasesPage() {
       });
     };
     const onResize = () => {
-      pinMetricsCache.delete(track);
+      updateStickyTop();
       sync();
     };
 
@@ -660,14 +627,14 @@ export default function CasesPage() {
       ignoreScrollRef.current = false;
     };
 
-    if (Math.abs(pinProgressPx(track) - targetProgress) < 2) {
+    if (Math.abs(pinProgressPx(track, stickyTopRef.current) - targetProgress) < 2) {
       ignoreScrollRef.current = false;
       return;
     }
 
     window.addEventListener("scrollend", unlock);
     unlockTimerRef.current = window.setTimeout(unlock, 1500);
-    scrollTrackToProgress(track, targetProgress);
+    scrollTrackToProgress(track, targetProgress, stickyTopRef.current);
   };
 
   const handleGroupClick = (group: CaseGroup) => {
@@ -694,6 +661,7 @@ export default function CasesPage() {
       if (next !== prevActiveRef.current) {
         prevActiveRef.current = next;
         setActive(next);
+        haptic.tick();
       }
     });
   };
@@ -715,6 +683,7 @@ export default function CasesPage() {
   }, [activeGroup]);
 
   const goToMobile = (i: number) => {
+    haptic.tap();
     prevActiveRef.current = i;
     setActive(i);
     railRef.current?.children[i]?.scrollIntoView({
@@ -737,7 +706,12 @@ export default function CasesPage() {
               </h1>
             </div>
             <p className="text-sm md:text-base text-neutral-500 dark:text-neutral-400 font-light leading-relaxed">
-              Листайте страницу вниз для последовательного просмотра проектов по направлениям (Веб, Чат-боты и Автоматизация), задач, технических решений и измеримых результатов.
+              <span className="hidden lg:inline">
+                Листайте страницу вниз для последовательного просмотра проектов по направлениям (Веб, Чат-боты, Автоматизация, Игры и софт), задач, технических решений и измеримых результатов.
+              </span>
+              <span className="lg:hidden">
+                Свайпайте карточки вбок для последовательного просмотра проектов по направлениям, задач, технических решений и измеримых результатов.
+              </span>
             </p>
           </div>
         </section>
@@ -773,11 +747,18 @@ export default function CasesPage() {
                     const groupActiveSubIndex = g.caseIndices.indexOf(active);
 
                     return (
-                      <button
+                      <div
                         key={g.id}
-                        type="button"
+                        role="button"
+                        tabIndex={0}
                         onClick={() => handleGroupClick(g)}
-                        className={`w-full text-left p-4 transition-all duration-300 border flex flex-col justify-between group relative rounded-xl cursor-pointer ${
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            handleGroupClick(g);
+                          }
+                        }}
+                        className={`w-full text-left p-4 transition-all duration-300 border flex flex-col justify-between group relative rounded-xl cursor-pointer select-none ${
                           isGroupActive
                             ? "bg-white dark:bg-neutral-900 border-blue-600 dark:border-blue-500 shadow-md translate-x-1"
                             : "bg-transparent border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700"
@@ -818,13 +799,47 @@ export default function CasesPage() {
                               </span>
                             </div>
                           </div>
-                          <ArrowRight
-                            className={`w-4 h-4 shrink-0 mt-0.5 transition-transform ${
-                              isGroupActive
-                                ? "text-blue-600 dark:text-blue-400 translate-x-1"
-                                : "text-neutral-300 dark:text-neutral-700 group-hover:text-neutral-400"
-                            }`}
-                          />
+
+                          {/* Интерактивные стрелки навигации по кейсам */}
+                          {isGroupActive ? (
+                            <div
+                              className="flex items-center gap-1 shrink-0 mt-0.5"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {active > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDesktopClick(active - 1);
+                                  }}
+                                  title="Предыдущий кейс"
+                                  aria-label="Предыдущий кейс"
+                                  className="w-7 h-7 rounded-lg flex items-center justify-center text-neutral-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/60 transition-all duration-200 cursor-pointer active:scale-90"
+                                >
+                                  <ArrowLeft className="w-4 h-4" />
+                                </button>
+                              )}
+                              {active < CASES.length - 1 && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDesktopClick(active + 1);
+                                  }}
+                                  title="Следующий кейс"
+                                  aria-label="Следующий кейс"
+                                  className="w-7 h-7 rounded-lg flex items-center justify-center text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/60 transition-all duration-200 cursor-pointer active:scale-90"
+                                >
+                                  <ArrowRight className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                          ) : (
+                            <ArrowRight
+                              className="w-4 h-4 shrink-0 mt-0.5 transition-transform text-neutral-300 dark:text-neutral-700 group-hover:text-neutral-400 group-hover:translate-x-0.5"
+                            />
+                          )}
                         </div>
 
                         {/* Индикатор текущего проекта внутри активной группы */}
@@ -839,7 +854,7 @@ export default function CasesPage() {
                               </span>
                             </div>
                             <div
-                              className="grid gap-1.5 w-full"
+                              className="grid gap-1.5 w-full items-center"
                               style={{
                                 gridTemplateColumns: `repeat(${g.caseIndices.length}, minmax(0, 1fr))`,
                               }}
@@ -848,22 +863,33 @@ export default function CasesPage() {
                                 const isCur = idx === active;
                                 const isPast = idx < active;
                                 return (
-                                  <div
+                                  <button
                                     key={idx}
-                                    className={`h-1 rounded-full transition-all duration-300 ${
-                                      isCur
-                                        ? "bg-blue-600 dark:bg-blue-400"
-                                        : isPast
-                                        ? "bg-blue-300 dark:bg-blue-900"
-                                        : "bg-neutral-200 dark:bg-neutral-800"
-                                    }`}
-                                  />
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDesktopClick(idx);
+                                    }}
+                                    title={`Кейс ${idx + 1}`}
+                                    aria-label={`Перейти к кейсу ${idx + 1}`}
+                                    className="py-1 w-full cursor-pointer group/bar focus:outline-none"
+                                  >
+                                    <div
+                                      className={`h-1 rounded-full transition-all duration-300 group-hover/bar:h-1.5 ${
+                                        isCur
+                                          ? "bg-blue-600 dark:bg-blue-400"
+                                          : isPast
+                                          ? "bg-blue-300 dark:bg-blue-900"
+                                          : "bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700"
+                                      }`}
+                                    />
+                                  </button>
                                 );
                               })}
                             </div>
                           </div>
                         )}
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -894,11 +920,11 @@ export default function CasesPage() {
         {/* ===== Mobile: липкая лента групп + свайп-карусель всех кейсов ===== */}
         <div className="lg:hidden">
           {/* Липкая шапка навигации с группами */}
-          <div className="sticky top-24 z-30 bg-neutral-50 dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-800">
-            <div className="flex items-center gap-3 px-6 pt-3 pb-2.5">
+          <div className="sticky top-16 z-30 bg-neutral-50 dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-800">
+            <div className="flex items-center justify-between gap-3 px-4 sm:px-6 pt-3 pb-2.5">
               <div
                 ref={chipsRef}
-                className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-1 px-1"
+                className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 flex-1 min-w-0"
               >
                 {GROUPS.map((g) => {
                   const isGroupActive = g.id === activeGroup.id;
@@ -907,10 +933,10 @@ export default function CasesPage() {
                       key={g.id}
                       type="button"
                       onClick={() => goToMobile(g.caseIndices[0])}
-                      className={`shrink-0 flex items-center gap-2 px-3 py-1.5 border text-xs transition-colors duration-300 rounded-md ${
+                      className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 border text-xs transition-colors duration-300 rounded-lg ${
                         isGroupActive
-                          ? "bg-neutral-900 dark:bg-white text-white dark:text-black border-neutral-900 dark:border-white font-medium"
-                          : "border-neutral-300 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400"
+                          ? "bg-neutral-900 dark:bg-white text-white dark:text-black border-neutral-900 dark:border-white font-medium shadow-xs"
+                          : "border-neutral-300 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 bg-white dark:bg-neutral-900"
                       }`}
                     >
                       <span className="font-mono opacity-60">[{g.num}]</span>
@@ -922,9 +948,11 @@ export default function CasesPage() {
                   );
                 })}
               </div>
-              <span className="ml-auto shrink-0 text-xs font-mono text-neutral-400 tabular-nums">
-                {String(active + 1).padStart(2, "0")}/{String(CASES.length).padStart(2, "0")}
-              </span>
+              <div className="shrink-0 pl-2.5 border-l border-neutral-200 dark:border-neutral-800">
+                <span className="text-xs font-mono font-bold text-blue-600 dark:text-blue-400 tabular-nums">
+                  {String(active + 1).padStart(2, "0")}/{String(CASES.length).padStart(2, "0")}
+                </span>
+              </div>
             </div>
 
             {/* Прогресс */}
@@ -940,12 +968,12 @@ export default function CasesPage() {
           <div
             ref={railRef}
             onScroll={syncFromRail}
-            className="flex items-stretch gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar px-6 py-8"
+            className="flex items-stretch gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar px-4 sm:px-6 py-6 sm:py-8"
           >
             {CASES.map((c, idx) => (
               <div
                 key={c.id}
-                className="snap-center shrink-0 w-[calc(100vw-4.5rem)] max-w-lg [content-visibility:auto] [contain-intrinsic-size:auto_640px]"
+                className="snap-center shrink-0 w-[calc(100vw-2.5rem)] sm:w-[calc(100vw-4.5rem)] max-w-lg [content-visibility:auto] [contain-intrinsic-size:auto_640px]"
               >
                 <CaseDetail
                   c={c}
@@ -972,24 +1000,24 @@ export default function CasesPage() {
               className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col justify-between p-4 sm:p-6 md:p-8 select-none"
             >
               {/* Modal Header */}
-              <div className="flex items-center justify-between text-white border-b border-neutral-800 pb-4">
-                <div>
-                  <span className="text-xs font-mono text-blue-400 uppercase tracking-widest font-semibold block mb-0.5">
+              <div className="flex items-center justify-between text-white border-b border-neutral-800 pb-4 gap-2">
+                <div className="min-w-0 flex-1 pr-2">
+                  <span className="text-[11px] sm:text-xs font-mono text-blue-400 uppercase tracking-widest font-semibold block mb-0.5 truncate">
                     [{galleryCase.num}] {galleryCase.category}
                   </span>
-                  <h3 className="text-base sm:text-lg font-medium text-white truncate max-w-xl">
+                  <h3 className="text-sm sm:text-lg font-medium text-white truncate">
                     {galleryCase.title}
                   </h3>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                   <span className="text-xs font-mono text-neutral-400 hidden sm:inline-block">
                     {photoIndex + 1} из {galleryCase.gallery.length}
                   </span>
                   <button
                     type="button"
                     onClick={handleCloseGallery}
-                    className="p-2 text-neutral-400 hover:text-white bg-neutral-900 border border-neutral-800 hover:border-neutral-600 rounded-md transition-colors cursor-pointer"
+                    className="p-2.5 sm:p-2 text-neutral-300 hover:text-white bg-neutral-900 border border-neutral-700 rounded-lg transition-colors cursor-pointer active:scale-90"
                     aria-label="Закрыть галерею"
                   >
                     <X className="w-5 h-5" />
@@ -998,12 +1026,16 @@ export default function CasesPage() {
               </div>
 
               {/* Main Image View Area */}
-              <div className="relative flex-1 flex items-center justify-center my-4 overflow-hidden">
-                {/* Left Arrow */}
+              <div
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+                className="relative flex-1 flex items-center justify-center my-4 overflow-hidden touch-pan-y"
+              >
+                {/* Left Arrow (Desktop on sides, mobile in bottom bar) */}
                 <button
                   type="button"
                   onClick={handlePrevPhoto}
-                  className="absolute left-2 sm:left-4 z-10 p-3 text-white bg-neutral-900/80 hover:bg-blue-600 border border-neutral-700 rounded-full transition-all shadow-lg cursor-pointer"
+                  className="hidden sm:flex absolute left-4 z-10 p-3 text-white bg-neutral-900/80 hover:bg-blue-600 border border-neutral-700 rounded-full transition-all shadow-lg cursor-pointer"
                   aria-label="Предыдущее фото"
                 >
                   <ChevronLeft className="w-6 h-6" />
@@ -1017,63 +1049,76 @@ export default function CasesPage() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.96 }}
                     transition={{ duration: 0.25 }}
-                    className="max-w-5xl max-h-[65vh] relative flex flex-col items-center justify-center"
+                    className="max-w-5xl max-h-[72vh] relative flex items-center justify-center"
                   >
                     <img
                       src={galleryCase.gallery[photoIndex].url}
-                      alt={galleryCase.gallery[photoIndex].title}
+                      alt={galleryCase.title}
                       decoding="async"
-                      className="max-w-full max-h-[58vh] object-contain rounded-md shadow-2xl border border-neutral-800"
+                      className="max-w-full max-h-[72vh] object-contain rounded-md shadow-2xl border border-neutral-800"
                     />
-
-                    {/* Image Caption & Description */}
-                    <div className="mt-3 text-center max-w-2xl px-4">
-                      <h4 className="text-sm sm:text-base font-medium text-white">
-                        {galleryCase.gallery[photoIndex].title}
-                      </h4>
-                      <p className="text-xs text-neutral-400 font-light mt-0.5">
-                        {galleryCase.gallery[photoIndex].desc}
-                      </p>
-                    </div>
                   </motion.div>
                 </AnimatePresence>
 
-                {/* Right Arrow */}
+                {/* Right Arrow (Desktop on sides, mobile in bottom bar) */}
                 <button
                   type="button"
                   onClick={handleNextPhoto}
-                  className="absolute right-2 sm:right-4 z-10 p-3 text-white bg-neutral-900/80 hover:bg-blue-600 border border-neutral-700 rounded-full transition-all shadow-lg cursor-pointer"
+                  className="hidden sm:flex absolute right-4 z-10 p-3 text-white bg-neutral-900/80 hover:bg-blue-600 border border-neutral-700 rounded-full transition-all shadow-lg cursor-pointer"
                   aria-label="Следующее фото"
                 >
                   <ChevronRight className="w-6 h-6" />
                 </button>
               </div>
 
-              {/* Thumbnails Strip Footer */}
-              <div className="border-t border-neutral-800 pt-3 flex items-center justify-center gap-3 overflow-x-auto no-scrollbar">
-                {galleryCase.gallery.map((item, idx) => {
-                  const isActive = idx === photoIndex;
-                  return (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setPhotoIndex(idx)}
-                      className={`relative w-16 sm:w-20 h-10 sm:h-12 rounded overflow-hidden border transition-all shrink-0 cursor-pointer ${
-                        isActive
-                          ? "border-blue-500 scale-105 shadow-md"
-                          : "border-neutral-800 opacity-50 hover:opacity-100"
-                      }`}
-                    >
-                      <img
-                        src={item.url}
-                        alt={item.title}
-                        loading="lazy"
-                        decoding="async"
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  );
-                })}
+              {/* Thumbnails & Mobile Controls Footer */}
+              <div className="border-t border-neutral-800 pt-3 flex items-center justify-between sm:justify-center gap-2 sm:gap-3">
+                {/* Mobile Prev Button */}
+                <button
+                  type="button"
+                  onClick={handlePrevPhoto}
+                  className="sm:hidden p-2.5 text-white bg-neutral-900 border border-neutral-700 rounded-lg active:scale-95 shrink-0"
+                  aria-label="Предыдущее фото"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+
+                {/* Thumbnails */}
+                <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar py-1">
+                  {galleryCase.gallery.map((item, idx) => {
+                    const isActive = idx === photoIndex;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setPhotoIndex(idx)}
+                        className={`relative w-14 sm:w-20 h-9 sm:h-12 rounded overflow-hidden border transition-all shrink-0 cursor-pointer ${
+                          isActive
+                            ? "border-blue-500 scale-105 shadow-md ring-1 ring-blue-500"
+                            : "border-neutral-800 opacity-50 hover:opacity-100"
+                        }`}
+                      >
+                        <img
+                          src={item.url}
+                          alt={item.title || galleryCase.title}
+                          loading="lazy"
+                          decoding="async"
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Mobile Next Button */}
+                <button
+                  type="button"
+                  onClick={handleNextPhoto}
+                  className="sm:hidden p-2.5 text-white bg-neutral-900 border border-neutral-700 rounded-lg active:scale-95 shrink-0"
+                  aria-label="Следующее фото"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
               </div>
             </motion.div>
           )}

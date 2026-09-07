@@ -6,6 +6,7 @@ import { Check, Send, Plus, Minus } from "lucide-react";
 import { SECTIONS } from "./data";
 import WaveRule from "@/components/WaveRule";
 import { usePageTransition } from "@/context/TransitionContext";
+import { haptic } from "@/utils/haptics";
 
 // 1. Анимированная иконка кода: кавычки разъезжаются, пишется 'code', удаляется, кавычки сужаются
 function AnimatedCodeIcon({
@@ -364,6 +365,7 @@ export default function ServicesPage() {
 
   const toggleAccordion = (id: string) => {
     if (isPending) return;
+    haptic.tap();
     const next = activeId === id ? null : id;
     // Обновляем URL и оповещаем сами себя — hash остаётся единственным источником правды
     const base = window.location.pathname + window.location.search;
@@ -402,8 +404,8 @@ export default function ServicesPage() {
                   className="w-full text-left flex items-center justify-between gap-4 py-2 group cursor-pointer focus:outline-none active:scale-[0.99] transition-transform"
                   aria-expanded={isOpen}
                 >
-                  <div className="flex items-center gap-4 sm:gap-6 min-w-0 flex-1">
-                    <span className="text-sm font-mono text-neutral-400 font-semibold min-w-[30px]">
+                  <div className="flex items-center gap-2.5 sm:gap-6 min-w-0 flex-1">
+                    <span className="text-xs sm:text-sm font-mono text-neutral-400 font-semibold min-w-[26px] sm:min-w-[30px]">
                       [{sec.num}]
                     </span>
                     <Icon
@@ -415,20 +417,20 @@ export default function ServicesPage() {
                         }`}
                     />
                     <div className="min-w-0 flex-1">
-                      <h2 className="text-xl md:text-3xl font-light tracking-tight text-neutral-950 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors break-words">
+                      <h2 className="text-base sm:text-2xl md:text-3xl font-light tracking-tight text-neutral-950 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors break-words">
                         {sec.title}
                       </h2>
-                      <p className="text-xs md:text-sm text-neutral-500 dark:text-neutral-400 font-light mt-1 hidden sm:block line-clamp-2">
+                      <p className="text-xs md:text-sm text-neutral-500 dark:text-neutral-400 font-light mt-1 line-clamp-1 sm:line-clamp-2">
                         {sec.subtitle}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-6 shrink-0">
-                    <span className="text-sm font-mono font-medium text-blue-600 dark:text-blue-400 hidden md:block">
+                  <div className="flex items-center gap-2 sm:gap-6 shrink-0">
+                    <span className="text-xs sm:text-sm font-mono font-medium text-blue-600 dark:text-blue-400 whitespace-nowrap">
                       {sec.price}
                     </span>
-                    <div className={`w-8 h-8 rounded-full border border-neutral-300 dark:border-neutral-700 flex items-center justify-center transition-all duration-300 active:scale-90 ${isOpen ? "bg-neutral-950 text-white dark:bg-white dark:text-black rotate-180" : "group-hover:border-neutral-400"}`}>
+                    <div className={`w-10 h-10 sm:w-8 sm:h-8 rounded-full border border-neutral-300 dark:border-neutral-700 flex items-center justify-center transition-all duration-300 active:scale-90 shrink-0 ${isOpen ? "bg-neutral-950 text-white dark:bg-white dark:text-black rotate-180" : "group-hover:border-neutral-400"}`}>
                       {isOpen ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                     </div>
                   </div>
@@ -443,11 +445,37 @@ export default function ServicesPage() {
                       transition={{ duration: 0.3, ease: "easeInOut" }}
                       className="overflow-hidden"
                     >
-                      <div className="pt-6 pb-4 pl-0 sm:pl-16 grid grid-cols-1 md:grid-cols-12 gap-8 md:items-start">
-                        <div className="md:col-span-8 space-y-4 max-w-xl">
-                          <p className="text-sm text-neutral-500 dark:text-neutral-400 font-light block sm:hidden text-pretty">
-                            {sec.subtitle}
-                          </p>
+                      <div className="pt-6 pb-4 pl-0 sm:pl-16 flex flex-col md:grid md:grid-cols-12 gap-8 md:items-start">
+                        {/* Карточка стоимости и заявки: на мобиле сразу сверху, на десктопе в правой колонке */}
+                        <div className="md:col-span-4 md:order-2 self-start w-full">
+                          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-5 sm:p-8 flex flex-col justify-center gap-4 sm:gap-5 rounded-2xl md:min-h-[420px]">
+                            <div className="flex items-baseline justify-between md:block">
+                              <div>
+                                <div className="text-xs font-mono text-neutral-400 uppercase tracking-widest mb-1">Стоимость</div>
+                                <div className="text-2xl sm:text-3xl font-light text-blue-600 dark:text-blue-400">{sec.price}</div>
+                              </div>
+                              <div className="text-xs text-neutral-400 font-mono mt-1 md:mt-1.5">{sec.time}</div>
+                            </div>
+
+                            <div className="h-px bg-neutral-100 dark:bg-neutral-800" />
+
+                            <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-light leading-relaxed text-pretty">
+                              Если сомневаетесь, оставьте заявку - поможем разобраться и подобрать подходящий вариант. Итоговая стоимость может быть ниже указанной.
+                            </p>
+
+                            <a
+                              href="https://t.me/maetti_agency_stub"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full inline-flex items-center justify-center gap-2 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold text-xs py-3.5 rounded-lg hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white active:scale-95 transition-all duration-200"
+                            >
+                              <span>Обсудить задачу</span>
+                              <Send className="w-3.5 h-3.5" />
+                            </a>
+                          </div>
+                        </div>
+
+                        <div className="md:col-span-8 md:order-1 space-y-4 max-w-xl">
                           <h3 className="text-xs font-mono text-neutral-400 uppercase tracking-widest">
                             Что входит:
                           </h3>
@@ -471,32 +499,6 @@ export default function ServicesPage() {
                           <p className="text-xs text-neutral-400 dark:text-neutral-500 font-light pt-1">
                             Не нашли свою задачу в списке? Напишите нам - скорее всего, мы её уже делали.
                           </p>
-                        </div>
-
-                        <div className="md:col-span-4 self-start">
-                          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8 flex flex-col justify-center gap-5 md:min-h-[420px]">
-                            <div>
-                              <div className="text-xs font-mono text-neutral-400 uppercase tracking-widest mb-1">Стоимость</div>
-                              <div className="text-3xl font-light text-blue-600 dark:text-blue-400">{sec.price}</div>
-                              <div className="text-xs text-neutral-400 mt-1.5 font-mono">{sec.time}</div>
-                            </div>
-
-                            <div className="h-px bg-neutral-100 dark:bg-neutral-800" />
-
-                            <p className="text-sm text-neutral-500 dark:text-neutral-400 font-light leading-relaxed text-pretty">
-                              Если сомневаетесь, оставьте заявку - поможем разобраться и подобрать подходящий вариант. Итоговая стоимость может быть ниже указанной.
-                            </p>
-
-                            <a
-                              href="https://t.me/maetti_agency_stub"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="w-full inline-flex items-center justify-center gap-2 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold text-xs py-3.5 rounded-lg hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white active:scale-95 transition-all duration-200"
-                            >
-                              <span>Обсудить задачу</span>
-                              <Send className="w-3.5 h-3.5" />
-                            </a>
-                          </div>
                         </div>
                       </div>
                     </motion.div>

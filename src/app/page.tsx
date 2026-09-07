@@ -219,7 +219,7 @@ function AboutPhoto() {
     : null;
 
   return (
-    <div className="relative w-full max-w-[77%] mx-auto aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/3] rounded-3xl overflow-hidden border border-neutral-200/80 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 shadow-xl shadow-neutral-200/50 dark:shadow-none group">
+    <div className="relative w-full max-w-full sm:max-w-[85%] lg:max-w-full mx-auto aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/3] rounded-3xl overflow-hidden border border-neutral-200/80 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 shadow-xl shadow-neutral-200/50 dark:shadow-none group">
       {currentSrc ? (
         <img
           src={currentSrc}
@@ -290,7 +290,7 @@ function MaettiWord() {
           заголовка и поток секции. Ловит hover со слова через group. */}
       <span
         aria-hidden="true"
-        className="absolute top-full left-0 -translate-x-1/0 sm:left-1/2 sm:-translate-x-1/2 mt-1 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-neutral-400/60 dark:text-neutral-500/60 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors duration-300 whitespace-nowrap"
+        className="absolute top-full left-1/2 -translate-x-1/2 mt-1 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-neutral-400/80 dark:text-neutral-500/80 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors duration-300 whitespace-nowrap"
       >
         {flipped ? (
           "↑ мы — it-команда"
@@ -319,37 +319,37 @@ export default function HomePage() {
   return (
     <div className="flex flex-col w-full">
       {/* 1. HERO SECTION */}
-      <section className="relative min-h-[85vh] flex flex-col justify-center overflow-hidden px-6 -mt-24 pt-24 pb-28 sm:pb-32 bg-white text-neutral-950">
+      <section className="relative min-h-[85vh] flex flex-col justify-center overflow-hidden px-6 -mt-16 md:-mt-24 pt-16 md:pt-24 pb-24 sm:pb-32 bg-white text-neutral-950">
         {/* Colorful blob backgrounds. Центр круга не ниже линии на 20px выше CTA. */}
         <HeroBlobs ctaEl={ctaEl} reduceMotion={shouldReduceMotion} />
 
         <div className="relative max-w-7xl mx-auto w-full z-10">
           {/* Kinetic Offer */}
-          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08] mb-6 select-none break-words">
-            ПОКОРЯЙТЕ <br />
+          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.12] sm:leading-[1.08] mb-6 select-none break-words">
+            ПОКОРЯЙТЕ <span className="hidden sm:inline"><br /></span>
             <span className="animate-gradient-flow">
               ЦИФРОВУЮ СТИХИЮ.
-            </span> <br />
+            </span> <span className="hidden sm:inline"><br /></span>
             <span className="text-neutral-900">
-              РАЗРАБОТКА НА ЛЮБОЙ <br />
+              РАЗРАБОТКА НА ЛЮБОЙ <span className="hidden sm:inline"><br /></span>
               <span className="animate-gradient-flow">ГЛУБИНЕ</span> СЛОЖНОСТИ.
             </span>
           </h1>
 
-          <p className="max-w-2xl text-lg sm:text-xl text-neutral-500 leading-relaxed mb-6">
+          <p className="max-w-2xl text-base sm:text-xl text-neutral-500 leading-relaxed mb-6">
             Создаем технологичные решения, которые выведут ваш продукт в&nbsp;топ. Разрабатываем сайты, автоматизируем процессы и&nbsp;строим экосистемы.
           </p>
 
-          <div ref={setCtaEl} className="flex flex-wrap gap-4">
+          <div ref={setCtaEl} className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto">
             <TransitionLink
               href="/contacts"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-8 py-4 rounded-full text-base transition-all duration-200 hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(37,99,235,0.3)]"
+              className="w-full sm:w-auto text-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-8 py-4 rounded-full text-base transition-all duration-200 hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(37,99,235,0.3)]"
             >
               Связаться с нами
             </TransitionLink>
             <TransitionLink
               href="/uslugi"
-              className="bg-neutral-900 hover:bg-neutral-800 text-white font-bold px-8 py-4 rounded-full text-base transition-all duration-200 flex items-center gap-2 hover:scale-105 active:scale-95"
+              className="w-full sm:w-auto text-center justify-center bg-neutral-900 hover:bg-neutral-800 text-white font-bold px-8 py-4 rounded-full text-base transition-all duration-200 flex items-center gap-2 hover:scale-105 active:scale-95"
             >
               <span>Наши услуги</span>
               <ChevronRight className="w-4 h-4" />
@@ -389,7 +389,7 @@ export default function HomePage() {
       <ServicesSection />
 
       {/* 3. WHO IS MAETTI */}
-      <section className="py-24 px-6 bg-neutral-50 dark:bg-neutral-950 border-y border-neutral-200 dark:border-neutral-900">
+      <section className="py-16 sm:py-24 px-6 bg-neutral-50 dark:bg-neutral-950 border-y border-neutral-200 dark:border-neutral-900 scroll-mt-20 md:scroll-mt-28">
         <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-5">
             <div className="w-fit mb-6">

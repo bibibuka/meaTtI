@@ -10,14 +10,13 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
-  Calculator,
-  Check,
   Globe,
   Layers,
   Music,
   Terminal as TerminalIcon,
 } from "lucide-react";
 import type { WallpaperTheme } from "./desk-themes";
+import { triggerHaptic } from "@/utils/haptics";
 
 /* ----------------------------- ЗВУКОВОЙ ДВИЖОК ----------------------------- */
 // Native Web Audio API: синтез тактильных кликов и эмбиента без внешних mp3
@@ -38,6 +37,7 @@ class SoundEngine {
 
   // Тактильный короткий щелчок (мягкий синус, 15ms)
   playGlassClick() {
+    triggerHaptic(8);
     if (!this.enabled) return;
     try {
       this.init();
@@ -120,148 +120,6 @@ class SoundEngine {
 
 export const sounds = new SoundEngine();
 
-/* ----------------------------- КАЛЬКУЛЯТОР ПРОЕКТА ----------------------------- */
-
-type TierId = "landing" | "portal" | "webapp" | "creative";
-type SpeedId = "normal" | "fast" | "urgent";
-
-const TIERS: { id: TierId; name: string; base: number; days: number; desc: string }[] = [
-  { id: "landing", name: "Landing / Промо", base: 90000, days: 14, desc: "Высококонверсионный лендинг с анимациями" },
-  { id: "portal", name: "Корпоративный портал", base: 185000, days: 25, desc: "Многостраничный сайт с CMS и интеграциями" },
-  { id: "webapp", name: "Web App / SaaS", base: 310000, days: 45, desc: "Сложная логика, кабинеты, API" },
-  { id: "creative", name: "3D / Креативный WebGL", base: 240000, days: 30, desc: "Иммерсивный 3D-опыт и шейдеры" },
-];
-
-const ADDONS: { id: string; name: string; cost: number }[] = [
-  { id: "three", name: "Интерактивные 3D-модели (Three.js/WebGL)", cost: 45000 },
-  { id: "pwa", name: "PWA и мобильная адаптация", cost: 35000 },
-  { id: "crm", name: "Интеграция CRM / Telegram-боты", cost: 40000 },
-  { id: "ai", name: "AI-ассистент / чат-бот на LLM", cost: 55000 },
-  { id: "seo", name: "SEO-оптимизация и аналитика", cost: 25000 },
-];
-
-const SPEEDS: { id: SpeedId; name: string; desc: string }[] = [
-  { id: "normal", name: "Стандарт ×1.0", desc: "Спокойная проработка" },
-  { id: "fast", name: "Спринт ×1.25", desc: "Приоритетная сборка" },
-  { id: "urgent", name: "Срочно ×1.5", desc: "Запуск день в день" },
-];
-
-export function ProjectCalculatorApp({
-  onContact,
-}: {
-  onContact: (data: { tier: string; budget: number; days: number; addons: string[] }) => void;
-}) {
-  const [tier, setTier] = useState<TierId>("landing");
-  const [addons, setAddons] = useState<string[]>(["three", "pwa"]);
-  const [speed, setSpeed] = useState<SpeedId>("normal");
-
-  const selectedTier = TIERS.find((t) => t.id === tier)!;
-  const addonCost = addons.reduce((sum, id) => sum + (ADDONS.find((a) => a.id === id)?.cost || 0), 0);
-  const speedMult = speed === "urgent" ? 1.5 : speed === "fast" ? 1.25 : 1.0;
-  const totalCost = Math.round((selectedTier.base + addonCost) * speedMult);
-  const estimatedDays = Math.max(7, Math.round((selectedTier.days + addons.length * 3) / (speed === "urgent" ? 1.4 : speed === "fast" ? 1.2 : 1.0)));
-
-  const card = (active: boolean) =>
-    `w-full min-w-0 overflow-hidden rounded-xl border p-3.5 text-left transition-all duration-150 cursor-pointer active:scale-[0.98] ${
-      active
-        ? "border-[var(--desk-accent)] bg-[var(--desk-surface-3)]"
-        : "border-[var(--desk-border)] bg-[var(--desk-surface-2)] hover:bg-[var(--desk-surface-3)]"
-    }`;
-
-  return (
-    <div className="flex flex-col gap-5 p-5 text-sm text-[var(--desk-fg)] max-w-4xl mx-auto w-full pb-8">
-      <div>
-        <span className="text-xs font-bold uppercase tracking-wider text-[var(--desk-muted)]">Шаг 1 · Тип проекта</span>
-        <div className="mt-2.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-          {TIERS.map((t) => (
-            <button key={t.id} type="button" onClick={() => setTier(t.id)} className={card(tier === t.id)}>
-              <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 font-bold">
-                <span className="min-w-0 leading-snug">{t.name}</span>
-                <span className="font-mono text-xs text-[var(--desk-accent)] shrink-0 whitespace-nowrap">{t.base.toLocaleString("ru-RU")} ₽</span>
-              </div>
-              <p className="mt-1.5 text-xs leading-relaxed text-[var(--desk-muted)]">{t.desc}</p>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <span className="text-xs font-bold uppercase tracking-wider text-[var(--desk-muted)]">Шаг 2 · Технологии</span>
-        <div className="mt-2.5 space-y-2">
-          {ADDONS.map((a) => {
-            const active = addons.includes(a.id);
-            return (
-              <button
-                key={a.id}
-                type="button"
-                onClick={() => setAddons((cur) => (cur.includes(a.id) ? cur.filter((x) => x !== a.id) : [...cur, a.id]))}
-                className={`flex w-full items-center justify-between gap-3 rounded-xl border p-3 text-left transition-all duration-150 cursor-pointer active:scale-[0.98] ${
-                  active
-                    ? "border-[var(--desk-accent)] bg-[var(--desk-surface-3)]"
-                    : "border-[var(--desk-border)] bg-[var(--desk-surface-2)] hover:bg-[var(--desk-surface-3)]"
-                }`}
-              >
-                <span className="flex min-w-0 flex-1 items-center gap-2.5">
-                  <span
-                    className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border transition-colors ${
-                      active ? "border-[var(--desk-accent)] bg-[var(--desk-accent)] text-[var(--desk-accent-fg)]" : "border-[var(--desk-border)]"
-                    }`}
-                  >
-                    {active && <Check className="h-3.5 w-3.5 stroke-[3]" />}
-                  </span>
-                  <span className="min-w-0 text-xs font-medium">{a.name}</span>
-                </span>
-                <span className="font-mono text-xs text-[var(--desk-muted)] shrink-0 whitespace-nowrap">+{a.cost.toLocaleString("ru-RU")} ₽</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div>
-        <span className="text-xs font-bold uppercase tracking-wider text-[var(--desk-muted)]">Шаг 3 · Темп запуска</span>
-        <div className="mt-2.5 grid grid-cols-3 gap-2 text-xs">
-          {SPEEDS.map((s) => (
-            <button key={s.id} type="button" onClick={() => setSpeed(s.id)} className={card(speed === s.id)}>
-              <div className="text-center font-bold">{s.name}</div>
-              <div className="mt-0.5 text-center text-[0.6875rem] text-[var(--desk-muted)]">{s.desc}</div>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-[var(--desk-border)] bg-[var(--desk-surface-2)] p-4.5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <span className="text-[0.6875rem] font-bold uppercase tracking-widest text-[var(--desk-muted)]">Ориентировочно</span>
-            <div className="mt-0.5 font-mono text-2xl font-black tracking-tight text-[var(--desk-fg)] sm:text-3xl shrink-0 whitespace-nowrap">
-              {totalCost.toLocaleString("ru-RU")} ₽
-            </div>
-            <div className="mt-0.5 text-xs text-[var(--desk-muted)]">
-              Срок: <strong className="text-[var(--desk-fg)]">~{estimatedDays} рабочих дней</strong>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() =>
-              onContact({
-                tier: selectedTier.name,
-                budget: totalCost,
-                days: estimatedDays,
-                addons: addons.map((id) => ADDONS.find((a) => a.id === id)?.name || id),
-              })
-            }
-            className="flex items-center gap-2 rounded-xl bg-[var(--desk-accent)] px-5 py-3 text-xs font-bold text-[var(--desk-accent-fg)] transition-all duration-150 hover:brightness-110 active:scale-95 cursor-pointer shadow-md"
-          >
-            <span>Отправить бриф с расчётом</span>
-            <ArrowUpRight className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ----------------------------- ТЕРМИНАЛ ----------------------------- */
 
 export function TerminalApp({
@@ -270,7 +128,7 @@ export function TerminalApp({
   onOpenApp,
 }: {
   onThemeChange: (t: WallpaperTheme) => void;
-  onOpenCalc: () => void;
+  onOpenCalc?: () => void;
   onOpenApp: (id: string) => void;
 }) {
   const [history, setHistory] = useState<string[]>([
@@ -329,8 +187,12 @@ export function TerminalApp({
         "",
       );
     } else if (cmd === "calc") {
-      log.push("Запуск калькулятора проектов…");
-      onOpenCalc();
+      if (onOpenCalc) {
+        log.push("Запуск калькулятора проектов…");
+        onOpenCalc();
+      } else {
+        log.push("Калькулятор не установлен.");
+      }
     } else if (cmd.startsWith("theme ")) {
       const t = cmd.replace("theme ", "").trim() as WallpaperTheme;
       if (["aurora", "light", "sunset", "ice", "cyber"].includes(t)) {
@@ -388,8 +250,6 @@ export function TerminalApp({
 /* ----------------------------- ИГРЫ ----------------------------- */
 
 const N = 20;
-const CELL = 14;
-const SIZE = N * CELL;
 
 const KEYS: Record<string, [number, number]> = {
   ArrowUp: [0, -1],
@@ -406,17 +266,10 @@ const KEYS: Record<string, [number, number]> = {
   в: [1, 0],
 };
 
-function GameHud({ score, onRestart }: { score: number; onRestart: () => void }) {
+function GameHud({ score }: { score: number }) {
   return (
-    <div className="mb-2 flex items-center justify-between text-xs font-bold text-[var(--desk-fg)]">
+    <div className="mb-2 flex shrink-0 items-center text-xs font-bold text-[var(--desk-fg)]">
       <span className="font-mono tabular-nums">Счёт: {score}</span>
-      <button
-        type="button"
-        onClick={onRestart}
-        className="rounded-lg border border-[var(--desk-border)] bg-[var(--desk-surface-2)] px-2 py-0.5 text-[var(--desk-fg)] transition-colors hover:bg-[var(--desk-surface-3)] cursor-pointer active:scale-95"
-      >
-        Заново
-      </button>
     </div>
   );
 }
@@ -440,7 +293,7 @@ function Overlay({
           onAction();
         }
       }}
-      className={`absolute inset-0 grid place-items-center rounded-lg bg-black/70 text-center text-white backdrop-blur-[2px] select-none ${
+      className={`absolute inset-0 grid place-items-center rounded-xl bg-black/75 text-center text-white backdrop-blur-[2px] select-none ${
         onAction ? "cursor-pointer" : ""
       }`}
     >
@@ -468,6 +321,7 @@ export function Snake({ active = true }: { active?: boolean }) {
 }
 
 function SnakeBoard({ restart, active }: { restart: () => void; active: boolean }) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const cv = useRef<HTMLCanvasElement>(null);
   const turn = useRef<(x: number, y: number) => void>(() => {});
   const activeRef = useRef(active);
@@ -477,13 +331,27 @@ function SnakeBoard({ restart, active }: { restart: () => void; active: boolean 
 
   const [score, setScore] = useState(0);
   const [over, setOver] = useState(false);
+  const [boardSize, setBoardSize] = useState(320);
 
   useEffect(() => {
-    const c = cv.current!;
-    const ctx = c.getContext("2d")!;
+    const c = cv.current;
+    const container = containerRef.current;
+    if (!c || !container) return;
+    const ctx = c.getContext("2d");
+    if (!ctx) return;
+
+    const rect = container.getBoundingClientRect();
+    const pad = 12;
+    const availW = Math.max(180, (rect.width || 320) - pad);
+    const availH = Math.max(180, (rect.height || 320) - pad);
+    const available = Math.min(availW, availH);
+    const cell = Math.max(12, Math.floor(available / N));
+    const size = cell * N;
+    setBoardSize(size);
+
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    c.width = SIZE * dpr;
-    c.height = SIZE * dpr;
+    c.width = size * dpr;
+    c.height = size * dpr;
     ctx.scale(dpr, dpr);
 
     const snake = [{ x: 9, y: 10 }, { x: 8, y: 10 }, { x: 7, y: 10 }];
@@ -501,12 +369,27 @@ function SnakeBoard({ restart, active }: { restart: () => void; active: boolean 
 
     const draw = () => {
       ctx.fillStyle = "#0a0f18";
-      ctx.fillRect(0, 0, SIZE, SIZE);
+      ctx.fillRect(0, 0, size, size);
+
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.04)";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= N; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * cell, 0);
+        ctx.lineTo(i * cell, size);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, i * cell);
+        ctx.lineTo(size, i * cell);
+        ctx.stroke();
+      }
+
       ctx.fillStyle = "#ef4444";
-      ctx.fillRect(food.x * CELL + 2, food.y * CELL + 2, CELL - 4, CELL - 4);
+      ctx.fillRect(food.x * cell + 2, food.y * cell + 2, cell - 4, cell - 4);
+
       snake.forEach((s, i) => {
         ctx.fillStyle = i ? "#22c55e" : "#86efac";
-        ctx.fillRect(s.x * CELL + 1, s.y * CELL + 1, CELL - 2, CELL - 2);
+        ctx.fillRect(s.x * cell + 1, s.y * cell + 1, cell - 2, cell - 2);
       });
     };
     draw();
@@ -553,34 +436,55 @@ function SnakeBoard({ restart, active }: { restart: () => void; active: boolean 
     };
     window.addEventListener("keydown", onKey);
 
+    let touchStartX = 0;
+    let touchStartY = 0;
+    const onTouchStart = (e: TouchEvent) => {
+      const t = e.touches[0];
+      touchStartX = t.clientX;
+      touchStartY = t.clientY;
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      const t = e.changedTouches[0];
+      const dx = t.clientX - touchStartX;
+      const dy = t.clientY - touchStartY;
+      if (Math.hypot(dx, dy) > 20) {
+        if (Math.abs(dx) > Math.abs(dy)) {
+          turn.current(dx > 0 ? 1 : -1, 0);
+        } else {
+          turn.current(0, dy > 0 ? 1 : -1);
+        }
+      }
+    };
+    container.addEventListener("touchstart", onTouchStart, { passive: true });
+    container.addEventListener("touchend", onTouchEnd, { passive: true });
+
     return () => {
       clearInterval(tick);
       window.removeEventListener("keydown", onKey);
+      container.removeEventListener("touchstart", onTouchStart);
+      container.removeEventListener("touchend", onTouchEnd);
     };
   }, []);
 
   return (
-    <div className="p-3">
-      <GameHud score={score} onRestart={restart} />
-      <div className="relative" style={{ width: SIZE, height: SIZE }}>
-        <canvas ref={cv} style={{ width: SIZE, height: SIZE }} className="block rounded-lg border border-[var(--desk-border)]" />
-        {over && <Overlay title="Игра окончена" hint={`Счёт: ${score}`} onRestart={restart} onAction={restart} />}
+    <div className="flex h-full w-full flex-col p-3 select-none">
+      <GameHud score={score} />
+      <div
+        ref={containerRef}
+        className="relative min-h-0 w-full flex-1 flex items-center justify-center rounded-xl border border-[var(--desk-border)] bg-[#0a0f18] p-2 shadow-inner"
+      >
+        <div className="relative" style={{ width: boardSize, height: boardSize }}>
+          <canvas
+            ref={cv}
+            style={{ width: boardSize, height: boardSize }}
+            className="block rounded-lg shadow-sm"
+          />
+          {over && <Overlay title="Игра окончена" hint={`Счёт: ${score}`} onRestart={restart} onAction={restart} />}
+        </div>
       </div>
     </div>
   );
 }
-
-const DW = 288;
-const DH = 384;
-const GROUND = 16;
-const GRAV = 1400;
-const JUMP = -360;
-const PIPE_W = 46;
-const GAP = 128;
-const SPEED = 130;
-const SPACING = 178;
-const DX = 66;
-const R = 9;
 
 type Pipe = { x: number; gap: number; scored: boolean };
 
@@ -590,6 +494,7 @@ export function Dragon({ active = true }: { active?: boolean }) {
 }
 
 function Sky({ restart, active }: { restart: () => void; active: boolean }) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const cv = useRef<HTMLCanvasElement>(null);
   const flap = useRef<() => void>(() => {});
   const activeRef = useRef(active);
@@ -602,14 +507,32 @@ function Sky({ restart, active }: { restart: () => void; active: boolean }) {
   const [ready, setReady] = useState(true);
 
   useEffect(() => {
-    const c = cv.current!;
-    const ctx = c.getContext("2d")!;
+    const c = cv.current;
+    const container = containerRef.current;
+    if (!c || !container) return;
+    const ctx = c.getContext("2d");
+    if (!ctx) return;
+
+    const rect = container.getBoundingClientRect();
+    const w = Math.max(260, Math.floor(rect.width || 320));
+    const h = Math.max(300, Math.floor(rect.height || 420));
+
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    c.width = DW * dpr;
-    c.height = DH * dpr;
+    c.width = w * dpr;
+    c.height = h * dpr;
     ctx.scale(dpr, dpr);
 
-    let y = DH * 0.42;
+    const GROUND = 18;
+    const GRAV = 1350;
+    const JUMP = -360;
+    const PIPE_W = 48;
+    const GAP = Math.round(Math.max(120, Math.min(150, h * 0.28)));
+    const SPEED = 135;
+    const SPACING = Math.round(Math.max(160, w * 0.54));
+    const DX = Math.round(w * 0.22);
+    const R = 10;
+
+    let y = h * 0.42;
     let vy = 0;
     let run = false;
     let dead = false;
@@ -617,9 +540,9 @@ function Sky({ restart, active }: { restart: () => void; active: boolean }) {
     let pipes: Pipe[] = [];
 
     const spawn = () => {
-      const top = GAP / 2 + 26;
-      const bot = DH - GROUND - GAP / 2 - 26;
-      pipes.push({ x: DW + 20, gap: top + Math.random() * (bot - top), scored: false });
+      const top = GAP / 2 + 24;
+      const bot = h - GROUND - GAP / 2 - 24;
+      pipes.push({ x: w + 20, gap: top + Math.random() * (bot - top), scored: false });
     };
 
     const die = () => {
@@ -627,9 +550,9 @@ function Sky({ restart, active }: { restart: () => void; active: boolean }) {
       setOver(true);
     };
 
-    const hits = (px: number, py: number, w: number, h: number) => {
-      const nx = Math.max(px, Math.min(DX, px + w));
-      const ny = Math.max(py, Math.min(y, py + h));
+    const hits = (px: number, py: number, pw: number, ph: number) => {
+      const nx = Math.max(px, Math.min(DX, px + pw));
+      const ny = Math.max(py, Math.min(y, py + ph));
       return (DX - nx) ** 2 + (y - ny) ** 2 < R * R;
     };
 
@@ -638,28 +561,223 @@ function Sky({ restart, active }: { restart: () => void; active: boolean }) {
       const bot = p.gap + GAP / 2;
       ctx.fillStyle = "#166534";
       ctx.fillRect(p.x, 0, PIPE_W, top);
-      ctx.fillRect(p.x, bot, PIPE_W, DH - GROUND - bot);
+      ctx.fillRect(p.x, bot, PIPE_W, h - GROUND - bot);
       ctx.fillStyle = "#22c55e";
       ctx.fillRect(p.x + 5, 0, PIPE_W - 14, Math.max(0, top - 6));
-      ctx.fillRect(p.x + 5, bot + 6, PIPE_W - 14, DH - GROUND - bot - 6);
+      ctx.fillRect(p.x + 5, bot + 6, PIPE_W - 14, Math.max(0, h - GROUND - bot - 6));
     };
 
-    const drawDragon = () => {
+    type Ember = { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; color: string; size: number };
+    let embers: Ember[] = [];
+
+    const spawnEmbers = () => {
+      for (let i = 0; i < 4; i++) {
+        embers.push({
+          x: DX - 8,
+          y: y + (Math.random() * 6 - 3),
+          vx: -(SPEED * 0.45 + Math.random() * 50),
+          vy: (Math.random() - 0.5) * 45,
+          life: 1,
+          maxLife: 0.3 + Math.random() * 0.2,
+          color: Math.random() > 0.4 ? "#f59e0b" : "#ef4444",
+          size: 1.5 + Math.random() * 2,
+        });
+      }
+    };
+
+    const drawDragon = (now: number) => {
+      ctx.save();
+      ctx.translate(DX, y);
+
+      // Наклон дракончика по скорости прыжка/падения
+      const rot = dead
+        ? Math.PI * 0.45
+        : Math.min(Math.PI * 0.35, Math.max(-Math.PI * 0.28, vy * 0.0018));
+      ctx.rotate(rot);
+
+      const wingCycle = dead ? 0.2 : Math.sin(now * (run ? 0.024 : 0.012));
+
+      // 1. Хвост с пламенным наконечником
+      ctx.beginPath();
+      ctx.moveTo(-8, 2);
+      ctx.quadraticCurveTo(-16, 2, -22, -2);
+      ctx.quadraticCurveTo(-16, 8, -8, 6);
       ctx.fillStyle = "#ea580c";
-      ctx.fillRect(DX - 8, y - 6, 14, 12);
-      ctx.fillStyle = "#fb923c";
-      ctx.fillRect(DX + 5, y - 8, 9, 9);
-      ctx.fillStyle = "#fff";
-      ctx.fillRect(DX + 10, y - 6, 3, 3);
+      ctx.fill();
+
+      // Наконечник хвоста
+      ctx.fillStyle = "#dc2626";
+      ctx.beginPath();
+      ctx.moveTo(-21, -1);
+      ctx.lineTo(-27, -5);
+      ctx.lineTo(-25, 0);
+      ctx.lineTo(-28, 4);
+      ctx.lineTo(-21, 2);
+      ctx.closePath();
+      ctx.fill();
+
+      // 2. Спинные шипы
+      ctx.fillStyle = "#dc2626";
+      ctx.beginPath();
+      ctx.moveTo(-10, -5);
+      ctx.lineTo(-12, -10);
+      ctx.lineTo(-6, -6);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(-4, -7);
+      ctx.lineTo(-5, -13);
+      ctx.lineTo(1, -7);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(3, -9);
+      ctx.lineTo(3, -15);
+      ctx.lineTo(8, -8);
+      ctx.fill();
+
+      // 3. Тело дракона (округлое туловище с тенью)
+      ctx.fillStyle = "#ea580c";
+      ctx.beginPath();
+      ctx.ellipse(-1, 2, 12, 9, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#c2410c";
+      ctx.beginPath();
+      ctx.ellipse(-1, 5, 10, 5, 0, 0, Math.PI);
+      ctx.fill();
+
+      // 4. Золотистое брюшко со щитками
+      ctx.fillStyle = "#fef08a";
+      ctx.beginPath();
+      ctx.ellipse(2, 4, 7, 6, 0.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = "#eab308";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(-2, 2);
+      ctx.lineTo(6, 3);
+      ctx.moveTo(-1, 5);
+      ctx.lineTo(7, 6);
+      ctx.moveTo(1, 8);
+      ctx.lineTo(6, 9);
+      ctx.stroke();
+
+      // 5. Голова дракончика и мордочка
+      ctx.fillStyle = "#f97316";
+      ctx.beginPath();
+      ctx.ellipse(8, -3, 8, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Носик
+      ctx.beginPath();
+      ctx.roundRect(11, -3, 8, 6, [2, 4, 4, 2]);
+      ctx.fill();
+
+      // Ноздря
+      ctx.fillStyle = "#7c2d12";
+      ctx.beginPath();
+      ctx.arc(16, -1.5, 1, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Изогнутые рожки
+      ctx.fillStyle = "#fde047";
+      ctx.beginPath();
+      ctx.moveTo(4, -8);
+      ctx.quadraticCurveTo(2, -15, -4, -16);
+      ctx.quadraticCurveTo(2, -12, 7, -8);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(7, -8);
+      ctx.quadraticCurveTo(6, -16, 0, -18);
+      ctx.quadraticCurveTo(6, -13, 10, -7);
+      ctx.fill();
+
+      // 6. Глаз дракончика
+      if (dead) {
+        ctx.strokeStyle = "#451a03";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(8, -6);
+        ctx.lineTo(13, -2);
+        ctx.moveTo(13, -6);
+        ctx.lineTo(8, -2);
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.ellipse(10, -4, 3.5, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#090d16";
+        ctx.beginPath();
+        ctx.arc(11, -4, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(10.5, -5.2, 1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Румянец
+      if (!dead) {
+        ctx.fillStyle = "rgba(239, 68, 68, 0.35)";
+        ctx.beginPath();
+        ctx.ellipse(8, 0, 2.5, 1.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 7. Анимированное крыло с взмахом
+      ctx.save();
+      ctx.translate(-2, -1);
+      ctx.rotate(wingCycle * 0.45);
+
+      ctx.fillStyle = "#dc2626";
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-4, -14);
+      ctx.quadraticCurveTo(1, -12, 4, -15);
+      ctx.quadraticCurveTo(6, -9, 9, -12);
+      ctx.quadraticCurveTo(7, -5, 4, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = "#fef08a";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-4, -14);
+      ctx.moveTo(0, 0);
+      ctx.lineTo(4, -15);
+      ctx.moveTo(0, 0);
+      ctx.lineTo(9, -12);
+      ctx.stroke();
+
+      ctx.restore();
+
+      ctx.restore();
     };
 
-    const draw = () => {
+    const draw = (now: number) => {
       ctx.fillStyle = "#0c1527";
-      ctx.fillRect(0, 0, DW, DH);
+      ctx.fillRect(0, 0, w, h);
       for (const p of pipes) drawKelp(p);
       ctx.fillStyle = "#1e293b";
-      ctx.fillRect(0, DH - GROUND, DW, GROUND);
-      drawDragon();
+      ctx.fillRect(0, h - GROUND, w, GROUND);
+      ctx.fillStyle = "#334155";
+      ctx.fillRect(0, h - GROUND, w, 2);
+
+      // Искры от взмахов крыльев
+      for (const p of embers) {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      drawDragon(now);
     };
 
     let raf = 0;
@@ -668,27 +786,35 @@ function Sky({ restart, active }: { restart: () => void; active: boolean }) {
       const dt = Math.min((now - last) / 1000, 0.033);
       last = now;
 
+      // Обновление искр
+      for (const p of embers) {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.life -= dt / p.maxLife;
+      }
+      embers = embers.filter((p) => p.life > 0);
+
       if (dead) {
-        if (y + R < DH - GROUND) {
+        if (y + R < h - GROUND) {
           vy = Math.min(vy + GRAV * dt, 520);
-          y = Math.min(y + vy * dt, DH - GROUND - R);
+          y = Math.min(y + vy * dt, h - GROUND - R);
         }
       } else if (run) {
         vy = Math.min(vy + GRAV * dt, 480);
         y += vy * dt;
         for (const p of pipes) p.x -= SPEED * dt;
-        if (!pipes.length || pipes[pipes.length - 1].x < DW + 20 - SPACING) spawn();
+        if (!pipes.length || pipes[pipes.length - 1].x < w + 20 - SPACING) spawn();
         pipes = pipes.filter((p) => p.x > -PIPE_W - 8);
         for (const p of pipes) {
           if (!p.scored && p.x + PIPE_W < DX) {
             p.scored = true;
             setScore(++pts);
           }
-          if (hits(p.x, 0, PIPE_W, p.gap - GAP / 2) || hits(p.x, p.gap + GAP / 2, PIPE_W, DH - GROUND - p.gap - GAP / 2)) die();
+          if (hits(p.x, 0, PIPE_W, p.gap - GAP / 2) || hits(p.x, p.gap + GAP / 2, PIPE_W, h - GROUND - p.gap - GAP / 2)) die();
         }
-        if (y + R >= DH - GROUND) die();
+        if (y + R >= h - GROUND) die();
       }
-      draw();
+      draw(now);
       raf = requestAnimationFrame(step);
     };
 
@@ -700,6 +826,7 @@ function Sky({ restart, active }: { restart: () => void; active: boolean }) {
         setReady(false);
       }
       vy = JUMP;
+      spawnEmbers();
     };
 
     const onKey = (e: KeyboardEvent) => {
@@ -730,17 +857,16 @@ function Sky({ restart, active }: { restart: () => void; active: boolean }) {
   }, []);
 
   return (
-    <div className="p-3 select-none">
-      <GameHud score={score} onRestart={restart} />
+    <div className="flex h-full w-full flex-col p-3 select-none">
+      <GameHud score={score} />
       <div
-        className="relative cursor-pointer select-none touch-none"
-        style={{ width: DW, height: DH }}
+        ref={containerRef}
+        className="relative min-h-0 w-full flex-1 cursor-pointer select-none touch-none overflow-hidden rounded-xl border border-[var(--desk-border)] shadow-inner"
         onPointerDown={() => flap.current()}
       >
         <canvas
           ref={cv}
-          style={{ width: DW, height: DH }}
-          className="block cursor-pointer touch-none rounded-lg border border-[var(--desk-border)]"
+          className="block h-full w-full cursor-pointer touch-none"
         />
         {ready && <Overlay title="Дракончик" hint="Тапни или нажми пробел" onAction={() => flap.current()} />}
         {over && <Overlay title="Игра окончена" hint={`Счёт: ${score}`} onRestart={restart} onAction={restart} />}
@@ -788,38 +914,87 @@ export function SiteIframe({ path, title }: { path: string; title: string }) {
 
 export function InfoApp({ onClose }: { onClose: () => void }) {
   const features = [
-    { icon: Layers, title: "Оконный менеджер", desc: "Перетаскивание, светофоры, док и z-order как в настоящей ОС" },
-    { icon: Calculator, title: "Калькулятор проекта", desc: "Смета и сроки за минуту, бриф улетает в контакты" },
-    { icon: TerminalIcon, title: "Терминал maeTtI", desc: "Управление столом командами: theme, app, calc" },
-    { icon: Music, title: "Звуковой движок", desc: "Процедурный эмбиент на Web Audio — без единого mp3" },
+    {
+      icon: Layers,
+      title: "Оконный менеджер",
+      desc: "Перетаскивание, светофоры, док и z-order как в настольной операционной системе",
+    },
+    {
+      icon: TerminalIcon,
+      title: "Терминал maeTtI",
+      desc: "Интерактивная консоль с командами: theme, app, skills, clear",
+    },
+    {
+      icon: Music,
+      title: "Звуковой движок",
+      desc: "Процедурный эмбиент и тактильные щелчки на чистом Web Audio API",
+    },
   ];
 
   return (
-    <div className="space-y-4 p-5 text-[var(--desk-fg)]">
-      <div>
-        <h3 className="text-lg font-black tracking-tight">maeTtI OS</h3>
-        <p className="mt-0.5 text-xs text-[var(--desk-muted)]">Интерактивная среда студии цифровой инженерии</p>
-      </div>
-
-      <div className="space-y-2">
-        {features.map((f) => (
-          <div key={f.title} className="flex items-start gap-3 rounded-xl border border-[var(--desk-border)] bg-[var(--desk-surface-2)] p-3">
-            <f.icon className="mt-0.5 h-4 w-4 shrink-0 text-[var(--desk-accent)]" />
-            <div>
-              <div className="text-xs font-bold">{f.title}</div>
-              <div className="mt-0.5 text-[0.6875rem] leading-relaxed text-[var(--desk-muted)]">{f.desc}</div>
-            </div>
+    <div className="flex h-full flex-col justify-between p-6 text-[var(--desk-fg)] select-none">
+      <div className="space-y-4">
+        {/* Шапка: логотип maeTtI OS, название, версия и статус */}
+        <div className="flex items-center gap-3.5 border-b border-[var(--desk-border)] pb-4">
+          <div className="relative grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-[var(--desk-border)] bg-[var(--desk-surface-2)] shadow-xs">
+            <span className="relative flex h-4 w-4 items-center justify-center">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--desk-accent)] opacity-60 animate-ping" />
+              <span className="relative inline-flex h-3 w-3 rounded-full bg-[var(--desk-accent)]" />
+            </span>
           </div>
-        ))}
+
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-black tracking-tight text-[var(--desk-fg)]">maeTtI OS</h3>
+              <span className="rounded-md border border-[var(--desk-border)] bg-[var(--desk-surface-2)] px-2 py-0.5 text-[0.6875rem] font-bold font-mono text-[var(--desk-accent)]">
+                v2.5
+              </span>
+            </div>
+            <p className="mt-0.5 text-xs font-semibold text-[var(--desk-fg)]">
+              Альтернативная версия взаимодействия с сайтом
+            </p>
+            <p className="mt-0.5 text-[0.6875rem] text-[var(--desk-muted)]">
+              Интерактивная среда студии цифровой инженерии
+            </p>
+          </div>
+        </div>
+
+        {/* Возможности системы */}
+        <div className="space-y-2.5">
+          {features.map((f) => (
+            <div
+              key={f.title}
+              className="flex items-center gap-3.5 rounded-xl border border-[var(--desk-border)] bg-[var(--desk-surface-2)] p-3 transition-colors hover:bg-[var(--desk-surface-3)]"
+            >
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[var(--desk-border)] bg-[var(--desk-surface)] text-[var(--desk-accent)] shadow-2xs">
+                <f.icon className="h-4 w-4 stroke-[2]" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-bold text-[var(--desk-fg)]">{f.title}</div>
+                <div className="mt-0.5 text-[0.75rem] leading-relaxed text-[var(--desk-muted)]">
+                  {f.desc}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <button
-        type="button"
-        onClick={onClose}
-        className="w-full rounded-xl bg-[var(--desk-accent)] px-6 py-2.5 text-xs font-bold text-[var(--desk-accent-fg)] transition-all duration-150 hover:brightness-110 active:scale-[0.98] cursor-pointer"
-      >
-        Понятно
-      </button>
+      {/* Футер: кнопка подтверждения */}
+      <div className="pt-3">
+        <button
+          type="button"
+          onClick={() => {
+            try {
+              sessionStorage.setItem("maetti_info_seen", "true");
+            } catch {}
+            onClose();
+          }}
+          className="w-full rounded-xl bg-[var(--desk-accent)] py-2.5 text-xs font-bold text-[var(--desk-accent-fg)] shadow-sm transition-all duration-150 hover:brightness-110 active:scale-[0.99] cursor-pointer"
+        >
+          Понятно
+        </button>
+      </div>
     </div>
   );
 }

@@ -26,6 +26,12 @@ const PAGE_CONFIG: Record<
     logo: "text-white",
     kelpInvert: true,
   },
+  "/": {
+    bg: "bg-white dark:bg-neutral-950",
+    border: "border-neutral-200 dark:border-neutral-800",
+    text: "text-neutral-600 dark:text-neutral-400",
+    logo: "text-foreground",
+  },
   "/policy": {
     bg: "bg-white dark:bg-neutral-950",
     border: "border-neutral-200 dark:border-neutral-800",
@@ -43,8 +49,6 @@ const DEFAULT_CONFIG = {
 
 export default function Footer() {
   const pathname = usePathname();
-  if (pathname === "/") return null;
-
   const config = PAGE_CONFIG[pathname] ?? DEFAULT_CONFIG;
 
   return (
@@ -68,14 +72,16 @@ export default function Footer() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center md:justify-end gap-x-4 gap-y-1 text-[11px]">
-            <span>© {new Date().getFullYear()} maeTtI. Все права защищены.</span>
-            <span className="text-neutral-300 dark:text-neutral-700">•</span>
-            <TransitionLink href="/policy" className="hover:text-foreground transition-colors">
-              Политика конфиденциальности
-            </TransitionLink>
-            <span className="text-neutral-300 dark:text-neutral-700">•</span>
-            <span className="opacity-75">Работаем по договору · Закрывающие документы для юрлиц и ИП · По запросу — соответствие 152-ФЗ</span>
+          <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center md:justify-end gap-x-3 gap-y-1 text-[11px] text-center md:text-right">
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+              <span>© {new Date().getFullYear()} maeTtI. Все права защищены.</span>
+              <span className="text-neutral-300 dark:text-neutral-700 hidden sm:inline">•</span>
+              <TransitionLink href="/policy" className="hover:text-foreground transition-colors underline sm:no-underline">
+                Политика конфиденциальности
+              </TransitionLink>
+            </div>
+            <span className="text-neutral-300 dark:text-neutral-700 hidden md:inline">•</span>
+            <span className="opacity-75 text-[10px] sm:text-[11px]">Работаем по договору · Закрывающие документы для юрлиц и ИП · По запросу — 152-ФЗ</span>
           </div>
         </div>
       </footer>

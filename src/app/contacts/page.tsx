@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Send, Terminal, ShieldCheck, RefreshCw } from "lucide-react";
 import { TransitionLink } from "@/context/TransitionContext";
+import { haptic } from "@/utils/haptics";
 
 export default function ContactsPage() {
   const router = useRouter();
@@ -44,6 +45,7 @@ export default function ContactsPage() {
 
     setErrorMsg("");
     setIsSubmitting(true);
+    haptic.tap();
     
     const newLogs = [
       `C:\\MAETTI\\Contacts> set [Имя]="${name}"`,
@@ -57,6 +59,9 @@ export default function ContactsPage() {
     newLogs.forEach((log, index) => {
       setTimeout(() => {
         setLogs((prev) => [...prev, log]);
+        if (index === 4) {
+          haptic.success();
+        }
       }, (index + 1) * 250);
     });
 
@@ -66,28 +71,28 @@ export default function ContactsPage() {
   };
 
   return (
-    <div className="bg-neutral-950 min-h-screen text-neutral-200 font-mono p-4 sm:p-8 md:p-12 flex flex-col justify-center items-center select-text">
+    <div className="bg-neutral-950 min-h-[calc(100vh-4rem)] text-neutral-200 font-mono p-4 sm:p-8 md:p-12 flex flex-col justify-center items-center select-text py-8 sm:py-12">
       
-      {/* CMD Window Container. -translate-y-7 — 28px вверх от центра */}
-      <div className="w-full max-w-3xl -translate-y-7 bg-[#0c0c0c] border border-neutral-700 shadow-2xl rounded-sm overflow-hidden">
+      {/* CMD Window Container. md:-translate-y-7 — на десктопе вверх от центра */}
+      <div className="w-full max-w-3xl md:-translate-y-7 bg-[#0c0c0c] border border-neutral-700 shadow-2xl rounded-sm overflow-hidden">
         
         {/* Windows CMD Title Bar */}
-        <div className="bg-[#1f1f1f] px-3 py-1.5 flex items-center justify-between border-b border-neutral-800 text-xs select-none">
+        <div className="bg-[#1f1f1f] px-3 py-2 sm:py-1.5 flex items-center justify-between border-b border-neutral-800 text-xs select-none">
           <div className="flex items-center gap-2 text-neutral-300">
             <div className="w-4 h-4 bg-black text-white text-[10px] font-bold flex items-center justify-center border border-neutral-600 rounded-xs">
               C:\
             </div>
-            <span className="font-semibold tracking-wide">Command Prompt - MAETTI.EXE</span>
+            <span className="font-semibold tracking-wide truncate">Command Prompt - MAETTI.EXE</span>
           </div>
-          <div className="flex items-center gap-2 text-neutral-400">
-            <span className="px-2 py-0.5 hover:bg-neutral-700 hover:text-white cursor-pointer transition-colors">_</span>
-            <span className="px-2 py-0.5 hover:bg-neutral-700 hover:text-white cursor-pointer transition-colors">□</span>
-            <span className="px-2 py-0.5 hover:bg-red-600 hover:text-white cursor-pointer transition-colors">✕</span>
+          <div className="hidden sm:flex items-center gap-2 text-neutral-500 pointer-events-none" aria-hidden="true">
+            <span className="px-1.5 py-0.5">_</span>
+            <span className="px-1.5 py-0.5">□</span>
+            <span className="px-1.5 py-0.5">✕</span>
           </div>
         </div>
 
         {/* CMD Terminal Body */}
-        <div className="p-6 md:p-8 space-y-6 text-sm text-[#cccccc] font-mono leading-relaxed bg-black">
+        <div className="p-4 sm:p-6 md:p-8 space-y-5 sm:space-y-6 text-sm text-[#cccccc] font-mono leading-relaxed bg-black">
           
           {/* Header Info */}
           <div>
@@ -97,18 +102,18 @@ export default function ContactsPage() {
           </div>
 
           {/* Quick Actions Bar */}
-          <div className="border border-neutral-800 bg-[#080808] p-3 text-xs flex flex-wrap items-center justify-between gap-3">
+          <div className="border border-neutral-800 bg-[#080808] p-3 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
             <div className="flex items-center gap-2 text-neutral-400">
-              <Terminal className="w-4 h-4 text-emerald-400" />
-              <span>Форма обратной связи. Заполните поля ниже:</span>
+              <Terminal className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>Форма обратной связи. Заполните поля:</span>
             </div>
             <a
               href="https://t.me/maetti_agency_stub"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 underline font-semibold"
+              className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 underline font-semibold self-start sm:self-auto"
             >
-              <span>[ Наш Telegram ]</span>
+              <span>[ Наш Telegram @maetti ]</span>
             </a>
           </div>
 
@@ -126,7 +131,7 @@ export default function ContactsPage() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Иван Петров"
                 required
-                className="w-full bg-[#111111] border border-neutral-800 focus:border-emerald-500 outline-none text-white px-3 py-2 text-sm font-mono transition-colors placeholder:text-neutral-600"
+                className="w-full bg-[#111111] border border-neutral-800 focus:border-emerald-500 outline-none text-white px-3 py-2.5 text-base md:text-sm font-mono transition-colors placeholder:text-neutral-600 rounded-none"
               />
             </div>
 
@@ -141,7 +146,7 @@ export default function ContactsPage() {
                 onChange={(e) => setContact(e.target.value)}
                 placeholder="Telegram @username / Телефон / Email"
                 required
-                className="w-full bg-[#111111] border border-neutral-800 focus:border-emerald-500 outline-none text-white px-3 py-2 text-sm font-mono transition-colors placeholder:text-neutral-600"
+                className="w-full bg-[#111111] border border-neutral-800 focus:border-emerald-500 outline-none text-white px-3 py-2.5 text-base md:text-sm font-mono transition-colors placeholder:text-neutral-600 rounded-none"
               />
             </div>
 
@@ -156,20 +161,20 @@ export default function ContactsPage() {
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Опишите ваш проект или задачу..."
                 required
-                className="w-full bg-[#111111] border border-neutral-800 focus:border-emerald-500 outline-none text-white px-3 py-2 text-sm font-mono transition-colors placeholder:text-neutral-600 resize-none"
+                className="w-full bg-[#111111] border border-neutral-800 focus:border-emerald-500 outline-none text-white px-3 py-2.5 text-base md:text-sm font-mono transition-colors placeholder:text-neutral-600 resize-none rounded-none"
               />
             </div>
 
             {/* Consent Checkbox */}
-            <div className="flex items-center gap-2 pt-1 text-xs text-neutral-400 select-none">
+            <div className="flex items-center gap-3 pt-1 text-xs text-neutral-400 select-none min-h-[44px]">
               <input
                 type="checkbox"
                 id="consentCheck"
                 checked={consent}
                 onChange={(e) => setConsent(e.target.checked)}
-                className="accent-emerald-500 w-4 h-4 cursor-pointer"
+                className="accent-emerald-500 w-5 h-5 cursor-pointer shrink-0"
               />
-              <label htmlFor="consentCheck" className="cursor-pointer">
+              <label htmlFor="consentCheck" className="cursor-pointer leading-normal">
                 Согласен на обработку данных •{" "}
                 <TransitionLink href="/policy" className="underline hover:text-white">
                   Политика
@@ -205,7 +210,7 @@ export default function ContactsPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="inline-flex items-center gap-2 bg-neutral-200 text-black hover:bg-emerald-400 font-bold text-xs uppercase tracking-wider px-6 py-2.5 transition-all duration-200 cursor-pointer disabled:opacity-50"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-neutral-200 text-black hover:bg-emerald-400 font-bold text-xs uppercase tracking-wider px-6 py-3.5 transition-all duration-200 cursor-pointer disabled:opacity-50 active:scale-95"
               >
                 {isSubmitting ? (
                   <>
@@ -226,12 +231,12 @@ export default function ContactsPage() {
         </div>
 
         {/* Window Footer */}
-        <div className="bg-[#111111] px-4 py-2 border-t border-neutral-800 text-[11px] text-neutral-500 flex flex-wrap items-center justify-between gap-2 select-none">
+        <div className="bg-[#111111] px-4 py-2.5 border-t border-neutral-800 text-[11px] text-neutral-500 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 select-none">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
             <span>Прямое подключение: Telegram @maetti</span>
           </div>
-          <span>ИП Маетный Д. А. • ИНН 772412345678</span>
+          <span className="text-[10px] sm:text-[11px] opacity-75">ИП Маетный Д. А. • ИНН 772412345678</span>
         </div>
 
       </div>

@@ -43,20 +43,16 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://images.unsplash.com" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
-        {/* Сырой <script> в дереве React дает dev-предупреждение "Encountered a script
-            tag" и красный бейдж Issues в dev-оверлее — поэтому через next/script. */}
+      </head>
+      <body suppressHydrationWarning className="min-h-full flex flex-col bg-background text-foreground overflow-x-hidden selection:bg-emerald-500 selection:text-white">
         <Script
           id="embed-detect"
+          src="/embed-detect.js"
           strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `if(self!==top){document.documentElement.classList.add("embed");addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[href]");if(!a||a.target||a.getAttribute("href").charAt(0)==="#")return;e.preventDefault();top.location.href=a.href},true)}`,
-          }}
         />
-      </head>
-      <body className="min-h-full flex flex-col bg-background text-foreground overflow-x-hidden selection:bg-emerald-500 selection:text-white">
         <TransitionProvider>
           <Header />
-          <main id="page-content" className="flex-1 flex flex-col pt-24">
+          <main id="page-content" className="flex-1 flex flex-col pt-16 md:pt-24">
             {children}
           </main>
           <Footer />

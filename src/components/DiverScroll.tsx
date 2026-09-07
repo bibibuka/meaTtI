@@ -12,11 +12,9 @@ const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
 const progressFromScroll = (
   scrollTop: number,
-  scrollHeight: number,
-  viewportHeight: number,
+  maxScroll: number,
 ) => {
-  const range = scrollHeight - viewportHeight;
-  return range > 0 ? clamp01(scrollTop / range) : 0;
+  return maxScroll > 0 ? clamp01(scrollTop / maxScroll) : 0;
 };
 
 const ROPE_PATH =
@@ -86,6 +84,7 @@ export default function DiverScroll() {
 
     function releaseBubble(order: number, bubbleCount: number) {
       if (reducedMotion.matches || document.hidden) return;
+      if (controller!.style.opacity === "0") return;
       const origin = regulator.getBoundingClientRect();
       const shape = BUBBLE_SHAPES[bubbleIndex % BUBBLE_SHAPES.length];
       // Первые пузырьки пачки поднимаются выше последних.
@@ -148,6 +147,33 @@ export default function DiverScroll() {
       );
       // clipPath триггерит перерисовку, используем более дешевую трансформацию через opacity/height
       rope.style.clipPath = `inset(0 0 ${((1 - progress) * 100).toFixed(2)}% 0)`;
+
+      // Если внизу экрана появляется интерактивный стол — водолаз не заходит внутрь него,
+      // а останавливается строго над его шапкой и при продолжении скролла поднимается вместе со столом,
+      // плавно угасая
+      const deskEl = document.querySelector<HTMLElement>(".desk-shell");
+      if (deskEl) {
+        const deskRect = deskEl.getBoundingClientRect();
+        // 52px — высота шапки стола
+        const deskShift = Math.max(0, (window.innerHeight - 52) - deskRect.top);
+        if (deskShift > 0) {
+          controller!.style.transform = `translate3d(0, -${deskShift.toFixed(2)}px, 0)`;
+          const fade = Math.max(0, 1 - deskShift / 70);
+          controller!.style.opacity = fade.toFixed(3);
+          controller!.style.pointerEvents = fade < 0.1 ? "none" : "";
+          if (bubbleLayer) bubbleLayer.style.opacity = fade.toFixed(3);
+        } else {
+          controller!.style.transform = "";
+          controller!.style.opacity = "";
+          controller!.style.pointerEvents = "";
+          if (bubbleLayer) bubbleLayer.style.opacity = "";
+        }
+      } else {
+        controller!.style.transform = "";
+        controller!.style.opacity = "";
+        controller!.style.pointerEvents = "";
+        if (bubbleLayer) bubbleLayer.style.opacity = "";
+      }
     }
 
     function setDirection(nextProgress: number) {
@@ -171,14 +197,22 @@ export default function DiverScroll() {
       }, 180);
     }
 
+    const getMaxScroll = () => {
+      const deskEl = document.querySelector<HTMLElement>(".desk-shell");
+      if (deskEl) {
+        const deskTop = deskEl.getBoundingClientRect().top + window.scrollY;
+        // Водолаз останавливается над шапкой интерактивного стола и дальше вниз не идёт
+        const targetScroll = deskTop - window.innerHeight + 52;
+        return Math.max(1, targetScroll);
+      }
+      return Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    };
+
     function syncFromScroll() {
       frame = 0;
       const nextScrollTop = window.scrollY;
-      const nextProgress = progressFromScroll(
-        nextScrollTop,
-        scrollHeight(),
-        window.innerHeight,
-      );
+      const maxScroll = getMaxScroll();
+      const nextProgress = progressFromScroll(nextScrollTop, maxScroll);
 
       if (nextScrollTop !== previousScrollTop) {
         setDirection(nextProgress);
@@ -200,9 +234,9 @@ export default function DiverScroll() {
       render(clamped);
       showActivity();
       showMovement();
+      const maxScroll = getMaxScroll();
       window.scrollTo({
-        top:
-          clamped * Math.max(0, scrollHeight() - window.innerHeight),
+        top: clamped * maxScroll,
         left: 0,
         // Не "auto": у html стоит scroll-behavior: smooth, и перетаскивание
         // начало бы отставать от курсора.
@@ -296,7 +330,7 @@ export default function DiverScroll() {
     const resizeObserver = new ResizeObserver(scheduleSync);
     resizeObserver.observe(document.body);
 
-    render(progressFromScroll(window.scrollY, scrollHeight(), window.innerHeight));
+    render(progressFromScroll(window.scrollY, getMaxScroll()));
     const startTimer = window.setTimeout(releaseBubbleBurst, 180);
     const breathTimer = window.setInterval(releaseBubbleBurst, 3_000);
     activityTimer = window.setTimeout(() => {

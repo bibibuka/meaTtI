@@ -11,6 +11,7 @@ import {
 } from "framer-motion";
 import { Send } from "lucide-react";
 import { usePageTransition } from "@/context/TransitionContext";
+import { haptic } from "@/utils/haptics";
 
 const NAV_LINKS = [
   { href: "/", label: "Главная" },
@@ -282,6 +283,17 @@ export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
+  // Блокируем скролл страницы под открытым мобильным меню
+  useEffect(() => {
+    if (isOpen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
+  }, [isOpen]);
+
   const transition = usePageTransition();
   const pending = transition?.pending ?? null;
   const layout = transition?.layout ?? 0;
@@ -428,29 +440,68 @@ export default function Header() {
         </defs>
       </svg>
 
-      <header className="site-header fixed top-0 left-0 right-0 z-50 h-24">
-        {/* Клик мимо меню — закрыть */}
+      <header className="site-header fixed top-0 left-0 right-0 z-50 h-16 md:h-24">
+        {/* Полноэкранное мобильное меню */}
         <AnimatePresence>
           {isOpen && (
             <motion.div
-              key="menu-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              onClick={() => setIsOpen(false)}
-              className="fixed top-24 left-0 right-0 bottom-0 bg-black/20 md:hidden"
-              aria-hidden="true"
-            />
+              key="mobile-menu-overlay"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="fixed inset-0 z-40 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-2xl md:hidden flex flex-col justify-between pt-20 pb-8 px-6 overflow-y-auto"
+            >
+              <div className="flex flex-col gap-6 max-w-sm mx-auto w-full pt-4">
+                <nav className="flex flex-col gap-3">
+                  {NAV_LINKS.map((link) => {
+                    const isActive =
+                      currentPath === link.href ||
+                      (link.href !== "/" && currentPath.startsWith(link.href));
+                    return (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        onClick={(e) => {
+                          haptic.tap();
+                          setIsOpen(false);
+                          startTransition(link.href)(e);
+                        }}
+                        className={`block text-2xl font-black tracking-tight py-2 transition-colors ${
+                          isActive
+                            ? "text-blue-600"
+                            : "text-neutral-900 dark:text-neutral-100 hover:text-blue-600"
+                        }`}
+                      >
+                        {link.label}
+                      </Link>
+                    );
+                  })}
+                </nav>
+
+                <div className="h-px bg-neutral-200 dark:bg-neutral-800 w-full my-1" />
+
+                <a
+                  href="https://t.me/maetti_agency_stub"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setIsOpen(false)}
+                  className="w-full justify-center inline-flex items-center gap-2.5 bg-neutral-950 dark:bg-white text-white dark:text-black font-bold px-6 py-4 rounded-full active:scale-95 transition-transform duration-200 shadow-lg text-sm"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>Написать в Telegram</span>
+                </a>
+              </div>
+
+              <div className="text-center text-xs text-neutral-400 max-w-sm mx-auto w-full pt-6">
+                maeTtI · Студия разработки цифровых решений
+              </div>
+            </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Единая поверхность: шапка и выехавшее меню — один кусок стекла,
-            который опускается вместе со своей волной */}
-        <div className="absolute top-0 left-0 right-0 pointer-events-none">
-          {/* Вода со своей волной и гребнем едет вниз целиком — тот же жест,
-              что и у шторы перехода, только на высоту шапки. Наверху страницы
-              она убрана вверх, и сквозь шапку виден фон самой страницы. */}
+        {/* Стеклянная плашка шапки */}
+        <div className="absolute top-0 left-0 right-0 pointer-events-none h-full">
           <motion.div
             className="absolute inset-0"
             initial={false}
@@ -484,15 +535,10 @@ export default function Header() {
                 strokeWidth={2}
                 vectorEffect="non-scaling-stroke"
                 className="text-blue-600"
-                // На переходе гребень прячем: под шапкой такое же голубое
-                // полотно шторы, и линия читалась бы швом поперёк заставки.
-                // Не анимировать здесь pathLength: framer-motion делает его через
-                // stroke-dasharray, а с non-scaling-stroke длины штрихов считаются в
-                // экранных пикселях — линия при таком viewBox рассыпается в точки.
-                // Появление и так на opacity.
+                initial={{ opacity: 0 }}
                 animate={{
                   opacity: submerged && !pending ? 1 : 0,
-                  d: reduce || !submerged ? WAVE_LINE[state][0] : WAVE_LINE[state],
+                  d: reduce || !submerged ? WAVE_LINE.closed[0] : WAVE_LINE.closed,
                 }}
                 transition={{
                   d: reduce || !submerged
@@ -503,72 +549,6 @@ export default function Header() {
               />
             </svg>
           </motion.div>
-
-          {/* Место под верхнюю строку шапки */}
-          <div className="h-24" />
-
-          <AnimatePresence initial={false}>
-            {isOpen && (
-              <motion.div
-                key="menu-panel"
-                initial={{ height: 0 }}
-                animate={{ height: "auto" }}
-                exit={{ height: 0 }}
-                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                className="overflow-hidden pointer-events-auto md:hidden"
-              >
-                <motion.div
-                  variants={listVariants}
-                  initial="closed"
-                  animate="open"
-                  exit="closed"
-                  className="px-6 pt-2 pb-24 flex flex-col gap-6"
-                >
-                  <nav className="flex flex-col gap-4">
-                    {NAV_LINKS.map((link) => {
-                      const isActive =
-                        currentPath === link.href ||
-                        (link.href !== "/" && currentPath.startsWith(link.href));
-                      return (
-                        <motion.div key={link.href} variants={itemVariants}>
-                          <Link
-                            href={link.href}
-                            onClick={(e) => {
-                              setIsOpen(false);
-                              startTransition(link.href)(e);
-                            }}
-                            className={`block text-lg font-bold ${isActive
-                                ? "text-blue-600 dark:text-blue-400"
-                                : "text-foreground/75 hover:text-foreground"
-                              } transition-colors`}
-                          >
-                            {link.label}
-                          </Link>
-                        </motion.div>
-                      );
-                    })}
-                  </nav>
-
-                  <motion.div
-                    variants={itemVariants}
-                    className="h-px bg-foreground/10 w-full"
-                  />
-
-                  <motion.a
-                    variants={itemVariants}
-                    href="https://t.me/maetti_agency_stub"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => setIsOpen(false)}
-                    className="w-full justify-center inline-flex items-center gap-2 bg-foreground text-background font-bold px-6 py-3.5 rounded-full active:scale-95 transition-transform duration-200 shadow-md text-sm"
-                  >
-                    <Send className="w-4 h-4" />
-                    <span>Написать в Telegram</span>
-                  </motion.a>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
 
         <div className="relative max-w-7xl mx-auto h-full px-6 flex items-center justify-between">
@@ -636,8 +616,13 @@ export default function Header() {
 
           {/* Mobile Menu Button */}
           <button
-            onClick={() => setIsOpen(!isOpen)}
-            className={`md:hidden relative z-50 -mr-2 flex h-10 w-10 flex-col items-center justify-center gap-1.5 ${isDarkHeader ? "text-white" : "text-foreground"} focus:outline-none active:scale-90 transition-colors`}
+            onClick={() => {
+              haptic.toggle();
+              setIsOpen(!isOpen);
+            }}
+            className={`md:hidden relative z-50 -mr-2 flex h-11 w-11 flex-col items-center justify-center gap-1.5 ${
+              isDarkHeader && !isOpen ? "text-white" : "text-foreground"
+            } focus:outline-none active:scale-90 transition-colors cursor-pointer`}
             aria-label={isOpen ? "Закрыть меню" : "Открыть меню"}
             aria-expanded={isOpen}
           >

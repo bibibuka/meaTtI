@@ -1,7 +1,7 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { motion, useInView, useReducedMotion } from "framer-motion";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useInView, useReducedMotion } from "framer-motion";
 import { ArrowUpRight, MousePointerClick } from "lucide-react";
 import { Unbounded, Onest } from "next/font/google";
 import WaveRule from "@/components/WaveRule";
@@ -92,36 +92,50 @@ const WORDS_DATA: WordData[] = (() => {
 
 const SESSION_KEY = "maetti_services_intro_seen";
 
-const emptySubscribe = () => () => {};
+let hasCompletedIntroInSession = false;
+
+const readSessionIntroSeen = () => {
+  if (typeof window === "undefined") return false;
+  try {
+    return sessionStorage.getItem(SESSION_KEY) === "true";
+  } catch {
+    return false;
+  }
+};
 
 export default function ServicesSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, { once: true, amount: 0.05 });
   const shouldReduceMotion = useReducedMotion();
 
-  // Read session storage safely without triggering hydration mismatches or cascading setState
-  const isSeenInSession = useSyncExternalStore(
-    emptySubscribe,
-    () => {
-      try {
-        return sessionStorage.getItem(SESSION_KEY) === "true";
-      } catch {
-        return false;
-      }
-    },
-    () => false
-  );
-
-  const [charCount, setCharCount] = useState(0);
-  const [isTyped, setIsTyped] = useState(false);
-  const [userSettled, setUserSettled] = useState(false);
+  const [isSettled, setIsSettled] = useState(hasCompletedIntroInSession);
+  const [charCount, setCharCount] = useState(hasCompletedIntroInSession ? FULL_TEXT.length : 0);
+  const [isTyped, setIsTyped] = useState(hasCompletedIntroInSession);
+  const [canSettle, setCanSettle] = useState(hasCompletedIntroInSession);
   const [isClickBlocked, setIsClickBlocked] = useState(false);
   const clickBlockedUntilRef = useRef<number>(0);
+  const wasAlreadySettledOnMount = useRef(hasCompletedIntroInSession);
 
-  const isSettled = isSeenInSession || userSettled;
-  const hasSeenIntro = isSeenInSession;
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      hasCompletedIntroInSession = true;
+      wasAlreadySettledOnMount.current = true;
+      setIsSettled(true);
+      setCharCount(FULL_TEXT.length);
+      setIsTyped(true);
+      setCanSettle(true);
+      return;
+    }
+    if (readSessionIntroSeen()) {
+      hasCompletedIntroInSession = true;
+      wasAlreadySettledOnMount.current = true;
+      setIsSettled(true);
+      setCharCount(FULL_TEXT.length);
+      setIsTyped(true);
+      setCanSettle(true);
+    }
+  }, []);
 
-  // Global click interception for 1.2 seconds after settling (prevents accidental link navigation)
   useEffect(() => {
     const handleCaptureClick = (e: MouseEvent) => {
       if (Date.now() < clickBlockedUntilRef.current) {
@@ -139,20 +153,23 @@ export default function ServicesSection() {
     };
   }, []);
 
-  // Settle section and activate 1.2s click cooldown
   const settleSection = useCallback(() => {
-    setUserSettled(true);
+    hasCompletedIntroInSession = true;
+    wasAlreadySettledOnMount.current = false;
+    setIsSettled(true);
+    setIsTyped(true);
+    setCanSettle(true);
     clickBlockedUntilRef.current = Date.now() + 1200;
     setIsClickBlocked(true);
 
-    try {
-      sessionStorage.setItem(SESSION_KEY, "true");
-    } catch {
-      // ignore in environments with restricted storage
-    }
-
+    // Save flag strictly AFTER the 0.85s flight animation finishes so duration is never 0
     setTimeout(() => {
       setIsClickBlocked(false);
+      try {
+        sessionStorage.setItem(SESSION_KEY, "true");
+      } catch {
+        // ignore in environments with restricted storage
+      }
     }, 1200);
   }, []);
 
@@ -162,7 +179,11 @@ export default function ServicesSection() {
       queueMicrotask(() => {
         setCharCount(FULL_TEXT.length);
         setIsTyped(true);
-        setUserSettled(true);
+        setCanSettle(true);
+        setIsSettled(true);
+        try {
+          sessionStorage.setItem(SESSION_KEY, "true");
+        } catch {}
       });
       return;
     }
@@ -200,45 +221,49 @@ export default function ServicesSection() {
     };
   }, [isInView, shouldReduceMotion, isSettled]);
 
-  // Handle interaction: click triggers instant settlement (allows skipping too)
+  // Strict 0.75-second click block after typing completes (no click allowed during or within 750ms after typing)
+  useEffect(() => {
+    if (wasAlreadySettledOnMount.current || isSettled || !isTyped) return;
+
+    const cooldownTimer = setTimeout(() => {
+      setCanSettle(true);
+    }, 750);
+
+    return () => clearTimeout(cooldownTimer);
+  }, [isTyped, isSettled]);
+
+  // Handle interaction: NO SKIPPING during typing. Click only triggers after text is finished + 0.75s passed
   const handleInteraction = useCallback((e?: React.MouseEvent) => {
-    if (isSettled) return;
+    if (!canSettle || isSettled) return;
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    setCharCount(FULL_TEXT.length);
-    setIsTyped(true);
     settleSection();
-  }, [isSettled, settleSection]);
+  }, [canSettle, isSettled, settleSection]);
 
-  // Listen for click/touch anywhere on the page once text has finished typing
+  // Listen for click/touch anywhere on the page only AFTER typing is completely finished AND 0.75s delay passed
   useEffect(() => {
-    if (isSettled) return;
+    if (!canSettle || isSettled) return;
 
-    const onGlobalClick = (e: MouseEvent | TouchEvent) => {
-      if (isTyped) {
-        e.preventDefault();
-        e.stopPropagation();
-        settleSection();
-      }
+    const onGlobalClick = () => {
+      settleSection();
     };
 
-    if (isTyped) {
-      window.addEventListener("click", onGlobalClick, { once: true, capture: true });
-      window.addEventListener("touchend", onGlobalClick, { once: true, capture: true });
-    }
+    window.addEventListener("click", onGlobalClick, { once: true, capture: true });
+    window.addEventListener("touchend", onGlobalClick, { once: true, capture: true });
 
     return () => {
       window.removeEventListener("click", onGlobalClick, { capture: true });
       window.removeEventListener("touchend", onGlobalClick, { capture: true });
     };
-  }, [isTyped, isSettled, settleSection]);
+  }, [canSettle, isSettled, settleSection]);
 
   // Fix screen while typing and waiting for click: keep section framed in view
   useEffect(() => {
     if (shouldReduceMotion) return;
     if (!isInView || isSettled) return;
+    if (typeof window !== "undefined" && window.innerWidth < 768) return;
 
     const el = sectionRef.current;
     if (!el) return;
@@ -309,52 +334,60 @@ export default function ServicesSection() {
       ref={sectionRef}
       id="services"
       onClick={handleInteraction}
+      suppressHydrationWarning
       className={`py-12 md:py-16 px-6 max-w-7xl mx-auto w-full relative select-none overflow-hidden ${
-        isTyped && !isSettled ? "cursor-pointer" : "cursor-default"
+        canSettle && !isSettled ? "cursor-pointer" : "cursor-default"
       }`}
     >
       {/* BACKGROUND TYPOGRAPHIC PATTERN (across the whole section to fill the top void) */}
-      {isTyped && !isSettled && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.5 }}
-          className="absolute inset-0 pointer-events-none overflow-hidden select-none flex flex-col justify-around py-4 z-0"
-        >
-          {Array.from({ length: 7 }).map((_, rIdx) => (
-            <div
-              key={rIdx}
-              className={`flex whitespace-nowrap text-base sm:text-lg md:text-xl font-bold tracking-wider text-blue-600/[0.07] dark:text-blue-400/[0.08] select-none animate-marquee ${unbounded.className}`}
-              style={{
-                animationDuration: `${30 + rIdx * 6}s`,
-                animationDirection: rIdx % 2 === 0 ? "normal" : "reverse",
-              }}
-            >
-              {Array.from({ length: 12 }).map((_, cIdx) => (
-                <span key={cIdx} className="inline-flex items-center gap-3 mx-6">
-                  <span>кликните по экрану</span>
-                  <MousePointerClick className="w-5 h-5 opacity-75 inline-block -mt-0.5" />
-                </span>
-              ))}
-            </div>
-          ))}
-        </motion.div>
-      )}
+      <AnimatePresence>
+        {canSettle && !isSettled && (
+          <motion.div
+            key="services-bg-marquee"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="absolute inset-0 pointer-events-none overflow-hidden select-none flex flex-col justify-around py-4 z-0"
+          >
+            {Array.from({ length: 7 }).map((_, rIdx) => (
+              <div
+                key={rIdx}
+                className={`flex whitespace-nowrap text-base sm:text-lg md:text-xl font-bold tracking-wider text-blue-600/[0.07] dark:text-blue-400/[0.08] select-none animate-marquee ${unbounded.className}`}
+                style={{
+                  animationDuration: `${30 + rIdx * 6}s`,
+                  animationDirection: rIdx % 2 === 0 ? "normal" : "reverse",
+                }}
+              >
+                {Array.from({ length: 12 }).map((_, cIdx) => (
+                  <span key={cIdx} className="inline-flex items-center gap-3 mx-6">
+                    <span>кликните по экрану</span>
+                    <MousePointerClick className="w-5 h-5 opacity-75 inline-block -mt-0.5" />
+                  </span>
+                ))}
+              </div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* HEADER ROW */}
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6 min-h-[100px] relative z-10">
         {/* Left: Title + Wave (reveals when typing completes and user clicks) */}
         <motion.div
-          initial={hasSeenIntro ? false : { opacity: 0, x: -28, filter: "blur(4px)" }}
+          initial={
+            wasAlreadySettledOnMount.current
+              ? { opacity: 1, x: 0, filter: "blur(0px)" }
+              : { opacity: 0, x: -28, filter: "blur(4px)" }
+          }
           animate={
             isSettled
               ? { opacity: 1, x: 0, filter: "blur(0px)" }
               : { opacity: 0, x: -28, filter: "blur(4px)" }
           }
           transition={{
-            duration: hasSeenIntro ? 0 : 0.7,
-            delay: hasSeenIntro ? 0 : (isSettled ? 0.2 : 0),
+            duration: wasAlreadySettledOnMount.current ? 0 : 0.7,
+            delay: wasAlreadySettledOnMount.current ? 0 : (isSettled ? 0.2 : 0),
             ease: [0.16, 1, 0.3, 1],
           }}
           className={`w-fit shrink-0 ${isSettled && !isClickBlocked ? "pointer-events-auto" : "pointer-events-none"}`}
@@ -371,7 +404,7 @@ export default function ServicesSection() {
             <motion.div
               layoutId="services-statement-box"
               transition={{
-                duration: hasSeenIntro ? 0 : 0.85,
+                duration: wasAlreadySettledOnMount.current ? 0 : 0.85,
                 ease: [0.16, 1, 0.3, 1],
               }}
               className="w-full text-neutral-500 dark:text-neutral-400 text-sm md:text-base font-normal leading-relaxed text-left"
@@ -389,15 +422,19 @@ export default function ServicesSection() {
           {SERVICES.map((s, idx) => (
             <motion.div
               key={s.id}
-              initial={hasSeenIntro ? false : { opacity: 0, y: 35 }}
+              initial={
+                wasAlreadySettledOnMount.current
+                  ? { opacity: 1, y: 0 }
+                  : { opacity: 0, y: 35 }
+              }
               animate={
                 isSettled
                   ? { opacity: 1, y: 0 }
                   : { opacity: 0, y: 35 }
               }
               transition={{
-                duration: hasSeenIntro ? 0 : 0.65,
-                delay: hasSeenIntro ? 0 : (isSettled ? 0.25 + idx * 0.1 : 0),
+                duration: wasAlreadySettledOnMount.current ? 0 : 0.65,
+                delay: wasAlreadySettledOnMount.current ? 0 : (isSettled ? 0.25 + idx * 0.1 : 0),
                 ease: [0.16, 1, 0.3, 1],
               }}
               className={`h-full ${(!isSettled || isClickBlocked) ? "pointer-events-none select-none" : ""}`}
@@ -441,7 +478,9 @@ export default function ServicesSection() {
       {!isSettled && (
         <div
           onClick={handleInteraction}
-          className="absolute inset-0 flex flex-col items-center justify-center p-6 z-20 cursor-pointer"
+          className={`absolute inset-0 flex flex-col items-center justify-center p-6 z-20 ${
+            canSettle ? "cursor-pointer" : "cursor-default"
+          }`}
         >
           <motion.div
             layoutId="services-statement-box"
@@ -480,12 +519,12 @@ export default function ServicesSection() {
             </p>
           </motion.div>
 
-          {/* Clean text prompt with Unbounded font and MousePointerClick sticker */}
-          {isTyped && (
+          {/* Clean text prompt with Unbounded font and MousePointerClick sticker - strictly after 0.75s cooldown */}
+          {canSettle && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: 0.1 }}
+              transition={{ duration: 0.35 }}
               className={`mt-6 inline-flex items-center gap-2 text-xs sm:text-sm font-semibold tracking-wider text-blue-600 dark:text-blue-400 select-none animate-pulse ${unbounded.className}`}
             >
               <span>кликните по экрану</span>
