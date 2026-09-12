@@ -11,12 +11,12 @@ import { TransitionProvider } from "@/context/TransitionContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  subsets: ["latin", "cyrillic"],
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  subsets: ["latin", "cyrillic"],
 });
 
 export const metadata: Metadata = {
@@ -47,7 +47,7 @@ export default function RootLayout({
       <body suppressHydrationWarning className="min-h-full flex flex-col bg-background text-foreground overflow-x-hidden selection:bg-emerald-500 selection:text-white">
         <Script
           id="embed-detect"
-          src="/embed-detect.js"
+          src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/embed-detect.js`}
           strategy="beforeInteractive"
         />
         <TransitionProvider>

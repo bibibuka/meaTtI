@@ -50,9 +50,10 @@ const DEFAULT_CONFIG = {
 export default function Footer() {
   const pathname = usePathname();
   const config = PAGE_CONFIG[pathname] ?? DEFAULT_CONFIG;
+  const isHome = pathname === "/";
 
   return (
-    <div className={`w-full mt-auto flex flex-col ${config.bg}`}>
+    <div className={`w-full mt-auto flex-col ${config.bg} ${isHome ? "hidden md:flex" : "flex"}`}>
       {/* Своя зона под ламинарии в потоке между контентом и футером */}
       <div className="w-full">
         <KelpFrame className={config.kelpInvert ? "kelp-strip--invert" : ""} transparentBlades={config.kelpInvert} />
@@ -76,7 +77,7 @@ export default function Footer() {
             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
               <span>© {new Date().getFullYear()} maeTtI. Все права защищены.</span>
               <span className="text-neutral-300 dark:text-neutral-700 hidden sm:inline">•</span>
-              <TransitionLink href="/policy" className="hover:text-foreground transition-colors underline sm:no-underline">
+              <TransitionLink href="/policy" className="inline-flex items-center min-h-[44px] hover:text-foreground transition-colors underline sm:no-underline px-1">
                 Политика конфиденциальности
               </TransitionLink>
             </div>

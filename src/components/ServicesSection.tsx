@@ -105,27 +105,31 @@ const readSessionIntroSeen = () => {
 
 export default function ServicesSection() {
   const sectionRef = useRef<HTMLElement>(null);
-  const isInView = useInView(sectionRef, { once: true, amount: 0.05 });
+  const isInView = useInView(sectionRef, {
+    once: true,
+    amount: 0,
+    margin: "-50% 0px -49% 0px",
+  });
   const shouldReduceMotion = useReducedMotion();
 
   const [isSettled, setIsSettled] = useState(hasCompletedIntroInSession);
   const [charCount, setCharCount] = useState(hasCompletedIntroInSession ? FULL_TEXT.length : 0);
   const [isTyped, setIsTyped] = useState(hasCompletedIntroInSession);
   const [canSettle, setCanSettle] = useState(hasCompletedIntroInSession);
-  const [isClickBlocked, setIsClickBlocked] = useState(false);
-  const clickBlockedUntilRef = useRef<number>(0);
   const wasAlreadySettledOnMount = useRef(hasCompletedIntroInSession);
+  const [inPlace, setInPlace] = useState<boolean | null>(null);
+  const inPlaceRef = useRef(false);
+  const [introGo, setIntroGo] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && window.innerWidth < 768) {
-      hasCompletedIntroInSession = true;
-      wasAlreadySettledOnMount.current = true;
-      setIsSettled(true);
-      setCharCount(FULL_TEXT.length);
-      setIsTyped(true);
-      setCanSettle(true);
-      return;
-    }
+    const mq = window.matchMedia("(max-width: 767px)");
+    const apply = () => {
+      const mobile = mq.matches;
+      inPlaceRef.current = mobile;
+      setInPlace(mobile);
+    };
+    apply();
+    mq.addEventListener("change", apply);
     if (readSessionIntroSeen()) {
       hasCompletedIntroInSession = true;
       wasAlreadySettledOnMount.current = true;
@@ -134,23 +138,7 @@ export default function ServicesSection() {
       setIsTyped(true);
       setCanSettle(true);
     }
-  }, []);
-
-  useEffect(() => {
-    const handleCaptureClick = (e: MouseEvent) => {
-      if (Date.now() < clickBlockedUntilRef.current) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      }
-    };
-
-    window.addEventListener("click", handleCaptureClick, { capture: true });
-    window.addEventListener("auxclick", handleCaptureClick, { capture: true });
-    return () => {
-      window.removeEventListener("click", handleCaptureClick, { capture: true });
-      window.removeEventListener("auxclick", handleCaptureClick, { capture: true });
-    };
+    return () => mq.removeEventListener("change", apply);
   }, []);
 
   const settleSection = useCallback(() => {
@@ -159,19 +147,15 @@ export default function ServicesSection() {
     setIsSettled(true);
     setIsTyped(true);
     setCanSettle(true);
-    clickBlockedUntilRef.current = Date.now() + 1200;
-    setIsClickBlocked(true);
-
-    // Save flag strictly AFTER the 0.85s flight animation finishes so duration is never 0
-    setTimeout(() => {
-      setIsClickBlocked(false);
-      try {
-        sessionStorage.setItem(SESSION_KEY, "true");
-      } catch {
-        // ignore in environments with restricted storage
-      }
-    }, 1200);
+    try {
+      sessionStorage.setItem(SESSION_KEY, "true");
+    } catch {}
   }, []);
+
+  useEffect(() => {
+    if (shouldReduceMotion || isSettled || !isInView || inPlace === null) return;
+    setIntroGo(true);
+  }, [isInView, isSettled, shouldReduceMotion, inPlace]);
 
   // Natural typewriter effect with cadence on punctuation
   useEffect(() => {
@@ -188,10 +172,11 @@ export default function ServicesSection() {
       return;
     }
 
-    if (!isInView || isSettled) return;
+    if (!introGo || isSettled) return;
 
     let timeoutId: NodeJS.Timeout;
     let current = 0;
+    const fast = inPlace === true;
 
     const typeNext = () => {
       current += 1;
@@ -199,27 +184,27 @@ export default function ServicesSection() {
 
       if (current >= FULL_TEXT.length) {
         setIsTyped(true);
+        if (inPlaceRef.current) settleSection();
         return;
       }
 
       const prevChar = FULL_TEXT[current - 1];
-      let delay = 18;
+      let delay = fast ? 7 : 18;
       if (prevChar === ":" || prevChar === ".") {
-        delay = 140;
+        delay = fast ? 40 : 140;
       } else if (prevChar === ",") {
-        delay = 80;
+        delay = fast ? 20 : 80;
       }
 
       timeoutId = setTimeout(typeNext, delay);
     };
 
-    const startTimer = setTimeout(typeNext, 180);
+    timeoutId = setTimeout(typeNext, 40);
 
     return () => {
-      clearTimeout(startTimer);
       clearTimeout(timeoutId);
     };
-  }, [isInView, shouldReduceMotion, isSettled]);
+  }, [introGo, shouldReduceMotion, isSettled, inPlace, settleSection]);
 
   // Strict 0.75-second click block after typing completes (no click allowed during or within 750ms after typing)
   useEffect(() => {
@@ -259,75 +244,52 @@ export default function ServicesSection() {
     };
   }, [canSettle, isSettled, settleSection]);
 
-  // Fix screen while typing and waiting for click: keep section framed in view
   useEffect(() => {
-    if (shouldReduceMotion) return;
-    if (!isInView || isSettled) return;
-    if (typeof window !== "undefined" && window.innerWidth < 768) return;
-
+    if (shouldReduceMotion || !isInView || isSettled || inPlace !== false) return;
     const el = sectionRef.current;
     if (!el) return;
 
     const HEADER_HEIGHT = 88;
     const rect = el.getBoundingClientRect();
     const availableHeight = window.innerHeight - HEADER_HEIGHT;
-    
-    // Ideal positioning: center the section inside the available height on screen.
-    // On laptops where the section is taller than availableHeight, align section top with comfortable clearance.
-    const targetTop = rect.height <= availableHeight
-      ? HEADER_HEIGHT + Math.max(0, (availableHeight - rect.height) / 2)
-      : HEADER_HEIGHT + 12;
+    const targetTop =
+      rect.height <= availableHeight
+        ? HEADER_HEIGHT + Math.max(0, (availableHeight - rect.height) / 2)
+        : HEADER_HEIGHT + 12;
+    const targetScrollY = Math.max(0, Math.round(window.scrollY + rect.top - targetTop));
 
-    const sectionDocTop = window.scrollY + rect.top;
-    const targetScrollY = Math.max(0, Math.round(sectionDocTop - targetTop));
+    window.scrollTo({ top: targetScrollY, behavior: "smooth" });
 
-    // Smoothly glide into position
-    window.scrollTo({
-      top: targetScrollY,
-      behavior: "smooth",
-    });
-
-    let isLocked = false;
-    // Activate position anchor shortly after smooth scroll starts to halt residual trackpad momentum
+    let locked = false;
     const anchorTimer = setTimeout(() => {
-      isLocked = true;
+      locked = true;
     }, 120);
 
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      e.preventDefault();
-    };
-
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const block = (e: Event) => e.preventDefault();
+    const onKey = (e: KeyboardEvent) => {
       if (["ArrowDown", "ArrowUp", "PageDown", "PageUp", " ", "Home", "End"].includes(e.key)) {
         e.preventDefault();
       }
     };
-
-    const handleScroll = () => {
-      if (isLocked) {
-        if (Math.abs(window.scrollY - targetScrollY) > 6) {
-          window.scrollTo({ top: targetScrollY });
-        }
+    const onScroll = () => {
+      if (locked && Math.abs(window.scrollY - targetScrollY) > 6) {
+        window.scrollTo({ top: targetScrollY });
       }
     };
 
-    window.addEventListener("wheel", handleWheel, { passive: false });
-    window.addEventListener("touchmove", handleTouchMove, { passive: false });
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("wheel", block, { passive: false });
+    window.addEventListener("touchmove", block, { passive: false });
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", onScroll, { passive: true });
 
     return () => {
       clearTimeout(anchorTimer);
-      window.removeEventListener("wheel", handleWheel);
-      window.removeEventListener("touchmove", handleTouchMove);
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("wheel", block);
+      window.removeEventListener("touchmove", block);
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", onScroll);
     };
-  }, [isInView, isSettled, shouldReduceMotion]);
+  }, [isInView, isSettled, shouldReduceMotion, inPlace]);
 
   return (
     <section
@@ -341,7 +303,7 @@ export default function ServicesSection() {
     >
       {/* BACKGROUND TYPOGRAPHIC PATTERN (across the whole section to fill the top void) */}
       <AnimatePresence>
-        {canSettle && !isSettled && (
+        {canSettle && !isSettled && inPlace === false && (
           <motion.div
             key="services-bg-marquee"
             initial={{ opacity: 0 }}
@@ -376,21 +338,21 @@ export default function ServicesSection() {
         {/* Left: Title + Wave (reveals when typing completes and user clicks) */}
         <motion.div
           initial={
-            wasAlreadySettledOnMount.current
+            wasAlreadySettledOnMount.current || inPlace
               ? { opacity: 1, x: 0, filter: "blur(0px)" }
               : { opacity: 0, x: -28, filter: "blur(4px)" }
           }
           animate={
-            isSettled
+            isSettled || inPlace
               ? { opacity: 1, x: 0, filter: "blur(0px)" }
               : { opacity: 0, x: -28, filter: "blur(4px)" }
           }
           transition={{
-            duration: wasAlreadySettledOnMount.current ? 0 : 0.7,
-            delay: wasAlreadySettledOnMount.current ? 0 : (isSettled ? 0.2 : 0),
+            duration: wasAlreadySettledOnMount.current || inPlace ? 0 : 0.9,
+            delay: wasAlreadySettledOnMount.current || inPlace ? 0 : (isSettled ? 0.25 : 0),
             ease: [0.16, 1, 0.3, 1],
           }}
-          className={`w-fit shrink-0 ${isSettled && !isClickBlocked ? "pointer-events-auto" : "pointer-events-none"}`}
+          className={`w-fit shrink-0 ${isSettled ? "pointer-events-auto" : "pointer-events-none"}`}
         >
           <WaveRule className="mb-4" />
           <h2 className="text-3xl md:text-5xl font-black tracking-tight text-foreground">
@@ -400,16 +362,27 @@ export default function ServicesSection() {
 
         {/* Right: Subtitle target slot (turns back to gray when settled) */}
         <div className="w-full md:max-w-md min-h-[72px] flex items-end">
-          {isSettled && (
+          {(isSettled || inPlace) && (
             <motion.div
-              layoutId="services-statement-box"
+              layoutId={inPlace ? undefined : "services-statement-box"}
               transition={{
-                duration: wasAlreadySettledOnMount.current ? 0 : 0.85,
+                duration: wasAlreadySettledOnMount.current || inPlace ? 0 : 2,
                 ease: [0.16, 1, 0.3, 1],
               }}
               className="w-full text-neutral-500 dark:text-neutral-400 text-sm md:text-base font-normal leading-relaxed text-left"
             >
-              <p>{FULL_TEXT}</p>
+              <p>
+                {inPlace && !isSettled ? (
+                  <>
+                    {FULL_TEXT.slice(0, charCount)}
+                    {introGo && !isTyped && (
+                      <span className="inline-block w-[1.5px] h-[1em] bg-neutral-400 ml-0.5 align-[-0.1em] animate-pulse" />
+                    )}
+                  </>
+                ) : (
+                  FULL_TEXT
+                )}
+              </p>
             </motion.div>
           )}
         </div>
@@ -423,21 +396,21 @@ export default function ServicesSection() {
             <motion.div
               key={s.id}
               initial={
-                wasAlreadySettledOnMount.current
+                wasAlreadySettledOnMount.current || inPlace
                   ? { opacity: 1, y: 0 }
                   : { opacity: 0, y: 35 }
               }
               animate={
-                isSettled
+                isSettled || inPlace
                   ? { opacity: 1, y: 0 }
                   : { opacity: 0, y: 35 }
               }
               transition={{
-                duration: wasAlreadySettledOnMount.current ? 0 : 0.65,
-                delay: wasAlreadySettledOnMount.current ? 0 : (isSettled ? 0.25 + idx * 0.1 : 0),
+                duration: wasAlreadySettledOnMount.current || inPlace ? 0 : 0.8,
+                delay: wasAlreadySettledOnMount.current || inPlace ? 0 : (isSettled ? 0.45 + idx * 0.25 : 0),
                 ease: [0.16, 1, 0.3, 1],
               }}
-              className={`h-full ${(!isSettled || isClickBlocked) ? "pointer-events-none select-none" : ""}`}
+              className={`h-full ${!isSettled ? "pointer-events-none select-none" : ""}`}
             >
               <TransitionLink href={`/uslugi#${s.id}`} className="group relative block h-full">
                 <div
@@ -475,7 +448,7 @@ export default function ServicesSection() {
       </div>
 
       {/* CENTER TYPING STAGE (Centered across the whole section without vertical layout jumps) */}
-      {!isSettled && (
+      {!isSettled && inPlace === false && introGo && (
         <div
           onClick={handleInteraction}
           className={`absolute inset-0 flex flex-col items-center justify-center p-6 z-20 ${
@@ -484,7 +457,7 @@ export default function ServicesSection() {
         >
           <motion.div
             layoutId="services-statement-box"
-            transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 2, ease: [0.16, 1, 0.3, 1] }}
             className="w-full max-w-2xl text-center"
           >
             <p className={`text-xl sm:text-2xl md:text-3xl font-semibold text-blue-600 dark:text-blue-500 leading-relaxed tracking-tight ${onest.className}`}>

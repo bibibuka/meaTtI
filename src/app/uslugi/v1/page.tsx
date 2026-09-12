@@ -134,7 +134,7 @@ export default function Variant1Page() {
                     <span className="text-sm font-medium text-neutral-800 dark:text-neutral-200">Бесплатный расчет ТЗ за 30 минут</span>
                   </div>
                   <a
-                    href="https://t.me/maetti_agency_stub"
+                    href="https://t.me/maetti_mihail"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-3 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold px-6 py-3.5 hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white transition-all duration-300 shadow-sm"

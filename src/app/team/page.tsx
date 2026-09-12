@@ -38,6 +38,14 @@ const TEAM: TeamMember[] = [
     awards: ["1 место - Computer Vision Hackathon (Arduino) - в команде студии"]
   },
   {
+    name: "Аксёнов Артём",
+    profession: "Fullstack-разработчик.",
+    desc: "Отвечает за интерфейсы, сервер и низкоуровневый код: JS/TS, Java, Python, Rust, C++.",
+    color: "bg-[#7dd3fc]",
+    avatar: "💻",
+    photo: "/team/aksenov/photo"
+  },
+  {
     name: "Пастушенко Леонид",
     profession: "Инженер аппаратных решений.",
     desc: "Отвечает за электронику: микроконтроллеры, пайку и логику устройств.",
@@ -117,13 +125,13 @@ export default function TeamPage() {
           </div>
         </div>
         <p className="text-base sm:text-lg md:text-xl text-neutral-700 dark:text-neutral-400 font-medium leading-relaxed text-pretty">
-          maeTtI - студия цифровых решений. В ядре команды четыре специалиста: разработчики, инженер аппаратных решений и специалист по медиа. Мы познакомились в университетских лабораториях, получили опыт на хакатонах и теперь реализуем коммерческие проекты.
+          maeTtI - студия цифровых решений. В ядре команды пять специалистов: разработчики, инженер аппаратных решений и специалист по медиа. Мы познакомились в университетских лабораториях, получили опыт на хакатонах и теперь реализуем коммерческие проекты.
         </p>
       </section>
 
       {/* Team Grid */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 sm:gap-8">
           {TEAM.map((member, idx) => (
             <motion.div
               key={idx}
@@ -131,7 +139,7 @@ export default function TeamPage() {
                 y: -10,
                 boxShadow: "10px 10px 0px 0px rgba(0,0,0,1)"
               }}
-              className="group relative border-4 border-black dark:border-white bg-white dark:bg-neutral-900 p-5 sm:p-6 transition-all duration-200 shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] sm:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[5px_5px_0px_0px_rgba(255,255,255,0.8)] sm:dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.8)]"
+              className={`group relative border-4 border-black dark:border-white bg-white dark:bg-neutral-900 p-5 sm:p-6 transition-all duration-200 shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] sm:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[5px_5px_0px_0px_rgba(255,255,255,0.8)] sm:dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.8)] lg:col-span-2 ${idx === 3 ? "lg:col-start-2" : ""}`}
             >
               <div className="flex flex-row gap-4 items-center sm:block sm:gap-0">
                 <div className="w-20 h-20 sm:w-full sm:h-auto shrink-0">
@@ -191,7 +199,7 @@ export default function TeamPage() {
               Проект будет выполнен
             </h2>
             <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400 font-medium leading-relaxed text-pretty">
-              Ядро команды - четыре специалиста. При необходимости усиливаем его проверенными узкопрофильными экспертами: дизайн, вёрстка, тестирование, маркетинг. Любую задачу проекта закрываем своими силами - проект не встанет из-за нехватки рук.
+              Ядро команды - пять специалистов. При необходимости усиливаем его проверенными узкопрофильными экспертами: дизайн, вёрстка, тестирование, маркетинг. Любую задачу проекта закрываем своими силами - проект не встанет из-за нехватки рук.
             </p>
           </div>
         </motion.div>

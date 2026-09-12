@@ -80,6 +80,8 @@ const GROUPS: CaseGroup[] = [
   },
 ];
 
+const asset = (path: string) => `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}${path}`;
+
 const CASES: Case[] = [
   {
     id: "barori",
@@ -325,9 +327,9 @@ const CASES: Case[] = [
   },
 ];
 
-/* 1 тик колеса ≈ 100px. Длина скролла: 6.5 тиков = 650px на кейс + буфер на финальном кейсе перед откреплением. */
+/* 1 тик колеса ≈ 100px. Длина скролла: 4 тика = 400px на кейс + буфер на финальном кейсе перед откреплением. */
 const TICK_PX = 100;
-const TICKS_PER_SLIDE = 6.5;
+const TICKS_PER_SLIDE = 4;
 const SLIDE_PX = Math.round(TICK_PX * TICKS_PER_SLIDE);
 const END_BUFFER_PX = 350;
 const PIN_EXTRA_PX = SLIDE_PX * CASES.length + END_BUFFER_PX;
@@ -379,7 +381,7 @@ function CaseDetail({
             className="w-full relative aspect-[16/9] rounded-xl overflow-hidden bg-neutral-900 group cursor-pointer border border-neutral-200/80 dark:border-neutral-800 shadow-sm"
           >
             <img
-              src={mainPhoto.url}
+              src={asset(mainPhoto.url)}
               alt={c.title}
               loading={eager ? "eager" : "lazy"}
               fetchPriority={eager ? "high" : "auto"}
@@ -398,10 +400,17 @@ function CaseDetail({
         </div>
 
         {/* Правый верхний: ТЕКСТ (Метрики просто текстом без плашки) */}
-        <div className="h-full flex flex-col justify-center self-center py-2">
+        <div className="h-full hidden lg:flex flex-col justify-center self-center py-2">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 text-left">
             {c.results.map((res, rIdx) => (
-              <div key={rIdx} className="flex flex-col">
+              <div
+                key={rIdx}
+                className={`flex flex-col${
+                  rIdx === c.results.length - 1 && c.results.length % 2
+                    ? " col-span-2 items-center text-center sm:col-span-1 sm:items-start sm:text-left"
+                    : ""
+                }`}
+              >
                 <div className="text-xl sm:text-2xl md:text-3xl font-light text-blue-600 dark:text-blue-400 tracking-tight">
                   {res.metric}
                 </div>
@@ -458,14 +467,14 @@ function CaseDetail({
                   : c.url.includes("t.me")
                   ? "Открыть бота"
                   : c.id === "omnichannel"
-                  ? "Живое демо"
+                  ? "К ботам"
                   : "На сайт"}
               </span>
               <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
             </a>
           )}
           <a
-            href="https://t.me/maetti_agency_stub"
+            href="https://t.me/maetti_mihail"
             target="_blank"
             rel="noopener noreferrer"
             className="w-full sm:w-auto justify-center inline-flex items-center gap-2.5 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold px-5 py-2.5 rounded-lg hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white active:scale-95 transition-all duration-200 shadow-sm text-xs sm:text-sm"
@@ -475,6 +484,143 @@ function CaseDetail({
           </a>
         </div>
       </div>
+    </div>
+  );
+}
+
+const ZMIN = 1;
+const ZMAX = 4;
+
+function ZoomableImg({
+  src,
+  alt,
+  onSwipe,
+}: {
+  src: string;
+  alt: string;
+  onSwipe: (dir: -1 | 1) => void;
+}) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const z = useRef({ s: 1, x: 0, y: 0 });
+  const drag = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
+  const pinch = useRef<{ dist: number; s: number } | null>(null);
+  const swipeX = useRef<number | null>(null);
+  const lastTap = useRef(0);
+  const [, bump] = useState(0);
+  const paint = () => bump((n) => n + 1);
+
+  const setZ = (s: number, x: number, y: number) => {
+    const ns = Math.min(ZMAX, Math.max(ZMIN, s));
+    z.current = ns <= 1.02 ? { s: 1, x: 0, y: 0 } : { s: ns, x, y };
+    paint();
+  };
+
+  useEffect(() => {
+    z.current = { s: 1, x: 0, y: 0 };
+    paint();
+  }, [src]);
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      setZ(z.current.s * (e.deltaY < 0 ? 1.12 : 0.89), z.current.x, z.current.y);
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
+
+  const dist = (a: React.Touch, b: React.Touch) =>
+    Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+
+  return (
+    <div
+      ref={wrapRef}
+      className="max-w-5xl max-h-[72vh] relative flex items-center justify-center overflow-hidden touch-none"
+      style={{ cursor: z.current.s > 1 ? "grab" : "zoom-in" }}
+      onTouchStart={(e) => {
+        if (e.touches.length === 2) {
+          pinch.current = { dist: dist(e.touches[0], e.touches[1]), s: z.current.s };
+          swipeX.current = null;
+          drag.current = null;
+          return;
+        }
+        if (z.current.s > 1) {
+          drag.current = {
+            x: z.current.x,
+            y: z.current.y,
+            px: e.touches[0].clientX,
+            py: e.touches[0].clientY,
+          };
+          swipeX.current = null;
+        } else {
+          swipeX.current = e.touches[0].clientX;
+        }
+      }}
+      onTouchMove={(e) => {
+        if (e.touches.length === 2 && pinch.current) {
+          const d = dist(e.touches[0], e.touches[1]);
+          setZ((d / pinch.current.dist) * pinch.current.s, z.current.x, z.current.y);
+          return;
+        }
+        if (drag.current && e.touches.length === 1) {
+          const t = e.touches[0];
+          setZ(
+            z.current.s,
+            drag.current.x + (t.clientX - drag.current.px),
+            drag.current.y + (t.clientY - drag.current.py),
+          );
+        }
+      }}
+      onTouchEnd={(e) => {
+        if (pinch.current) {
+          pinch.current = e.touches.length >= 2 ? pinch.current : null;
+          return;
+        }
+        if (drag.current) {
+          drag.current = null;
+          return;
+        }
+        if (swipeX.current == null || !e.changedTouches[0]) return;
+        const dx = e.changedTouches[0].clientX - swipeX.current;
+        swipeX.current = null;
+        const now = Date.now();
+        if (now - lastTap.current < 280 && Math.abs(dx) < 12) {
+          lastTap.current = 0;
+          setZ(z.current.s > 1 ? 1 : 2.5, 0, 0);
+          return;
+        }
+        lastTap.current = now;
+        if (dx > 45) onSwipe(-1);
+        else if (dx < -45) onSwipe(1);
+      }}
+      onPointerDown={(e) => {
+        if (e.pointerType !== "mouse" || z.current.s <= 1) return;
+        drag.current = { x: z.current.x, y: z.current.y, px: e.clientX, py: e.clientY };
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      }}
+      onPointerMove={(e) => {
+        if (!drag.current || e.pointerType !== "mouse") return;
+        setZ(z.current.s, drag.current.x + e.clientX - drag.current.px, drag.current.y + e.clientY - drag.current.py);
+      }}
+      onPointerUp={() => {
+        drag.current = null;
+      }}
+      onDoubleClick={() => setZ(z.current.s > 1 ? 1 : 2.5, 0, 0)}
+    >
+      <img
+        src={src}
+        alt={alt}
+        decoding="async"
+        draggable={false}
+        className="max-w-full max-h-[72vh] object-contain rounded-md shadow-2xl border border-neutral-800"
+        style={{
+          transform: `translate(${z.current.x}px, ${z.current.y}px) scale(${z.current.s})`,
+          transformOrigin: "center center",
+          transition: drag.current || pinch.current ? "none" : "transform 120ms ease-out",
+        }}
+      />
     </div>
   );
 }
@@ -494,6 +640,8 @@ export default function CasesPage() {
   // Modal Lightbox Gallery State
   const [galleryCase, setGalleryCase] = useState<Case | null>(null);
   const [photoIndex, setPhotoIndex] = useState(0);
+  const thumbsRef = useRef<HTMLDivElement>(null);
+  const thumbsLockRef = useRef(false);
 
   const handleOpenGallery = (c: Case, idx = 0) => {
     haptic.toggle();
@@ -520,20 +668,40 @@ export default function CasesPage() {
     );
   };
 
-  const touchStartXRef = useRef<number | null>(null);
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartXRef.current = e.touches[0].clientX;
-  };
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartXRef.current === null) return;
-    const deltaX = e.changedTouches[0].clientX - touchStartXRef.current;
-    touchStartXRef.current = null;
-    if (deltaX > 45) {
-      handlePrevPhoto();
-    } else if (deltaX < -45) {
-      handleNextPhoto();
-    }
-  };
+  useEffect(() => {
+    const strip = thumbsRef.current;
+    if (!strip || !galleryCase) return;
+    const thumb = strip.children[photoIndex] as HTMLElement | undefined;
+    if (!thumb) return;
+    thumbsLockRef.current = true;
+    thumb.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    const t = window.setTimeout(() => {
+      thumbsLockRef.current = false;
+    }, 420);
+    return () => clearTimeout(t);
+  }, [photoIndex, galleryCase]);
+
+  useEffect(() => {
+    const strip = thumbsRef.current;
+    if (!strip || !galleryCase) return;
+    const onEnd = () => {
+      if (thumbsLockRef.current) return;
+      const mid = strip.getBoundingClientRect().left + strip.clientWidth / 2;
+      let best = 0;
+      let bestDist = Infinity;
+      for (let i = 0; i < strip.children.length; i++) {
+        const r = (strip.children[i] as HTMLElement).getBoundingClientRect();
+        const d = Math.abs(r.left + r.width / 2 - mid);
+        if (d < bestDist) {
+          bestDist = d;
+          best = i;
+        }
+      }
+      if (best !== photoIndex) setPhotoIndex(best);
+    };
+    strip.addEventListener("scrollend", onEnd);
+    return () => strip.removeEventListener("scrollend", onEnd);
+  }, [galleryCase, photoIndex]);
 
   // Предзагрузка соседних фото галереи, чтобы листалось без задержек
   useEffect(() => {
@@ -541,7 +709,7 @@ export default function CasesPage() {
     const n = galleryCase.gallery.length;
     [(photoIndex + 1) % n, (photoIndex - 1 + n) % n].forEach((i) => {
       const im = new Image();
-      im.src = galleryCase.gallery[i].url;
+      im.src = asset(galleryCase.gallery[i].url);
     });
   }, [galleryCase, photoIndex]);
 
@@ -556,6 +724,15 @@ export default function CasesPage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [galleryCase]);
+
+  useEffect(() => {
+    if (!galleryCase) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, [galleryCase]);
 
   const activeCase = CASES[active] || CASES[0];
@@ -666,21 +843,16 @@ export default function CasesPage() {
     });
   };
 
-  const prevGroupRef = useRef(activeGroup.id);
   useEffect(() => {
-    // Чипы мотаем только при смене группы, иначе петля scroll→setState→scroll
-    if (prevGroupRef.current === activeGroup.id) return;
-    prevGroupRef.current = activeGroup.id;
     if (window.matchMedia("(min-width: 1024px)").matches) return;
     const activeGroupIndex = GROUPS.findIndex((g) => g.id === activeGroup.id);
-    if (activeGroupIndex >= 0) {
-      chipsRef.current?.children[activeGroupIndex]?.scrollIntoView({
-        behavior: "smooth",
-        inline: "center",
-        block: "nearest",
-      });
-    }
-  }, [activeGroup]);
+    if (activeGroupIndex < 0) return;
+    chipsRef.current?.children[activeGroupIndex]?.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest",
+    });
+  }, [active, activeGroup.id]);
 
   const goToMobile = (i: number) => {
     haptic.tap();
@@ -920,7 +1092,7 @@ export default function CasesPage() {
         {/* ===== Mobile: липкая лента групп + свайп-карусель всех кейсов ===== */}
         <div className="lg:hidden">
           {/* Липкая шапка навигации с группами */}
-          <div className="sticky top-16 z-30 bg-neutral-50 dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-800">
+          <div className="bg-neutral-50 dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-800">
             <div className="flex items-center justify-between gap-3 px-4 sm:px-6 pt-3 pb-2.5">
               <div
                 ref={chipsRef}
@@ -968,12 +1140,12 @@ export default function CasesPage() {
           <div
             ref={railRef}
             onScroll={syncFromRail}
-            className="flex items-stretch gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar px-4 sm:px-6 py-6 sm:py-8"
+            className="flex items-start gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar px-4 sm:px-6 py-6 sm:py-8"
           >
             {CASES.map((c, idx) => (
               <div
                 key={c.id}
-                className="snap-center shrink-0 w-[calc(100vw-2.5rem)] sm:w-[calc(100vw-4.5rem)] max-w-lg [content-visibility:auto] [contain-intrinsic-size:auto_640px]"
+                className="snap-center snap-always shrink-0 w-[calc(100vw-2.5rem)] sm:w-[calc(100vw-4.5rem)] max-w-lg [content-visibility:auto] [contain-intrinsic-size:auto_640px]"
               >
                 <CaseDetail
                   c={c}
@@ -1026,16 +1198,12 @@ export default function CasesPage() {
               </div>
 
               {/* Main Image View Area */}
-              <div
-                onTouchStart={handleTouchStart}
-                onTouchEnd={handleTouchEnd}
-                className="relative flex-1 flex items-center justify-center my-4 overflow-hidden touch-pan-y"
-              >
+              <div className="relative flex-1 flex items-center justify-center my-4 overflow-hidden">
                 {/* Left Arrow (Desktop on sides, mobile in bottom bar) */}
                 <button
                   type="button"
                   onClick={handlePrevPhoto}
-                  className="hidden sm:flex absolute left-4 z-10 p-3 text-white bg-neutral-900/80 hover:bg-blue-600 border border-neutral-700 rounded-full transition-all shadow-lg cursor-pointer"
+                  className="hidden md:flex absolute left-4 z-10 p-3 text-white bg-neutral-900/80 hover:bg-blue-600 border border-neutral-700 rounded-full transition-all shadow-lg cursor-pointer"
                   aria-label="Предыдущее фото"
                 >
                   <ChevronLeft className="w-6 h-6" />
@@ -1051,11 +1219,10 @@ export default function CasesPage() {
                     transition={{ duration: 0.25 }}
                     className="max-w-5xl max-h-[72vh] relative flex items-center justify-center"
                   >
-                    <img
-                      src={galleryCase.gallery[photoIndex].url}
+                    <ZoomableImg
+                      src={asset(galleryCase.gallery[photoIndex].url)}
                       alt={galleryCase.title}
-                      decoding="async"
-                      className="max-w-full max-h-[72vh] object-contain rounded-md shadow-2xl border border-neutral-800"
+                      onSwipe={(dir) => (dir < 0 ? handlePrevPhoto() : handleNextPhoto())}
                     />
                   </motion.div>
                 </AnimatePresence>
@@ -1064,7 +1231,7 @@ export default function CasesPage() {
                 <button
                   type="button"
                   onClick={handleNextPhoto}
-                  className="hidden sm:flex absolute right-4 z-10 p-3 text-white bg-neutral-900/80 hover:bg-blue-600 border border-neutral-700 rounded-full transition-all shadow-lg cursor-pointer"
+                  className="hidden md:flex absolute right-4 z-10 p-3 text-white bg-neutral-900/80 hover:bg-blue-600 border border-neutral-700 rounded-full transition-all shadow-lg cursor-pointer"
                   aria-label="Следующее фото"
                 >
                   <ChevronRight className="w-6 h-6" />
@@ -1072,19 +1239,22 @@ export default function CasesPage() {
               </div>
 
               {/* Thumbnails & Mobile Controls Footer */}
-              <div className="border-t border-neutral-800 pt-3 flex items-center justify-between sm:justify-center gap-2 sm:gap-3">
+              <div className="border-t border-neutral-800 pt-3 flex items-center justify-between md:justify-center gap-2 md:gap-3">
                 {/* Mobile Prev Button */}
                 <button
                   type="button"
                   onClick={handlePrevPhoto}
-                  className="sm:hidden p-2.5 text-white bg-neutral-900 border border-neutral-700 rounded-lg active:scale-95 shrink-0"
+                  className="md:hidden min-w-[44px] min-h-[44px] p-2.5 flex items-center justify-center text-white bg-neutral-900 border border-neutral-700 rounded-lg active:scale-95 shrink-0"
                   aria-label="Предыдущее фото"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
 
                 {/* Thumbnails */}
-                <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar py-1">
+                <div
+                  ref={thumbsRef}
+                  className="flex items-center gap-2 sm:gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar py-1 px-[calc(50%-1.75rem)] sm:px-[calc(50%-2.5rem)]"
+                >
                   {galleryCase.gallery.map((item, idx) => {
                     const isActive = idx === photoIndex;
                     return (
@@ -1092,14 +1262,14 @@ export default function CasesPage() {
                         key={idx}
                         type="button"
                         onClick={() => setPhotoIndex(idx)}
-                        className={`relative w-14 sm:w-20 h-9 sm:h-12 rounded overflow-hidden border transition-all shrink-0 cursor-pointer ${
+                        className={`relative w-14 sm:w-20 h-9 sm:h-12 rounded overflow-hidden border transition-all shrink-0 snap-center snap-always cursor-pointer ${
                           isActive
                             ? "border-blue-500 scale-105 shadow-md ring-1 ring-blue-500"
                             : "border-neutral-800 opacity-50 hover:opacity-100"
                         }`}
                       >
                         <img
-                          src={item.url}
+                          src={asset(item.url)}
                           alt={item.title || galleryCase.title}
                           loading="lazy"
                           decoding="async"
@@ -1114,7 +1284,7 @@ export default function CasesPage() {
                 <button
                   type="button"
                   onClick={handleNextPhoto}
-                  className="sm:hidden p-2.5 text-white bg-neutral-900 border border-neutral-700 rounded-lg active:scale-95 shrink-0"
+                  className="md:hidden min-w-[44px] min-h-[44px] p-2.5 flex items-center justify-center text-white bg-neutral-900 border border-neutral-700 rounded-lg active:scale-95 shrink-0"
                   aria-label="Следующее фото"
                 >
                   <ChevronRight className="w-5 h-5" />

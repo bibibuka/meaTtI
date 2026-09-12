@@ -5,6 +5,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type ReactNode,
   type RefObject,
 } from "react";
 import dynamic from "next/dynamic";
@@ -207,33 +208,18 @@ const WinDesktop = dynamic(() => import("@/components/WinDesktop"), {
 
 
 
-const ABOUT_PHOTO_EXTS = ["webp", "jpg", "png", "jpeg"];
-
 function AboutPhoto() {
-  const [extIdx, setExtIdx] = useState(0);
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-
-  const hasMore = extIdx < ABOUT_PHOTO_EXTS.length;
-  const currentSrc = hasMore
-    ? `${base}/about/photo.${ABOUT_PHOTO_EXTS[extIdx]}`
-    : null;
 
   return (
     <div className="relative w-full max-w-full sm:max-w-[85%] lg:max-w-full mx-auto aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/3] rounded-3xl overflow-hidden border border-neutral-200/80 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 shadow-xl shadow-neutral-200/50 dark:shadow-none group">
-      {currentSrc ? (
-        <img
-          src={currentSrc}
-          alt="Команда MAETTI"
-          loading="lazy"
-          decoding="async"
-          onError={() => setExtIdx((prev) => prev + 1)}
-          className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-        />
-      ) : (
-        <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center text-neutral-400">
-          <p className="text-sm font-medium">Поместите фото в public/about/photo.jpg</p>
-        </div>
-      )}
+      <img
+        src={`${base}/about/photo.webp`}
+        alt="Команда MAETTI"
+        loading="lazy"
+        decoding="async"
+        className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+      />
       <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
     </div>
   );
@@ -251,8 +237,6 @@ function MaettiWord() {
   const reduce = useReducedMotion();
 
   const order = flipped ? [5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5];
-  // Пробел после второй буквы в разобранном виде: IT | TEAM
-  const gapAfter = new Set(flipped ? [4] : []);
 
   return (
     <span className="relative inline-flex flex-col items-center group">
@@ -275,14 +259,7 @@ function MaettiWord() {
             >
               {FLIP_LETTERS[i]}
             </motion.span>
-            {gapAfter.has(i) && (
-              <motion.span
-                initial={false}
-                animate={{ width: flipped ? "0.15em" : "0em" }}
-                transition={reduce ? { duration: 0 } : { duration: 0.4 }}
-                className="inline-block"
-              />
-            )}
+            {i === 4 && flipped && <span className="inline-block w-[0.15em]" />}
           </Fragment>
         ))}
       </button>
@@ -290,6 +267,7 @@ function MaettiWord() {
           заголовка и поток секции. Ловит hover со слова через group. */}
       <span
         aria-hidden="true"
+        data-fit-ignore
         className="absolute top-full left-1/2 -translate-x-1/2 mt-1 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-neutral-400/80 dark:text-neutral-500/80 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors duration-300 whitespace-nowrap"
       >
         {flipped ? (
@@ -302,6 +280,42 @@ function MaettiWord() {
         )}
       </span>
     </span>
+  );
+}
+
+function FitLine({ children, className = "" }: { children: ReactNode; className?: string }) {
+  const ref = useRef<HTMLHeadingElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    const box = el?.parentElement;
+    if (!el || !box) return;
+    const fit = () => {
+      const width = box.clientWidth;
+      if (width < 1) return;
+      const hide = el.querySelectorAll<HTMLElement>("[data-fit-ignore]");
+      hide.forEach((n) => {
+        n.style.display = "none";
+      });
+      el.style.width = "max-content";
+      el.style.fontSize = "40px";
+      const sw = el.scrollWidth + 40 * 0.15;
+      hide.forEach((n) => {
+        n.style.display = "";
+      });
+      el.style.width = "";
+      if (sw < 1) return;
+      el.style.fontSize = `${Math.min(64, (40 * width * 0.99) / sw)}px`;
+    };
+    fit();
+    void document.fonts?.ready.then(fit);
+    const ro = new ResizeObserver(fit);
+    ro.observe(box);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <h2 ref={ref} className={`w-max max-w-full whitespace-nowrap ${className}`}>
+      {children}
+    </h2>
   );
 }
 
@@ -319,13 +333,13 @@ export default function HomePage() {
   return (
     <div className="flex flex-col w-full">
       {/* 1. HERO SECTION */}
-      <section className="relative min-h-[85vh] flex flex-col justify-center overflow-hidden px-6 -mt-16 md:-mt-24 pt-16 md:pt-24 pb-24 sm:pb-32 bg-white text-neutral-950">
+      <section className="relative min-h-svh md:min-h-[85vh] flex flex-col overflow-x-hidden px-6 -mt-16 md:-mt-24 pt-16 md:pt-24 bg-white text-neutral-950">
         {/* Colorful blob backgrounds. Центр круга не ниже линии на 20px выше CTA. */}
         <HeroBlobs ctaEl={ctaEl} reduceMotion={shouldReduceMotion} />
 
-        <div className="relative max-w-7xl mx-auto w-full z-10">
+        <div className="relative max-w-7xl mx-auto w-full z-10 flex-1 flex flex-col justify-center">
           {/* Kinetic Offer */}
-          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.12] sm:leading-[1.08] mb-6 select-none break-words">
+          <h1 className="text-[2.55rem] sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter sm:tracking-tight leading-[1.05] sm:leading-[1.08] mb-4 sm:mb-6 select-none break-words">
             ПОКОРЯЙТЕ <span className="hidden sm:inline"><br /></span>
             <span className="animate-gradient-flow">
               ЦИФРОВУЮ СТИХИЮ.
@@ -336,20 +350,20 @@ export default function HomePage() {
             </span>
           </h1>
 
-          <p className="max-w-2xl text-base sm:text-xl text-neutral-500 leading-relaxed mb-6">
+          <p className="max-w-2xl text-base sm:text-xl text-neutral-500 leading-relaxed mb-5 sm:mb-6">
             Создаем технологичные решения, которые выведут ваш продукт в&nbsp;топ. Разрабатываем сайты, автоматизируем процессы и&nbsp;строим экосистемы.
           </p>
 
-          <div ref={setCtaEl} className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto">
+          <div ref={setCtaEl} className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-fit">
             <TransitionLink
               href="/contacts"
-              className="w-full sm:w-auto text-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-8 py-4 rounded-full text-base transition-all duration-200 hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(37,99,235,0.3)]"
+              className="inline-flex w-fit items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-6 py-2.5 sm:px-8 sm:py-4 rounded-full text-sm sm:text-base transition-all duration-200 hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(37,99,235,0.3)]"
             >
               Связаться с нами
             </TransitionLink>
             <TransitionLink
               href="/uslugi"
-              className="w-full sm:w-auto text-center justify-center bg-neutral-900 hover:bg-neutral-800 text-white font-bold px-8 py-4 rounded-full text-base transition-all duration-200 flex items-center gap-2 hover:scale-105 active:scale-95"
+              className="hidden sm:inline-flex w-auto items-center justify-center bg-neutral-900 hover:bg-neutral-800 text-white font-bold px-8 py-4 rounded-full text-base transition-all duration-200 gap-2 hover:scale-105 active:scale-95"
             >
               <span>Наши услуги</span>
               <ChevronRight className="w-4 h-4" />
@@ -359,7 +373,7 @@ export default function HomePage() {
 
         {/* Endless scrolling kinetic typography */}
         {!shouldReduceMotion ? (
-          <div className="absolute bottom-6 left-0 right-0 w-full overflow-hidden py-4 border-y border-neutral-200 select-none bg-white/50 backdrop-blur-xs pointer-events-none">
+          <div className="relative z-10 w-full overflow-hidden py-3 sm:py-4 sm:mt-3 mb-4 sm:mb-6 border-y border-neutral-200 select-none bg-white/50 backdrop-blur-xs pointer-events-none">
             <div className="flex whitespace-nowrap animate-marquee">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div
@@ -379,7 +393,7 @@ export default function HomePage() {
             </div>
           </div>
         ) : (
-          <div className="absolute bottom-6 left-0 right-0 w-full py-4 border-y border-neutral-200 bg-white/40 text-center text-neutral-400 text-sm font-bold tracking-widest uppercase">
+          <div className="relative z-10 w-full py-3 sm:py-4 sm:mt-3 mb-4 sm:mb-6 border-y border-neutral-200 bg-white/40 text-center text-neutral-400 text-sm font-bold tracking-widest uppercase">
             {MARQUEE_ITEMS.join(" • ")}
           </div>
         )}
@@ -392,11 +406,11 @@ export default function HomePage() {
       <section className="py-16 sm:py-24 px-6 bg-neutral-50 dark:bg-neutral-950 border-y border-neutral-200 dark:border-neutral-900 scroll-mt-20 md:scroll-mt-28">
         <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-5">
-            <div className="w-fit mb-6">
+            <div className="w-full mb-6">
               <WaveRule className="mb-4" />
-              <h2 className="text-3xl md:text-5xl font-black tracking-tight text-foreground">
+              <FitLine className="font-black tracking-tight text-foreground">
                 КТО ТАКИЕ <MaettiWord />?
-              </h2>
+              </FitLine>
             </div>
             <p className="text-neutral-500 leading-relaxed mb-4">
               Название говорит о&nbsp;нас больше, чем кажется на&nbsp;первый взгляд. Иногда просто стоит посмотреть на&nbsp;него под другим углом.

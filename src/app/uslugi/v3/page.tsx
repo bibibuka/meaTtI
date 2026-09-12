@@ -118,7 +118,7 @@ export default function Variant3Page() {
                           </div>
 
                           <a
-                            href="https://t.me/maetti_agency_stub"
+                            href="https://t.me/maetti_mihail"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="w-full inline-flex items-center justify-center gap-2 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold text-xs py-3 hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white transition-all duration-300"

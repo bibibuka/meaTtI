@@ -96,7 +96,8 @@ export default function DiverScroll() {
       bubble.style.left = `${(origin.right - 1).toFixed(2)}px`;
       bubble.style.top = `${(origin.top + origin.height * 0.55).toFixed(2)}px`;
       // Размеры в rem, чтобы на 27″ пузырьки росли вместе с водолазом.
-      bubble.style.width = `${shape.size / 16}rem`;
+      const k = window.matchMedia("(max-width: 767px)").matches ? 0.55 : 1;
+      bubble.style.width = `${(shape.size / 16) * k}rem`;
       bubble.style.setProperty("--bubble-drift", `${shape.drift / 16}rem`);
       bubble.style.setProperty("--bubble-rise", `${rise / 16}rem`);
       bubble.addEventListener("animationend", () => bubble.remove(), {
@@ -122,6 +123,7 @@ export default function DiverScroll() {
 
     function render(nextProgress: number) {
       progress = clamp01(nextProgress);
+      controller!.style.transform = "";
       const trackRect = track.getBoundingClientRect();
       let thumbX = 0;
       const thumbY = progress * trackRect.height;
@@ -148,28 +150,33 @@ export default function DiverScroll() {
       // clipPath триггерит перерисовку, используем более дешевую трансформацию через opacity/height
       rope.style.clipPath = `inset(0 0 ${((1 - progress) * 100).toFixed(2)}% 0)`;
 
-      // Если внизу экрана появляется интерактивный стол — водолаз не заходит внутрь него,
-      // а останавливается строго над его шапкой и при продолжении скролла поднимается вместе со столом,
-      // плавно угасая
       const deskEl = document.querySelector<HTMLElement>(".desk-shell");
+      const kelpEl = document.querySelector<HTMLElement>(".kelp-strip");
+      const thumbH = thumb.getBoundingClientRect().height;
+      const diverBottom = trackRect.top + progress * trackRect.height + thumbH / 2;
+      let floor = Infinity;
+      for (const el of [deskEl, kelpEl]) {
+        const r = el?.getBoundingClientRect();
+        if (r && r.height > 1) floor = Math.min(floor, r.top);
+      }
+      const shift = Number.isFinite(floor) ? Math.max(0, diverBottom - floor) : 0;
+      if (shift > 0) {
+        controller!.style.transform = `translate3d(0, -${shift.toFixed(2)}px, 0)`;
+      }
+
       if (deskEl) {
-        const deskRect = deskEl.getBoundingClientRect();
-        // 52px — высота шапки стола
-        const deskShift = Math.max(0, (window.innerHeight - 52) - deskRect.top);
+        const deskShift = Math.max(0, window.innerHeight - 52 - deskEl.getBoundingClientRect().top);
         if (deskShift > 0) {
-          controller!.style.transform = `translate3d(0, -${deskShift.toFixed(2)}px, 0)`;
           const fade = Math.max(0, 1 - deskShift / 70);
           controller!.style.opacity = fade.toFixed(3);
           controller!.style.pointerEvents = fade < 0.1 ? "none" : "";
           if (bubbleLayer) bubbleLayer.style.opacity = fade.toFixed(3);
         } else {
-          controller!.style.transform = "";
           controller!.style.opacity = "";
           controller!.style.pointerEvents = "";
           if (bubbleLayer) bubbleLayer.style.opacity = "";
         }
       } else {
-        controller!.style.transform = "";
         controller!.style.opacity = "";
         controller!.style.pointerEvents = "";
         if (bubbleLayer) bubbleLayer.style.opacity = "";

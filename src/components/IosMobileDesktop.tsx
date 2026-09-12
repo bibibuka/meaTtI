@@ -219,7 +219,7 @@ export default function IosMobileDesktop({
       ref={secRef}
       aria-label="maeTtI iOS Mobile Desktop"
       style={{ ...(THEMES[theme].vars as CSSProperties), background: THEMES[theme].wall }}
-      className="relative z-10 isolate h-[100svh] w-full shrink-0 select-none overflow-hidden font-sans text-[var(--desk-fg)]"
+      className="desk-shell relative z-10 isolate h-[100svh] w-full shrink-0 select-none overflow-hidden font-sans text-[var(--desk-fg)]"
     >
       {/* ЖИВЫЕ ОБОИ (орбы темы) */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -246,7 +246,7 @@ export default function IosMobileDesktop({
       <header className="relative z-40 flex h-11 items-center justify-between px-4 pt-1 select-none">
         {/* Слева: время и кнопка «К сайту» */}
         <div className="flex items-center gap-2">
-          <span className="text-[13px] font-bold text-white tracking-tight tabular-nums drop-shadow-xs">
+          <span className="text-[13px] font-bold tracking-tight tabular-nums text-[var(--desk-fg)]">
             {clock}
           </span>
           <button
@@ -256,12 +256,12 @@ export default function IosMobileDesktop({
               haptic.tick();
               onExit();
             }}
-            title="Вернуться к сайту"
-            aria-label="Вернуться к сайту"
-            className="flex items-center gap-1 rounded-full bg-white/20 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-bold text-white/95 border border-white/25 shadow-xs transition-transform hover:bg-white/30 active:scale-95 cursor-pointer"
+            title="Вернуться наверх"
+            aria-label="Наверх"
+            className="flex items-center gap-1 rounded-full bg-[var(--desk-surface)] backdrop-blur-md px-2.5 py-0.5 text-[10px] font-bold text-[var(--desk-fg)] border border-[var(--desk-border)] shadow-xs transition-transform hover:bg-[var(--desk-surface-3)] active:scale-95 cursor-pointer"
           >
             <ArrowUp className="h-3 w-3 stroke-[2.5]" />
-            <span>К сайту</span>
+            <span>Наверх</span>
           </button>
         </div>
 
@@ -378,23 +378,23 @@ export default function IosMobileDesktop({
         </div>
 
         {/* Справа: сотовая связь, Wi-Fi и батарея */}
-        <div className="flex items-center gap-1.5 text-white drop-shadow-xs">
+        <div className="flex items-center gap-1.5 text-[var(--desk-fg)]">
           {/* 4 столбика сигнала */}
           <div className="flex items-end gap-[1.5px] h-3">
-            <span className="w-[2.5px] h-1 bg-white rounded-xs" />
-            <span className="w-[2.5px] h-1.5 bg-white rounded-xs" />
-            <span className="w-[2.5px] h-2 bg-white rounded-xs" />
-            <span className="w-[2.5px] h-3 bg-white rounded-xs" />
+            <span className="w-[2.5px] h-1 bg-current rounded-xs" />
+            <span className="w-[2.5px] h-1.5 bg-current rounded-xs" />
+            <span className="w-[2.5px] h-2 bg-current rounded-xs" />
+            <span className="w-[2.5px] h-3 bg-current rounded-xs" />
           </div>
 
           <Wifi className="h-3.5 w-3.5 stroke-[2.2]" />
 
           {/* Иконка батареи iOS */}
           <div className="flex items-center">
-            <div className="relative h-3 w-5 rounded-[3px] border border-white/80 p-[1.5px] flex items-center">
+            <div className="relative h-3 w-5 rounded-[3px] border border-current p-[1.5px] flex items-center">
               <span className="h-full w-4/5 rounded-[1px] bg-emerald-400" />
             </div>
-            <span className="h-1 w-[2px] rounded-r-xs bg-white/80" />
+            <span className="h-1 w-[2px] rounded-r-xs bg-current" />
           </div>
         </div>
       </header>
@@ -402,18 +402,18 @@ export default function IosMobileDesktop({
       {/* =========================================================================
           2. ГЛАВНЫЙ ЭКРАН (SPRINGBOARD)
           ========================================================================= */}
-      <div className="relative z-20 flex h-[calc(100svh-2.75rem)] flex-col justify-between px-3 pb-3 pt-1 select-none">
+      <div className="relative z-20 flex h-[calc(100svh-2.75rem)] flex-col justify-between px-3 pb-1.5 pt-1 select-none">
         {/* ВЕРХНЯЯ ЧАСТЬ: iOS Smart Widget */}
         <div className="w-full">
-          <div className="relative overflow-hidden rounded-[26px] border border-white/30 bg-white/20 p-3.5 shadow-xl backdrop-blur-2xl text-white">
+          <div className="relative overflow-hidden rounded-[26px] border border-[var(--desk-border)] bg-[var(--desk-surface)] p-3.5 shadow-xl backdrop-blur-2xl text-[var(--desk-fg)]">
             {/* Вкладки виджета */}
             <div className="mb-2.5 flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-white/90">
-                <Disc3 className={`h-3.5 w-3.5 text-sky-400 ${isPlayingSound ? "animate-spin [animation-duration:4s]" : ""}`} />
+              <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider">
+                <Disc3 className={`h-3.5 w-3.5 text-[var(--desk-accent)] ${isPlayingSound ? "animate-spin [animation-duration:4s]" : ""}`} />
                 {widgetTab === "music" ? "Медиаплеер" : widgetTab === "notes" ? "Заметки" : "Тема обоев"}
               </span>
 
-              <div className="flex items-center gap-1 rounded-full bg-black/20 p-0.5 border border-white/10">
+              <div className="flex items-center gap-1 rounded-full bg-[var(--desk-surface-2)] p-0.5 border border-[var(--desk-border)]">
                 <button
                   type="button"
                   onClick={() => {
@@ -421,7 +421,7 @@ export default function IosMobileDesktop({
                     setWidgetTab("music");
                   }}
                   className={`rounded-full px-2 py-0.5 text-[9px] font-bold transition-colors cursor-pointer ${
-                    widgetTab === "music" ? "bg-white text-black shadow-xs" : "text-white/70 hover:text-white"
+                    widgetTab === "music" ? "bg-[var(--desk-fg)] text-[var(--desk-surface-opaque)] shadow-xs" : "text-[var(--desk-muted)]"
                   }`}
                 >
                   Плеер
@@ -433,7 +433,7 @@ export default function IosMobileDesktop({
                     setWidgetTab("notes");
                   }}
                   className={`rounded-full px-2 py-0.5 text-[9px] font-bold transition-colors cursor-pointer ${
-                    widgetTab === "notes" ? "bg-white text-black shadow-xs" : "text-white/70 hover:text-white"
+                    widgetTab === "notes" ? "bg-[var(--desk-fg)] text-[var(--desk-surface-opaque)] shadow-xs" : "text-[var(--desk-muted)]"
                   }`}
                 >
                   Заметки
@@ -445,7 +445,7 @@ export default function IosMobileDesktop({
                     setWidgetTab("wallpaper");
                   }}
                   className={`rounded-full px-2 py-0.5 text-[9px] font-bold transition-colors cursor-pointer ${
-                    widgetTab === "wallpaper" ? "bg-white text-black shadow-xs" : "text-white/70 hover:text-white"
+                    widgetTab === "wallpaper" ? "bg-[var(--desk-fg)] text-[var(--desk-surface-opaque)] shadow-xs" : "text-[var(--desk-muted)]"
                   }`}
                 >
                   Обои
@@ -465,10 +465,10 @@ export default function IosMobileDesktop({
                       )}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-xs font-bold text-white drop-shadow-xs" title={currentTrack.title}>
+                      <div className="truncate text-xs font-bold" title={currentTrack.title}>
                         {currentTrack.title}
                       </div>
-                      <div className="truncate text-[11px] text-white/80" title={currentTrack.artist}>
+                      <div className="truncate text-[11px] text-[var(--desk-muted)]" title={currentTrack.artist}>
                         {currentTrack.artist}
                       </div>
                     </div>
@@ -483,7 +483,7 @@ export default function IosMobileDesktop({
                         prevTrack();
                       }}
                       title="Предыдущий трек"
-                      className="grid h-7 w-7 place-items-center rounded-full text-white/80 transition-colors hover:text-white active:scale-90 cursor-pointer"
+                      className="grid h-7 w-7 place-items-center rounded-full text-[var(--desk-muted)] transition-colors hover:text-[var(--desk-fg)] active:scale-90 cursor-pointer"
                     >
                       <SkipBack className="h-3.5 w-3.5 stroke-[2.5]" />
                     </button>
@@ -496,12 +496,12 @@ export default function IosMobileDesktop({
                         toggleSound();
                       }}
                       title={isPlayingSound ? "Пауза" : "Слушать"}
-                      className="grid h-8 w-8 place-items-center rounded-full bg-white text-black shadow-md transition-transform hover:scale-105 active:scale-90 cursor-pointer"
+                      className="grid h-8 w-8 place-items-center rounded-full bg-[var(--desk-fg)] text-[var(--desk-surface-opaque)] shadow-md transition-transform hover:scale-105 active:scale-90 cursor-pointer"
                     >
                       {isPlayingSound ? (
-                        <Pause className="h-3.5 w-3.5 fill-black" />
+                        <Pause className="h-3.5 w-3.5 fill-current" />
                       ) : (
-                        <Play className="ml-0.5 h-3.5 w-3.5 fill-black" />
+                        <Play className="ml-0.5 h-3.5 w-3.5 fill-current" />
                       )}
                     </button>
 
@@ -513,7 +513,7 @@ export default function IosMobileDesktop({
                         nextTrack();
                       }}
                       title="Следующий трек"
-                      className="grid h-7 w-7 place-items-center rounded-full text-white/80 transition-colors hover:text-white active:scale-90 cursor-pointer"
+                      className="grid h-7 w-7 place-items-center rounded-full text-[var(--desk-muted)] transition-colors hover:text-[var(--desk-fg)] active:scale-90 cursor-pointer"
                     >
                       <SkipForward className="h-3.5 w-3.5 stroke-[2.5]" />
                     </button>
@@ -522,7 +522,7 @@ export default function IosMobileDesktop({
 
                 {/* Scrubber таймлайн */}
                 {currentTrack.type === "audio" && (
-                  <div className="flex flex-col gap-1 border-t border-white/15 pt-2">
+                  <div className="flex flex-col gap-1 border-t border-[var(--desk-border)] pt-2">
                     <input
                       type="range"
                       min={0}
@@ -530,16 +530,16 @@ export default function IosMobileDesktop({
                       step={0.5}
                       value={currentTime}
                       onChange={(e) => onSeek(parseFloat(e.target.value))}
-                      className="h-1.5 w-full appearance-none rounded-full bg-black/20 outline-none cursor-pointer [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md"
+                      className="h-1.5 w-full appearance-none rounded-full bg-[var(--desk-surface-2)] outline-none cursor-pointer [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--desk-fg)] [&::-webkit-slider-thumb]:shadow-md"
                       style={{
-                        background: `linear-gradient(to right, #38bdf8 ${
+                        background: `linear-gradient(to right, var(--desk-accent) ${
                           duration > 0 ? Math.min(100, Math.max(0, (currentTime / duration) * 100)) : 0
-                        }%, rgba(255,255,255,0.2) ${
+                        }%, var(--desk-surface-2) ${
                           duration > 0 ? Math.min(100, Math.max(0, (currentTime / duration) * 100)) : 0
                         }%)`,
                       }}
                     />
-                    <div className="flex justify-between font-mono text-[9px] font-semibold text-white/80 tabular-nums">
+                    <div className="flex justify-between font-mono text-[9px] font-semibold text-[var(--desk-muted)] tabular-nums">
                       <span>{formatTime(currentTime)}</span>
                       <span>{formatTime(duration)}</span>
                     </div>
@@ -556,9 +556,9 @@ export default function IosMobileDesktop({
                   onChange={(e) => updateNote(e.target.value)}
                   rows={2}
                   placeholder="Запишите мысль или задачу…"
-                  className="w-full resize-none rounded-xl border border-white/20 bg-black/20 p-2 text-xs text-white outline-none placeholder:text-white/50 focus:border-sky-400"
+                  className="w-full resize-none rounded-xl border border-[var(--desk-border)] bg-[var(--desk-surface-2)] p-2 text-xs text-[var(--desk-fg)] outline-none placeholder:text-[var(--desk-muted)] focus:border-[var(--desk-accent)]"
                 />
-                <div className="flex items-center justify-between text-[9px] text-white/70">
+                <div className="flex items-center justify-between text-[9px] text-[var(--desk-muted)]">
                   <span className="first-letter:uppercase">{dateStr}</span>
                   <span>автосохранение</span>
                 </div>
@@ -568,7 +568,7 @@ export default function IosMobileDesktop({
             {/* Контент: Обои */}
             {widgetTab === "wallpaper" && (
               <div className="py-1">
-                <div className="text-[10px] text-white/80 mb-2 font-medium">Выберите стиль обоев:</div>
+                <div className="text-[10px] text-[var(--desk-muted)] mb-2 font-medium">Выберите стиль обоев:</div>
                 <div className="grid grid-cols-5 gap-2">
                   {THEME_ORDER.map((t) => (
                     <button
@@ -593,7 +593,7 @@ export default function IosMobileDesktop({
         </div>
 
         {/* СРЕДНЯЯ ЧАСТЬ: Сетка приложений SpringBoard (4 колонки) */}
-        <div className="my-auto grid grid-cols-4 content-center gap-x-2 gap-y-4 px-1">
+        <div className="my-auto grid grid-cols-4 content-center gap-x-2 gap-y-2.5 px-1">
           {IOS_APPS.map((app) => {
             const Glyph = app.glyph;
             return (
@@ -605,7 +605,7 @@ export default function IosMobileDesktop({
               >
                 {/* Иконка squircle с градиентом и глянцевым бликом */}
                 <span
-                  className={`relative grid h-[56px] w-[56px] place-items-center rounded-[16px] bg-gradient-to-b ${app.gradient} border border-white/30 text-white shadow-[0_6px_20px_rgba(0,0,0,0.35)] transition-all duration-150 group-active:scale-90 group-active:brightness-90`}
+                  className={`relative grid h-[54px] w-[54px] place-items-center rounded-[16px] bg-gradient-to-b ${app.gradient} border border-white/30 text-white shadow-[0_6px_20px_rgba(0,0,0,0.35)] transition-all duration-150 group-active:scale-90 group-active:brightness-90`}
                 >
                   {/* Верхний глянцевый блик */}
                   <span className="pointer-events-none absolute inset-0 rounded-[16px] bg-gradient-to-b from-white/35 via-white/5 to-transparent" />
@@ -613,7 +613,7 @@ export default function IosMobileDesktop({
                 </span>
 
                 {/* Подпись под иконкой */}
-                <span className="max-w-[62px] truncate text-[11px] font-medium tracking-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] text-center">
+                <span className="max-w-[62px] truncate text-[11px] font-medium tracking-tight text-[var(--desk-fg)] text-center">
                   {app.label}
                 </span>
               </button>
@@ -621,8 +621,8 @@ export default function IosMobileDesktop({
           })}
         </div>
 
-        {/* НИЖНЯЯ ЧАСТЬ: Кнопка поиска + Стеклянный Dock */}
-        <div className="flex flex-col items-center gap-2">
+        {/* НИЖНЯЯ ЧАСТЬ: Кнопка поиска + Стеклянный Dock + Кнопка Наверх (Home Bar) */}
+        <div className="flex flex-col items-center gap-1.5">
           {/* Кнопка iOS Spotlight Search */}
           <button
             type="button"
@@ -631,14 +631,14 @@ export default function IosMobileDesktop({
               haptic.tick();
               setSpotlightOpen(true);
             }}
-            className="flex items-center gap-1.5 rounded-full border border-white/20 bg-black/25 px-3 py-1 text-xs font-semibold text-white/90 shadow-sm backdrop-blur-xl transition-transform hover:bg-black/35 active:scale-95 cursor-pointer"
+            className="flex items-center gap-1.5 rounded-full border border-[var(--desk-border)] bg-[var(--desk-surface)] px-3 py-0.5 text-xs font-semibold text-[var(--desk-fg)] shadow-sm backdrop-blur-xl transition-transform hover:bg-[var(--desk-surface-3)] active:scale-95 cursor-pointer"
           >
             <Search className="h-3.5 w-3.5 stroke-[2.2]" />
             <span>Поиск</span>
           </button>
 
           {/* Фиксированный iOS Dock (4 главных приложения) */}
-          <div className="w-full rounded-[30px] border border-white/30 bg-white/25 px-4 py-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.35)] backdrop-blur-2xl flex items-center justify-around">
+          <div className="w-full rounded-[30px] border border-white/30 bg-white/25 px-4 py-2 shadow-[0_12px_40px_rgba(0,0,0,0.35)] backdrop-blur-2xl flex items-center justify-around">
             {["uslugi", "keysy", "team", "contacts"].map((id) => {
               const app = IOS_APPS.find((a) => a.id === id);
               if (!app) return null;
@@ -653,7 +653,7 @@ export default function IosMobileDesktop({
                   className="group relative flex flex-col items-center outline-none cursor-pointer"
                 >
                   <span
-                    className={`relative grid h-[52px] w-[52px] place-items-center rounded-[15px] bg-gradient-to-b ${app.gradient} border border-white/30 text-white shadow-[0_6px_18px_rgba(0,0,0,0.3)] transition-all duration-150 group-active:scale-90 group-active:brightness-90`}
+                    className={`relative grid h-[50px] w-[50px] place-items-center rounded-[15px] bg-gradient-to-b ${app.gradient} border border-white/30 text-white shadow-[0_6px_18px_rgba(0,0,0,0.3)] transition-all duration-150 group-active:scale-90 group-active:brightness-90`}
                   >
                     <span className="pointer-events-none absolute inset-0 rounded-[15px] bg-gradient-to-b from-white/35 via-white/5 to-transparent" />
                     <Glyph className="h-6 w-6 stroke-[1.8] drop-shadow-xs" />
@@ -662,6 +662,25 @@ export default function IosMobileDesktop({
               );
             })}
           </div>
+
+          {/* Индикатор Home Bar и кнопка «Наверх» */}
+          <button
+            type="button"
+            onClick={() => {
+              sounds.playGlassClick();
+              haptic.tick();
+              onExit();
+            }}
+            title="Вернуться наверх к началу сайта"
+            aria-label="Наверх"
+            className="group flex flex-col items-center gap-1 cursor-pointer active:scale-95 transition-transform pt-0.5"
+          >
+            <div className="flex items-center gap-1.5 rounded-full bg-black/40 hover:bg-black/60 border border-white/25 px-4 py-1 text-[11px] font-bold text-white shadow-md backdrop-blur-xl transition-all">
+              <ArrowUp className="h-3 w-3 stroke-[2.5]" />
+              <span>Наверх</span>
+            </div>
+            <span className="h-1 w-28 rounded-full bg-white/50 transition-colors group-hover:bg-white/80" />
+          </button>
         </div>
       </div>
 
@@ -698,7 +717,7 @@ export default function IosMobileDesktop({
           </div>
 
           {/* Содержимое приложения */}
-          <div className="relative min-h-0 flex-1 flex flex-col overflow-y-auto bg-neutral-950">
+          <div className="desk-scroll relative min-h-0 flex-1 flex flex-col overflow-y-auto bg-neutral-950">
             {activeApp.href && (
               <SiteIframe
                 path={activeApp.href}

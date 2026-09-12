@@ -307,6 +307,14 @@ export default function Header() {
 
   const reduce = useReducedMotion();
   const state = isOpen ? "open" : "closed";
+
+  useEffect(() => {
+    if (!pending) return;
+    const t = window.setTimeout(() => {
+      router.push(pending.href, { scroll: !pending.href.includes("#") });
+    }, reduce ? 0 : 900);
+    return () => window.clearTimeout(t);
+  }, [pending, reduce, router]);
   // Вода в шапке. Наверху страницы её нет — шапка пропускает фон насквозь;
   // при скролле, открытом меню или переходе она спускается со своей волной.
   // На переходе завязана прямо на pending, поэтому уходит вверх вместе со
@@ -482,7 +490,7 @@ export default function Header() {
                 <div className="h-px bg-neutral-200 dark:bg-neutral-800 w-full my-1" />
 
                 <a
-                  href="https://t.me/maetti_agency_stub"
+                  href="https://t.me/maetti_mihail"
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setIsOpen(false)}
@@ -601,7 +609,7 @@ export default function Header() {
           {/* Right Action Button */}
           <div className="hidden md:flex items-center gap-4">
             <a
-              href="https://t.me/maetti_agency_stub"
+              href="https://t.me/maetti_mihail"
               target="_blank"
               rel="noopener noreferrer"
               className={`inline-flex items-center gap-2 ${isDarkHeader

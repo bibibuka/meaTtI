@@ -32,7 +32,7 @@ export default function Variant4Page() {
   const buildTelegramLink = () => {
     const names = selectedServices.map((s) => s.title).join(", ");
     const text = encodeURIComponent(`Здравствуйте! Хочу обсудить комплекс услуг: ${names} (ориентировочно от ${totalPrice.toLocaleString("ru-RU")} ₽)`);
-    return `https://t.me/maetti_agency_stub?text=${text}`;
+    return `https://t.me/maetti_mihail?text=${text}`;
   };
 
   return (

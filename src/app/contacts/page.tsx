@@ -2,72 +2,100 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Send, Terminal, ShieldCheck, RefreshCw } from "lucide-react";
+import { Send, Terminal, ShieldCheck } from "lucide-react";
 import { TransitionLink } from "@/context/TransitionContext";
 import { haptic } from "@/utils/haptics";
+
+const TELEGRAM = "https://t.me/maetti_mihail";
+const botBase = () => `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/bot`;
+
+const ERR: Record<string, string> = {
+  captcha: "C:\\MAETTI> ERROR: Captcha failed.",
+  consent: "C:\\MAETTI> ERROR: User consent required.",
+  rate: "C:\\MAETTI> ERROR: Too many requests.",
+  telegram: "C:\\MAETTI> ERROR: Telegram unavailable.",
+  config: "C:\\MAETTI> ERROR: Bot not configured.",
+};
 
 export default function ContactsPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [message, setMessage] = useState("");
-  const [consent, setConsent] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [logs, setLogs] = useState<string[]>([]);
+  const [consent, setConsent] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [captcha, setCaptcha] = useState<{ q: string; token: string } | null>(null);
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
+
+  const loadCaptcha = () => {
+    fetch(`${botBase()}/captcha.php`)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => {
+        if (d?.token && d?.q) setCaptcha({ q: d.q, token: d.token });
+      })
+      .catch(() => setCaptcha(null));
+    setCaptchaAnswer("");
+  };
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const tier = params.get("tier");
-    const budget = params.get("budget");
-    const days = params.get("days");
-    if (tier || budget || days) {
-      const lines = [
-        "Бриф из калькулятора maeTtI OS:",
-        tier ? `• Тип проекта: ${tier}` : null,
-        budget ? `• Оценка бюджета: ${Number(budget).toLocaleString("ru-RU")} ₽` : null,
-        days ? `• Срок: ~${days} рабочих дней` : null,
-      ].filter(Boolean);
-      const text = lines.join("\n");
-      queueMicrotask(() => {
-        setMessage(text);
-      });
-    }
+    loadCaptcha();
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!consent) {
-      setErrorMsg("C:\\MAETTI> ERROR: User consent required.");
+      setErrorMsg(ERR.consent);
       return;
     }
 
     setErrorMsg("");
     setIsSubmitting(true);
     haptic.tap();
-    
-    const newLogs = [
-      `C:\\MAETTI\\Contacts> set [Имя]="${name}"`,
-      `C:\\MAETTI\\Contacts> set [Контакты]="${contact}"`,
-      `C:\\MAETTI\\Contacts> send-packet.exe --secure`,
-      "Connecting to api.maetti.ru [192.168.1.100]...",
-      "Status: 200 OK - Message delivered successfully.",
-      "Redirecting to /spasibo..."
-    ];
 
-    newLogs.forEach((log, index) => {
-      setTimeout(() => {
-        setLogs((prev) => [...prev, log]);
-        if (index === 4) {
-          haptic.success();
-        }
-      }, (index + 1) * 250);
-    });
+    const fallback = () => {
+      const text = `Заявка с сайта\nИмя: ${name}\nКонтакт: ${contact}\n\n${message}`;
+      window.open(
+        `${TELEGRAM}?text=${encodeURIComponent(text)}`,
+        "_blank",
+        "noopener,noreferrer",
+      );
+      setIsSubmitting(false);
+    };
 
-    setTimeout(() => {
+    try {
+      const res = await fetch(`${botBase()}/send.php`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          contact,
+          message,
+          consent: true,
+          captcha_token: captcha?.token ?? "",
+          captcha_answer: captchaAnswer,
+        }),
+      });
+      if (res.status === 404 || res.status === 405) {
+        fallback();
+        return;
+      }
+      const data = await res.json().catch(() => null);
+      if (!data) {
+        fallback();
+        return;
+      }
+      if (!res.ok || data.ok !== true) {
+        setErrorMsg(ERR[data.error] ?? "C:\\MAETTI> ERROR: Send failed.");
+        loadCaptcha();
+        setIsSubmitting(false);
+        return;
+      }
+      haptic.success();
       router.push("/spasibo");
-    }, 2000);
+    } catch {
+      fallback();
+    }
   };
 
   return (
@@ -108,12 +136,12 @@ export default function ContactsPage() {
               <span>Форма обратной связи. Заполните поля:</span>
             </div>
             <a
-              href="https://t.me/maetti_agency_stub"
+              href={TELEGRAM}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 underline font-semibold self-start sm:self-auto"
+              className="inline-flex items-center gap-1.5 min-h-[44px] px-1 text-xs text-blue-400 hover:text-blue-300 underline font-semibold self-start sm:self-auto"
             >
-              <span>[ Наш Telegram @maetti ]</span>
+              <span>[ Наш Telegram @maetti_mihail ]</span>
             </a>
           </div>
 
@@ -122,10 +150,11 @@ export default function ContactsPage() {
             
             {/* Field 1: Name */}
             <div className="space-y-1">
-              <label className="block text-xs text-neutral-400 font-mono">
+              <label htmlFor="contact-name" className="block text-xs text-neutral-400 font-mono">
                 C:\MAETTI\Contacts&gt; set <span className="text-emerald-400 font-bold">[Имя]</span>=
               </label>
               <input
+                id="contact-name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -137,10 +166,11 @@ export default function ContactsPage() {
 
             {/* Field 2: Contact */}
             <div className="space-y-1">
-              <label className="block text-xs text-neutral-400 font-mono">
+              <label htmlFor="contact-reach" className="block text-xs text-neutral-400 font-mono">
                 C:\MAETTI\Contacts&gt; set <span className="text-emerald-400 font-bold">[Контакты]</span>=
               </label>
               <input
+                id="contact-reach"
                 type="text"
                 value={contact}
                 onChange={(e) => setContact(e.target.value)}
@@ -152,10 +182,11 @@ export default function ContactsPage() {
 
             {/* Field 3: Message */}
             <div className="space-y-1">
-              <label className="block text-xs text-neutral-400 font-mono">
+              <label htmlFor="contact-message" className="block text-xs text-neutral-400 font-mono">
                 C:\MAETTI\Contacts&gt; set <span className="text-emerald-400 font-bold">[Сообщение]</span>=
               </label>
               <textarea
+                id="contact-message"
                 rows={3}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -165,16 +196,36 @@ export default function ContactsPage() {
               />
             </div>
 
+            {captcha && (
+              <div className="space-y-1">
+                <label htmlFor="contact-captcha" className="block text-xs text-neutral-400 font-mono">
+                  C:\MAETTI\Contacts&gt; set <span className="text-emerald-400 font-bold">[Капча {captcha.q}]</span>=
+                </label>
+                <input
+                  id="contact-captcha"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={captchaAnswer}
+                  onChange={(e) => setCaptchaAnswer(e.target.value)}
+                  placeholder="Ответ"
+                  required
+                  className="w-full bg-[#111111] border border-neutral-800 focus:border-emerald-500 outline-none text-white px-3 py-2.5 text-base md:text-sm font-mono transition-colors placeholder:text-neutral-600 rounded-none"
+                />
+              </div>
+            )}
+
             {/* Consent Checkbox */}
             <div className="flex items-center gap-3 pt-1 text-xs text-neutral-400 select-none min-h-[44px]">
               <input
                 type="checkbox"
                 id="consentCheck"
                 checked={consent}
+                required
                 onChange={(e) => setConsent(e.target.checked)}
                 className="accent-emerald-500 w-5 h-5 cursor-pointer shrink-0"
               />
-              <label htmlFor="consentCheck" className="cursor-pointer leading-normal">
+              <label htmlFor="consentCheck" className="cursor-pointer leading-normal flex-1 py-2">
                 Согласен на обработку данных •{" "}
                 <TransitionLink href="/policy" className="underline hover:text-white">
                   Политика
@@ -189,19 +240,6 @@ export default function ContactsPage() {
               </div>
             )}
 
-            {/* Dynamic Console Output Logs */}
-            {logs.length > 0 && (
-              <div className="bg-[#050505] border border-neutral-800 p-3 space-y-1 text-xs font-mono text-emerald-400">
-                {logs.map((log, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <span className="text-neutral-600">&gt;</span>
-                    <span>{log}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Submit Button */}
             <div className="pt-3 flex flex-wrap items-center justify-between gap-4">
               <span className="text-xs text-neutral-500">
                 C:\MAETTI\Contacts&gt; <span className="animate-pulse font-bold text-white">_</span>
@@ -212,17 +250,8 @@ export default function ContactsPage() {
                 disabled={isSubmitting}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-neutral-200 text-black hover:bg-emerald-400 font-bold text-xs uppercase tracking-wider px-6 py-3.5 transition-all duration-200 cursor-pointer disabled:opacity-50 active:scale-95"
               >
-                {isSubmitting ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Отправка...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Отправить</span>
-                    <Send className="w-3.5 h-3.5" />
-                  </>
-                )}
+                <span>{isSubmitting ? "Отправка..." : "Отправить"}</span>
+                <Send className="w-3.5 h-3.5" />
               </button>
             </div>
 
@@ -234,9 +263,9 @@ export default function ContactsPage() {
         <div className="bg-[#111111] px-4 py-2.5 border-t border-neutral-800 text-[11px] text-neutral-500 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 select-none">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-            <span>Прямое подключение: Telegram @maetti</span>
+            <span>Прямое подключение: Telegram @maetti_mihail</span>
           </div>
-          <span className="text-[10px] sm:text-[11px] opacity-75">ИП Маетный Д. А. • ИНН 772412345678</span>
+          <span className="text-[10px] sm:text-[11px] opacity-75">ИП Маетный Д. А.</span>
         </div>
 
       </div>

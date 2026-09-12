@@ -24,12 +24,12 @@ export default function SpasiboPage() {
         </h1>
         
         <p className="text-neutral-500 dark:text-neutral-400 text-sm md:text-base leading-relaxed mb-8">
-          Ваш запрос успешно отправлен и зарегистрирован в системе. Мы свяжемся с вами в Telegram или по указанному номеру в течение 30 минут.
+          Заявка отправлена. Напишем в Telegram в течение 30 минут.
         </p>
 
         <div className="space-y-4">
           <a
-            href="https://t.me/maetti_agency_stub"
+            href="https://t.me/maetti_mihail"
             target="_blank"
             rel="noopener noreferrer"
             className="w-full inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-6 py-4 rounded-full transition-transform active:scale-95 shadow-md"

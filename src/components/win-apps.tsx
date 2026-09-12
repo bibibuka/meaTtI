@@ -2,7 +2,7 @@
 
 /* =========================================================================
    maeTtI OS — содержимое приложений рабочего стола:
-   звуковой движок, калькулятор проекта, терминал, игры, браузер, «О системе».
+   звуковой движок, терминал, игры, браузер, «О системе».
    Весь UI красится токенами --desk-* (см. desk-themes.ts); терминал —
    намеренно всегда тёмный, это его природа.
    ========================================================================= */
@@ -24,6 +24,7 @@ class SoundEngine {
   private ctx: AudioContext | null = null;
   private ambientGain: GainNode | null = null;
   private oscs: OscillatorNode[] = [];
+  private ambientGen = 0;
   public enabled = true;
 
   private init() {
@@ -65,6 +66,7 @@ class SoundEngine {
 
   // Процедурный эмбиент: пентатонический аккорд с низкочастотным фильтром
   startAmbient(volume = 0.08) {
+    this.ambientGen++;
     try {
       this.init();
       if (!this.ctx) return;
@@ -101,10 +103,12 @@ class SoundEngine {
   }
 
   stopAmbient() {
+    const gen = ++this.ambientGen;
     try {
       if (this.ctx && this.ambientGain) {
         this.ambientGain.gain.setTargetAtTime(0.001, this.ctx.currentTime, 0.5);
         setTimeout(() => {
+          if (gen !== this.ambientGen) return;
           this.oscs.forEach((o) => {
             try {
               o.stop();
@@ -124,11 +128,9 @@ export const sounds = new SoundEngine();
 
 export function TerminalApp({
   onThemeChange,
-  onOpenCalc,
   onOpenApp,
 }: {
   onThemeChange: (t: WallpaperTheme) => void;
-  onOpenCalc?: () => void;
   onOpenApp: (id: string) => void;
 }) {
   const [history, setHistory] = useState<string[]>([
@@ -160,7 +162,6 @@ export function TerminalApp({
         "  help         — эта справка",
         "  services     — услуги и стек",
         "  team         — команда",
-        "  calc         — калькулятор бюджета",
         "  theme <name> — тема: aurora, light, sunset, ice, cyber",
         "  app <id>     — открыть приложение (uslugi, keysy, team, contacts, snake, dragon)",
         "  skills       — технический стек",
@@ -171,28 +172,23 @@ export function TerminalApp({
     } else if (cmd === "services") {
       log.push(
         "Услуги maeTtI:",
-        "  • 3D и WebGL-сайты (Three.js, GLSL)",
-        "  • Веб-сервисы и SaaS (Next.js, Node.js)",
-        "  • Дизайн-системы и UI",
-        "  • PWA и мобильная разработка",
+        "  • Веб-сайты — от 40 000 ₽",
+        "  • Чат-боты и мини-приложения — от 50 000 ₽",
+        "  • Автоматизация и интеграции — от 25 000 ₽",
         "",
       );
     } else if (cmd === "team") {
       log.push(
         "Команда:",
-        "  • Lead 3D / Creative Developer",
-        "  • Senior Fullstack & System Architect",
-        "  • UI/UX & Motion Designer",
-        "  • DevOps & Cloud Engineer",
+        "  • Орлов Михаил — основатель, разработка",
+        "  • Егор Калач — сооснователь, backend",
+        "  • Аксёнов Артём — fullstack",
+        "  • Пастушенко Леонид — железо",
+        "  • Борисова Василиса — медиа",
         "",
       );
     } else if (cmd === "calc") {
-      if (onOpenCalc) {
-        log.push("Запуск калькулятора проектов…");
-        onOpenCalc();
-      } else {
-        log.push("Калькулятор не установлен.");
-      }
+      log.push("Калькулятора нет. Напишите в Telegram: @maetti");
     } else if (cmd.startsWith("theme ")) {
       const t = cmd.replace("theme ", "").trim() as WallpaperTheme;
       if (["aurora", "light", "sunset", "ice", "cyber"].includes(t)) {
@@ -208,7 +204,7 @@ export function TerminalApp({
     } else if (cmd === "skills") {
       log.push("Стек: Next.js, React, TypeScript, Three.js, TailwindCSS, Web Audio API, Node.js.");
     } else if (cmd === "contact") {
-      log.push("Telegram: @maetti_studio · Email: hello@maetti.ru");
+      log.push("Telegram: @maetti_mihail — https://t.me/maetti_mihail");
     } else if (cmd === "clear") {
       setHistory([]);
       setInput("");

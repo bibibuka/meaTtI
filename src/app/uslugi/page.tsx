@@ -63,7 +63,7 @@ function AnimatedCodeIcon({
 
   return (
     <div
-      className={`w-14 h-6 flex items-center justify-center select-none shrink-0 ${className}`}
+      className={`w-14 min-w-14 max-w-14 h-6 flex items-center justify-center select-none shrink-0 overflow-hidden ${className}`}
     >
       <svg
         className="w-2.5 h-4 shrink-0"
@@ -80,9 +80,9 @@ function AnimatedCodeIcon({
       <AnimatePresence>
         {(isTyping || text) && (
           <motion.span
-            initial={{ opacity: 0, width: 0 }}
-            animate={{ opacity: 1, width: "auto" }}
-            exit={{ opacity: 0, width: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
             className="px-1 font-mono text-[16px] md:text-[18px] font-black text-blue-600 dark:text-blue-400 overflow-hidden inline-flex items-center leading-none tracking-normal"
           >
@@ -142,7 +142,7 @@ function AnimatedBotIcon({
 
   return (
     <motion.div
-      className={`w-14 h-6 flex items-center justify-center shrink-0 ${className}`}
+      className={`w-14 min-w-14 max-w-14 h-6 flex items-center justify-center shrink-0 overflow-hidden ${className}`}
       animate={
         animating
           ? {
@@ -212,7 +212,7 @@ function AnimatedWorkflowIcon({
   return (
     <div
       key={trigger}
-      className={`w-14 h-6 flex items-center justify-center shrink-0 overflow-hidden ${className}`}
+      className={`w-14 min-w-14 max-w-14 h-6 flex items-center justify-center shrink-0 overflow-hidden ${className}`}
     >
       <svg
         className="w-6 h-6 overflow-hidden"
@@ -323,13 +323,12 @@ export default function ServicesPage() {
     };
   }, [isPending]);
 
-  // Анимация иконки — только после полного раскрытия (300ms)
   useEffect(() => {
     if (!activeId) return;
-    const timer = setTimeout(() => {
+    const t = setTimeout(() => {
       setAnimTrigger((prev) => ({ ...prev, [activeId]: (prev[activeId] || 0) + 1 }));
     }, 320);
-    return () => clearTimeout(timer);
+    return () => clearTimeout(t);
   }, [activeId]);
 
   // Плавный скролл к открытой карточке — после анимации раскрытия.
@@ -346,7 +345,7 @@ export default function ServicesPage() {
       const elementTop = window.scrollY + rect.top;
       const elementHeight = rect.height;
 
-      const headerOffset = 96; // h-24
+      const headerOffset = window.matchMedia("(min-width: 768px)").matches ? 96 : 64; // md:h-24 / h-16
       const viewportHeight = window.innerHeight;
       const visibleAreaHeight = viewportHeight - headerOffset;
 
@@ -398,14 +397,14 @@ export default function ServicesPage() {
             const Icon = ICON_MAP[sec.iconName];
 
             return (
-              <div key={sec.id} id={sec.id} className="py-6 px-4 sm:px-6 rounded-xl transition-all duration-300 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/5 scroll-mt-28 border border-transparent">
+              <div key={sec.id} id={sec.id} className="py-6 px-4 sm:px-6 rounded-xl transition-all duration-300 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/5 scroll-mt-20 md:scroll-mt-28 border border-transparent">
                 <button
                   onClick={() => toggleAccordion(sec.id)}
-                  className="w-full text-left flex items-center justify-between gap-4 py-2 group cursor-pointer focus:outline-none active:scale-[0.99] transition-transform"
+                  className="w-full text-left flex items-center justify-between gap-3 sm:gap-4 py-2 group cursor-pointer focus:outline-none active:scale-[0.99] transition-transform"
                   aria-expanded={isOpen}
                 >
-                  <div className="flex items-center gap-2.5 sm:gap-6 min-w-0 flex-1">
-                    <span className="text-xs sm:text-sm font-mono text-neutral-400 font-semibold min-w-[26px] sm:min-w-[30px]">
+                  <div className="flex items-center gap-2 sm:gap-6 min-w-0 flex-1">
+                    <span className="text-xs sm:text-sm font-mono text-neutral-400 font-semibold min-w-[26px] sm:min-w-[30px] shrink-0">
                       [{sec.num}]
                     </span>
                     <Icon
@@ -417,21 +416,26 @@ export default function ServicesPage() {
                         }`}
                     />
                     <div className="min-w-0 flex-1">
-                      <h2 className="text-base sm:text-2xl md:text-3xl font-light tracking-tight text-neutral-950 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors break-words">
+                      <h2 className="text-xl sm:text-2xl md:text-3xl font-light tracking-tight text-neutral-950 dark:text-white md:group-hover:text-blue-600 dark:md:group-hover:text-blue-400 transition-colors text-pretty [overflow-wrap:normal] [word-break:normal]">
                         {sec.title}
                       </h2>
-                      <p className="text-xs md:text-sm text-neutral-500 dark:text-neutral-400 font-light mt-1 line-clamp-1 sm:line-clamp-2">
+                      <span className="mt-0.5 block text-sm font-mono font-medium text-blue-600 dark:text-blue-400 md:hidden">
+                        {sec.price}
+                      </span>
+                      <p className="hidden md:block text-sm text-neutral-500 dark:text-neutral-400 font-light mt-1 line-clamp-2">
                         {sec.subtitle}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 sm:gap-6 shrink-0">
-                    <span className="text-xs sm:text-sm font-mono font-medium text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                    <span className="hidden md:inline text-xs sm:text-sm font-mono font-medium text-blue-600 dark:text-blue-400 whitespace-nowrap">
                       {sec.price}
                     </span>
-                    <div className={`w-10 h-10 sm:w-8 sm:h-8 rounded-full border border-neutral-300 dark:border-neutral-700 flex items-center justify-center transition-all duration-300 active:scale-90 shrink-0 ${isOpen ? "bg-neutral-950 text-white dark:bg-white dark:text-black rotate-180" : "group-hover:border-neutral-400"}`}>
-                      {isOpen ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                    <div className="grid size-11 place-items-center shrink-0">
+                      <div className={`size-7 sm:size-8 rounded-full border border-neutral-300 dark:border-neutral-700 flex items-center justify-center transition-all duration-300 active:scale-90 ${isOpen ? "bg-neutral-950 text-white dark:bg-white dark:text-black rotate-180" : "group-hover:border-neutral-400"}`}>
+                        {isOpen ? <Minus className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                      </div>
                     </div>
                   </div>
                 </button>
@@ -439,43 +443,20 @@ export default function ServicesPage() {
                 <AnimatePresence initial={false}>
                   {isOpen && (
                     <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
+                      initial={{ height: 0 }}
+                      animate={{ height: "auto" }}
+                      exit={{ height: 0 }}
                       transition={{ duration: 0.3, ease: "easeInOut" }}
                       className="overflow-hidden"
                     >
-                      <div className="pt-6 pb-4 pl-0 sm:pl-16 flex flex-col md:grid md:grid-cols-12 gap-8 md:items-start">
-                        {/* Карточка стоимости и заявки: на мобиле сразу сверху, на десктопе в правой колонке */}
-                        <div className="md:col-span-4 md:order-2 self-start w-full">
-                          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-5 sm:p-8 flex flex-col justify-center gap-4 sm:gap-5 rounded-2xl md:min-h-[420px]">
-                            <div className="flex items-baseline justify-between md:block">
-                              <div>
-                                <div className="text-xs font-mono text-neutral-400 uppercase tracking-widest mb-1">Стоимость</div>
-                                <div className="text-2xl sm:text-3xl font-light text-blue-600 dark:text-blue-400">{sec.price}</div>
-                              </div>
-                              <div className="text-xs text-neutral-400 font-mono mt-1 md:mt-1.5">{sec.time}</div>
-                            </div>
-
-                            <div className="h-px bg-neutral-100 dark:bg-neutral-800" />
-
-                            <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-light leading-relaxed text-pretty">
-                              Если сомневаетесь, оставьте заявку - поможем разобраться и подобрать подходящий вариант. Итоговая стоимость может быть ниже указанной.
-                            </p>
-
-                            <a
-                              href="https://t.me/maetti_agency_stub"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="w-full inline-flex items-center justify-center gap-2 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold text-xs py-3.5 rounded-lg hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white active:scale-95 transition-all duration-200"
-                            >
-                              <span>Обсудить задачу</span>
-                              <Send className="w-3.5 h-3.5" />
-                            </a>
-                          </div>
-                        </div>
-
-                        <div className="md:col-span-8 md:order-1 space-y-4 max-w-xl">
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.22, delay: 0.28 }}
+                        className="pt-6 pb-4 pl-0 sm:pl-16 flex flex-col md:grid md:grid-cols-12 gap-8 md:items-start"
+                      >
+                        <div className="md:col-span-8 space-y-4 max-w-xl">
                           <h3 className="text-xs font-mono text-neutral-400 uppercase tracking-widest">
                             Что входит:
                           </h3>
@@ -500,7 +481,35 @@ export default function ServicesPage() {
                             Не нашли свою задачу в списке? Напишите нам - скорее всего, мы её уже делали.
                           </p>
                         </div>
-                      </div>
+
+                        <div className="md:col-span-4 self-start w-full">
+                          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-5 sm:p-8 flex flex-col justify-center gap-4 sm:gap-5 rounded-2xl md:min-h-[420px]">
+                            <div className="flex items-baseline justify-between md:block">
+                              <div>
+                                <div className="text-xs font-mono text-neutral-400 uppercase tracking-widest mb-1">Стоимость</div>
+                                <div className="text-2xl sm:text-3xl font-light text-blue-600 dark:text-blue-400">{sec.price}</div>
+                              </div>
+                              <div className="text-xs text-neutral-400 font-mono mt-1 md:mt-1.5">{sec.time}</div>
+                            </div>
+
+                            <div className="h-px bg-neutral-100 dark:bg-neutral-800" />
+
+                            <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-light leading-relaxed text-pretty">
+                              Если сомневаетесь, оставьте заявку - поможем разобраться и подобрать подходящий вариант. Итоговая стоимость может быть ниже указанной.
+                            </p>
+
+                            <a
+                              href="https://t.me/maetti_mihail"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full inline-flex items-center justify-center gap-2 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold text-xs py-3.5 rounded-lg hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white active:scale-95 transition-all duration-200"
+                            >
+                              <span>Обсудить задачу</span>
+                              <Send className="w-3.5 h-3.5" />
+                            </a>
+                          </div>
+                        </div>
+                      </motion.div>
                     </motion.div>
                   )}
                 </AnimatePresence>

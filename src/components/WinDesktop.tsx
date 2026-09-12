@@ -786,9 +786,8 @@ export default function WinDesktop() {
   // Гарантированное добавление/удаление классов desk-on и desk-locked
   useEffect(() => {
     if (embed) return;
-    const isMobile = window.innerWidth < 768;
     const root = document.documentElement;
-    if (isDeskActive && !isMobile) {
+    if (isDeskActive) {
       root.classList.add("desk-on", "desk-locked");
       document.body.classList.add("desk-locked");
     } else {
@@ -804,7 +803,6 @@ export default function WinDesktop() {
   // Магнитный доводчик к столу при прокрутке до середины (>= 45%)
   useEffect(() => {
     if (embed) return;
-    if (window.innerWidth < 768) return; // Не блокируем скролл на мобильных устройствах
 
     const io = new IntersectionObserver(
       ([entry]) => {
@@ -831,11 +829,11 @@ export default function WinDesktop() {
 
     if (secRef.current) io.observe(secRef.current);
     return () => io.disconnect();
-  }, [embed]);
+  }, [embed, phone]);
 
   // Запрет выхода с рабочего стола скроллом (когда стол активен)
   useEffect(() => {
-    if (!isDeskActive || embed || window.innerWidth < 768) return;
+    if (!isDeskActive || embed) return;
 
     const preventOuterScroll = (e: WheelEvent | TouchEvent) => {
       const target = e.target as HTMLElement | null;
