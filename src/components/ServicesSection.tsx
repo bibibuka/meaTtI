@@ -6,16 +6,21 @@ import { ArrowUpRight, MousePointerClick } from "lucide-react";
 import { Unbounded, Onest } from "next/font/google";
 import WaveRule from "@/components/WaveRule";
 
+// Оба шрифта нужны только интро на ПК, поэтому заранее их не грузим и берём
+// лишь те начертания, что там есть: font-bold и font-semibold. Подтягиваются
+// в фоне из эффекта ниже, пока секция ещё не на экране.
 const unbounded = Unbounded({
   subsets: ["cyrillic", "latin"],
-  weight: ["400", "600", "700"],
+  weight: ["600", "700"],
   display: "swap",
+  preload: false,
 });
 
 const onest = Onest({
   subsets: ["cyrillic", "latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["600"],
   display: "swap",
+  preload: false,
 });
 import { TransitionLink } from "@/context/TransitionContext";
 
@@ -142,6 +147,19 @@ export default function ServicesSection() {
     }
     return () => mq.removeEventListener("change", apply);
   }, []);
+
+  // Шрифты интро без preload: подтягиваем их в фоне сразу после загрузки
+  // страницы, чтобы к началу печати текст не мигнул шрифтом-заменителем.
+  // На телефоне и после уже увиденного интро они не нужны вовсе.
+  useEffect(() => {
+    if (inPlace !== false || isSettled) return;
+    const sample = "Мы кликните по экрану";
+    Promise.all([
+      document.fonts.load(`600 1em ${onest.style.fontFamily}`, sample),
+      document.fonts.load(`600 1em ${unbounded.style.fontFamily}`, sample),
+      document.fonts.load(`700 1em ${unbounded.style.fontFamily}`, sample),
+    ]).catch(() => {});
+  }, [inPlace, isSettled]);
 
   // Клик, которым раскрывают секцию, не должен провалиться дальше: сразу после
   // него карточки становятся кликабельными, и второй клик уводил на другую страницу.

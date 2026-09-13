@@ -22,33 +22,27 @@ const NAV_LINKS = [
 ];
 
 // Бегущая волна — нижняя кромка шапки. Точки синусоиды в objectBoundingBox
-// (0..1), кадры = сдвиг фазы -> волна едет вбок, цикл бесшовный.
+// (0..1). Слой с волной вдвое шире шапки и нарисован на два периода, CSS
+// (.header-wave в globals.css) сдвигает его влево ровно на один — цикл
+// бесшовный. Двигается готовая картинка, а не перерисовывается форма каждый
+// кадр, как было при морфинге пути через framer-motion.
 // Амплитуда в долях, поэтому для закрытой (низкой) шапки она больше:
 // в пикселях волна получается примерно одинаковой в обоих состояниях.
 const AMP = { closed: 0.115, open: 0.035 };
-const PHASES = Array.from({ length: 9 }, (_, i) => (i * Math.PI) / 4); // 0..2PI
 
-const wavePoints = (phase: number, amp: number) =>
-  Array.from({ length: 41 }, (_, i) => {
-    const x = 1 - i / 40;
-    const y = 0.88 + amp * Math.sin(x * 2 * Math.PI + phase);
-    return `${x.toFixed(3)},${y.toFixed(3)}`;
+const wavePoints = (amp: number) =>
+  Array.from({ length: 81 }, (_, i) => {
+    const x = 1 - i / 80;
+    const y = 0.88 + amp * Math.sin(x * 4 * Math.PI);
+    return `${x.toFixed(4)},${y.toFixed(4)}`;
   }).join(" L ");
 
-const frames = (amp: number, shift = 0) =>
-  PHASES.map((p) => wavePoints(p + shift, amp));
-
-const fill = (pts: string[]) => pts.map((p) => `M 0,0 L 1,0 L ${p} Z`);
-const line = (pts: string[]) => pts.map((p) => `M ${p}`);
-
 const WAVE_FILL = {
-  closed: fill(frames(AMP.closed)),
-  open: fill(frames(AMP.open)),
+  closed: `M 0,0 L 1,0 L ${wavePoints(AMP.closed)} Z`,
+  open: `M 0,0 L 1,0 L ${wavePoints(AMP.open)} Z`,
 };
-const WAVE_LINE = {
-  closed: line(frames(AMP.closed)),
-  open: line(frames(AMP.open)),
-};
+// Гребень и раньше всегда рисовался с амплитудой закрытой шапки.
+const WAVE_LINE = `M ${wavePoints(AMP.closed)}`;
 
 // Штора перехода между страницами: полотно в высоту экрана + полоса волны под
 // ним. Едет сверху вниз (закрывает старую страницу), после чего идёт push, и
@@ -442,18 +436,16 @@ export default function Header() {
         )}
       </motion.div>
 
-      {/* ClipPath Definition - пауза когда шапка не видна (submerged=false) */}
+      {/* Форма стекла шапки. Сама не анимируется — едет весь слой
+          (.header-wave); меняется только амплитуда при открытии мобильного меню. */}
       <svg className="absolute w-0 h-0 pointer-events-none" aria-hidden="true">
         <defs>
           <clipPath id="liquid-glass-clip" clipPathUnits="objectBoundingBox">
             <motion.path
-              d={WAVE_FILL.closed[0]}
-              animate={{ d: reduce || !submerged ? WAVE_FILL[state][0] : WAVE_FILL[state] }}
-              transition={
-                reduce || !submerged
-                  ? { duration: 0 }
-                  : { duration: 6, repeat: Infinity, ease: "linear" }
-              }
+              d={WAVE_FILL.closed}
+              initial={false}
+              animate={{ d: WAVE_FILL[state] }}
+              transition={reduce ? { duration: 0 } : { duration: 0.3, ease: "easeInOut" }}
             />
           </clipPath>
         </defs>
@@ -527,7 +519,7 @@ export default function Header() {
         </AnimatePresence>
 
         {/* Стеклянная плашка шапки */}
-        <div className="absolute top-0 left-0 right-0 pointer-events-none h-full">
+        <div className="absolute top-0 left-0 right-0 pointer-events-none h-full overflow-x-clip">
           <motion.div
             className="absolute inset-0"
             initial={false}
@@ -538,42 +530,41 @@ export default function Header() {
                 : { duration: submerged ? 0.5 : 0.38, ease: [0.22, 1, 0.36, 1] }
             }
           >
+            {/* Слой вдвое шире шапки: стекло и гребень нарисованы на два периода
+                и едут влево на один (.header-wave). Пока воды нет — стоит. */}
             <div
-              className={`absolute inset-0 backdrop-blur-xl transition-colors duration-200 ${pending ? "bg-sky-100" : "bg-sky-100/85"
-                }`}
-              style={{
-                clipPath: "url(#liquid-glass-clip)",
-                boxShadow: scrolled ? "0 4px 30px rgba(0, 0, 0, 0.1)" : "none",
-              }}
-            />
-
-            {/* Гребень волны — кромка воды */}
-            <svg
-              className="absolute inset-0 w-full h-full"
-              viewBox="0 0 1 1"
-              preserveAspectRatio="none"
-              aria-hidden="true"
+              className="header-wave absolute inset-y-0 left-0 w-[200%]"
+              data-still={submerged ? undefined : ""}
             >
-              <motion.path
-                d={WAVE_LINE.closed[0]}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                vectorEffect="non-scaling-stroke"
-                className="text-blue-600"
-                initial={{ opacity: 0 }}
-                animate={{
-                  opacity: submerged && !pending ? 1 : 0,
-                  d: reduce || !submerged ? WAVE_LINE.closed[0] : WAVE_LINE.closed,
-                }}
-                transition={{
-                  d: reduce || !submerged
-                    ? { duration: 0 }
-                    : { duration: 6, repeat: Infinity, ease: "linear" },
-                  opacity: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+              <div
+                className={`absolute inset-0 backdrop-blur-xl transition-colors duration-200 ${pending ? "bg-sky-100" : "bg-sky-100/85"
+                  }`}
+                style={{
+                  clipPath: "url(#liquid-glass-clip)",
+                  boxShadow: scrolled ? "0 4px 30px rgba(0, 0, 0, 0.1)" : "none",
                 }}
               />
-            </svg>
+
+              {/* Гребень волны — кромка воды */}
+              <svg
+                className="absolute inset-0 w-full h-full"
+                viewBox="0 0 1 1"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                <motion.path
+                  d={WAVE_LINE}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  vectorEffect="non-scaling-stroke"
+                  className="text-blue-600"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: submerged && !pending ? 1 : 0 }}
+                  transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                />
+              </svg>
+            </div>
           </motion.div>
         </div>
 

@@ -859,6 +859,14 @@ html {
   animation: desk-orb var(--dur, 40s) ease-in-out infinite alternate;
   will-change: transform;
 }
+/* На телефоне пятна стоят: поверх них лежат панели с сильным размытием,
+   и движение фона заставляло пересчитывать размытие каждый кадр. */
+@media (max-width: 767px) {
+  .desk-orb {
+    animation: none;
+    will-change: auto;
+  }
+}
 
 /* Тонкий скроллбар в тон темы внутри окон и списков стола. */
 .desk-scroll {
@@ -944,5 +952,22 @@ body.desk-locked {
 }
 .desk-on .diver-thumb {
   pointer-events: none;
+}
+
+/* Волна шапки: слой вдвое шире шапки, нарисован на два периода и уезжает
+   влево ровно на один за 6s — тот же такт, что у .wave-rule. Браузер двигает
+   готовую картинку (transform), а не перерисовывает форму под размытием.
+   Стоит, пока шапка без воды, и пока она спрятана на рабочем столе. */
+@keyframes header-wave {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.header-wave {
+  animation: header-wave 6s linear infinite;
+}
+.header-wave[data-still],
+.desk-on .header-wave {
+  animation-play-state: paused;
 }
 

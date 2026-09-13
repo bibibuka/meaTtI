@@ -224,6 +224,10 @@ export default function DiverScroll() {
       return Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
     };
 
+    // Пузырьки выпускаем только во время прокрутки, не чаще пачки в 3 секунды —
+    // тот же темп, что был у таймера. В покое водолаз DOM не трогает.
+    let lastBurstAt = 0;
+
     function syncFromScroll() {
       frame = 0;
       const nextScrollTop = window.scrollY;
@@ -233,6 +237,11 @@ export default function DiverScroll() {
       if (nextScrollTop !== previousScrollTop) {
         setDirection(nextProgress);
         showMovement();
+        const now = performance.now();
+        if (now - lastBurstAt > 3_000) {
+          lastBurstAt = now;
+          releaseBubbleBurst();
+        }
       }
 
       previousScrollTop = nextScrollTop;
@@ -347,8 +356,6 @@ export default function DiverScroll() {
     resizeObserver.observe(document.body);
 
     render(progressFromScroll(window.scrollY, getMaxScroll()));
-    const startTimer = window.setTimeout(releaseBubbleBurst, 180);
-    const breathTimer = window.setInterval(releaseBubbleBurst, 3_000);
     activityTimer = window.setTimeout(() => {
       controller.dataset.active = "false";
     }, 1_800);
@@ -367,10 +374,8 @@ export default function DiverScroll() {
       roThumb.disconnect();
       if (frame) window.cancelAnimationFrame(frame);
       pendingBubbles.forEach(window.clearTimeout);
-      window.clearTimeout(startTimer);
       window.clearTimeout(activityTimer);
       window.clearTimeout(movementTimer);
-      window.clearInterval(breathTimer);
       bubbleLayer.replaceChildren();
     };
   }, []);
