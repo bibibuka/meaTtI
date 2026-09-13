@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import DiverScroll from "@/components/DiverScroll";
 import HoverLine from "@/components/HoverLine";
+import ViewportGate from "@/components/ViewportGate";
 
 import { TransitionProvider } from "@/context/TransitionContext";
 
@@ -58,6 +59,7 @@ export default function RootLayout({
           <Footer />
           <DiverScroll />
           <HoverLine />
+          <ViewportGate />
         </TransitionProvider>
       </body>
     </html>

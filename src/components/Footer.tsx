@@ -49,11 +49,11 @@ const DEFAULT_CONFIG = {
 
 export default function Footer() {
   const pathname = usePathname();
+  if (pathname === "/") return null;
   const config = PAGE_CONFIG[pathname] ?? DEFAULT_CONFIG;
-  const isHome = pathname === "/";
 
   return (
-    <div className={`w-full mt-auto flex-col ${config.bg} ${isHome ? "hidden md:flex" : "flex"}`}>
+    <div className={`w-full mt-auto flex flex-col ${config.bg}`}>
       {/* Своя зона под ламинарии в потоке между контентом и футером */}
       <div className="w-full">
         <KelpFrame className={config.kelpInvert ? "kelp-strip--invert" : ""} transparentBlades={config.kelpInvert} />

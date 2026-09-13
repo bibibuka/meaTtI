@@ -1082,7 +1082,7 @@ export default function WinDesktop() {
       ref={secRef}
       aria-label="maeTtI OS — интерактивный рабочий стол"
       style={{ ...(THEMES[theme].vars as CSSProperties), background: THEMES[theme].wall }}
-      className="desk-shell relative z-10 isolate h-[100svh] w-full shrink-0 select-none overflow-hidden font-sans transition-[background] duration-700 text-[var(--desk-fg)]"
+      className="desk-shell relative z-10 isolate h-dvh w-full shrink-0 select-none overflow-hidden font-sans transition-[background] duration-700 text-[var(--desk-fg)]"
     >
       {/* ЖИВЫЕ ОБОИ: два медленно дрейфующих орба */}
       <div
@@ -1245,7 +1245,7 @@ export default function WinDesktop() {
       </nav>
 
       {/* ЯРЛЫКИ: десктоп — колонки слева, мобайл — сетка */}
-      <div className="absolute bottom-16 sm:bottom-18 left-2 sm:left-3 top-14 z-10 hidden flex-col flex-wrap content-start gap-0.5 sm:gap-1 sm:flex">
+      <div className="absolute bottom-16 sm:bottom-18 left-2 sm:left-3 top-14 z-10 hidden w-max grid-cols-2 content-start gap-x-1 gap-y-0.5 sm:grid">
         {APPS.map((app) => (
           <AppTile key={app.id} app={app} selected={sel === app.id} onOpen={() => openApp(app.id)} />
         ))}
