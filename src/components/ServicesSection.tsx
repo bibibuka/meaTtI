@@ -116,6 +116,8 @@ export default function ServicesSection() {
   const [charCount, setCharCount] = useState(hasCompletedIntroInSession ? FULL_TEXT.length : 0);
   const [isTyped, setIsTyped] = useState(hasCompletedIntroInSession);
   const [canSettle, setCanSettle] = useState(hasCompletedIntroInSession);
+  const [isClickBlocked, setIsClickBlocked] = useState(false);
+  const clickBlockedUntilRef = useRef<number>(0);
   const wasAlreadySettledOnMount = useRef(hasCompletedIntroInSession);
   const [inPlace, setInPlace] = useState<boolean | null>(null);
   const inPlaceRef = useRef(false);
@@ -141,12 +143,37 @@ export default function ServicesSection() {
     return () => mq.removeEventListener("change", apply);
   }, []);
 
+  // Клик, которым раскрывают секцию, не должен провалиться дальше: сразу после
+  // него карточки становятся кликабельными, и второй клик уводил на другую страницу.
+  useEffect(() => {
+    const handleCaptureClick = (e: MouseEvent) => {
+      if (Date.now() < clickBlockedUntilRef.current) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    };
+
+    window.addEventListener("click", handleCaptureClick, { capture: true });
+    window.addEventListener("auxclick", handleCaptureClick, { capture: true });
+    return () => {
+      window.removeEventListener("click", handleCaptureClick, { capture: true });
+      window.removeEventListener("auxclick", handleCaptureClick, { capture: true });
+    };
+  }, []);
+
   const settleSection = useCallback(() => {
     hasCompletedIntroInSession = true;
     wasAlreadySettledOnMount.current = false;
     setIsSettled(true);
     setIsTyped(true);
     setCanSettle(true);
+    // На телефоне секция раскрывается сама, без клика, — там блокировать нечего.
+    if (!inPlaceRef.current) {
+      clickBlockedUntilRef.current = Date.now() + 1200;
+      setIsClickBlocked(true);
+      setTimeout(() => setIsClickBlocked(false), 1200);
+    }
     try {
       sessionStorage.setItem(SESSION_KEY, "true");
     } catch {}
@@ -352,7 +379,7 @@ export default function ServicesSection() {
             delay: wasAlreadySettledOnMount.current || inPlace ? 0 : (isSettled ? 0.25 : 0),
             ease: [0.16, 1, 0.3, 1],
           }}
-          className={`w-fit shrink-0 ${isSettled ? "pointer-events-auto" : "pointer-events-none"}`}
+          className={`w-fit shrink-0 ${isSettled && !isClickBlocked ? "pointer-events-auto" : "pointer-events-none"}`}
         >
           <WaveRule className="mb-4" />
           <h2 className="text-3xl md:text-5xl font-black tracking-tight text-foreground">
@@ -410,7 +437,7 @@ export default function ServicesSection() {
                 delay: wasAlreadySettledOnMount.current || inPlace ? 0 : (isSettled ? 0.45 + idx * 0.25 : 0),
                 ease: [0.16, 1, 0.3, 1],
               }}
-              className={`h-full ${!isSettled ? "pointer-events-none select-none" : ""}`}
+              className={`h-full ${!isSettled || isClickBlocked ? "pointer-events-none select-none" : ""}`}
             >
               <TransitionLink href={`/uslugi#${s.id}`} className="group relative block h-full">
                 <div

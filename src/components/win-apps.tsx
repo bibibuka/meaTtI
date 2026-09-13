@@ -289,7 +289,7 @@ function Overlay({
           onAction();
         }
       }}
-      className={`absolute inset-0 grid place-items-center rounded-xl bg-black/75 text-center text-white backdrop-blur-[2px] select-none ${
+      className={`desk-fade absolute inset-0 grid place-items-center rounded-xl bg-black/75 text-center text-white backdrop-blur-[2px] select-none ${
         onAction ? "cursor-pointer" : ""
       }`}
     >
@@ -899,7 +899,7 @@ export function SiteIframe({ path, title }: { path: string; title: string }) {
           target="_blank"
           rel="noopener noreferrer"
           title="Открыть в новой вкладке"
-          className="grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-700 cursor-pointer shadow-2xs active:scale-95"
+          className="grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 transition hover:bg-neutral-200 dark:hover:bg-neutral-700 cursor-pointer shadow-2xs active:scale-95"
         >
           <ArrowUpRight className="h-3.5 w-3.5 stroke-[2.5]" />
         </a>

@@ -10,7 +10,7 @@ export default function PolicyPage() {
         {/* Back Link */}
         <Link
           href="/contacts"
-          className="inline-flex items-center gap-2 min-h-[44px] text-sm text-neutral-500 hover:text-foreground transition-colors mb-8 sm:mb-12 py-2.5 px-3 -ml-2 rounded-lg active:scale-95 cursor-pointer"
+          className="inline-flex items-center gap-2 min-h-[44px] text-sm text-neutral-500 hover:text-foreground transition mb-8 sm:mb-12 py-2.5 px-3 -ml-2 rounded-lg active:scale-95 cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Вернуться к контактам</span>

@@ -81,6 +81,9 @@ const GROUPS: CaseGroup[] = [
 ];
 
 const asset = (path: string) => `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}${path}`;
+// Рядом с каждым скриншотом лежит копия шириной 320px (-thumb.webp) для ленты
+// миниатюр: иначе открытие галереи качало все оригиналы ради плашек в 80px.
+const thumbUrl = (path: string) => asset(path.replace(/\.webp$/, "-thumb.webp"));
 
 const CASES: Case[] = [
   {
@@ -386,7 +389,7 @@ function CaseDetail({
               loading={eager ? "eager" : "lazy"}
               fetchPriority={eager ? "high" : "auto"}
               decoding="async"
-              className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105 opacity-95 group-hover:opacity-100"
+              className="w-full h-full object-cover object-center transition duration-500 group-hover:scale-105 opacity-95 group-hover:opacity-100"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
 
@@ -1009,7 +1012,7 @@ export default function CasesPage() {
                             </div>
                           ) : (
                             <ArrowRight
-                              className="w-4 h-4 shrink-0 mt-0.5 transition-transform text-neutral-300 dark:text-neutral-700 group-hover:text-neutral-400 group-hover:translate-x-0.5"
+                              className="w-4 h-4 shrink-0 mt-0.5 transition text-neutral-300 dark:text-neutral-700 group-hover:text-neutral-400 group-hover:translate-x-0.5"
                             />
                           )}
                         </div>
@@ -1189,7 +1192,7 @@ export default function CasesPage() {
                   <button
                     type="button"
                     onClick={handleCloseGallery}
-                    className="p-2.5 sm:p-2 text-neutral-300 hover:text-white bg-neutral-900 border border-neutral-700 rounded-lg transition-colors cursor-pointer active:scale-90"
+                    className="p-2.5 sm:p-2 text-neutral-300 hover:text-white bg-neutral-900 border border-neutral-700 rounded-lg transition cursor-pointer active:scale-90"
                     aria-label="Закрыть галерею"
                   >
                     <X className="w-5 h-5" />
@@ -1244,7 +1247,7 @@ export default function CasesPage() {
                 <button
                   type="button"
                   onClick={handlePrevPhoto}
-                  className="md:hidden min-w-[44px] min-h-[44px] p-2.5 flex items-center justify-center text-white bg-neutral-900 border border-neutral-700 rounded-lg active:scale-95 shrink-0"
+                  className="md:hidden min-w-[44px] min-h-[44px] p-2.5 flex items-center justify-center text-white bg-neutral-900 border border-neutral-700 rounded-lg transition active:scale-95 shrink-0"
                   aria-label="Предыдущее фото"
                 >
                   <ChevronLeft className="w-5 h-5" />
@@ -1269,7 +1272,7 @@ export default function CasesPage() {
                         }`}
                       >
                         <img
-                          src={asset(item.url)}
+                          src={thumbUrl(item.url)}
                           alt={item.title || galleryCase.title}
                           loading="lazy"
                           decoding="async"
@@ -1284,7 +1287,7 @@ export default function CasesPage() {
                 <button
                   type="button"
                   onClick={handleNextPhoto}
-                  className="md:hidden min-w-[44px] min-h-[44px] p-2.5 flex items-center justify-center text-white bg-neutral-900 border border-neutral-700 rounded-lg active:scale-95 shrink-0"
+                  className="md:hidden min-w-[44px] min-h-[44px] p-2.5 flex items-center justify-center text-white bg-neutral-900 border border-neutral-700 rounded-lg transition active:scale-95 shrink-0"
                   aria-label="Следующее фото"
                 >
                   <ChevronRight className="w-5 h-5" />

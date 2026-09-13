@@ -297,6 +297,10 @@ export default function Header() {
   const transition = usePageTransition();
   const pending = transition?.pending ?? null;
   const layout = transition?.layout ?? 0;
+  // Штора почти всё время за экраном, а её каракули и волна анимируются
+  // бесконечно. Начинку рисуем, только пока штора едет или закрывает экран.
+  const [sheetOn, setSheetOn] = useState(false);
+  if (pending && !sheetOn) setSheetOn(true);
   const startTransition = (href: string) => (e?: { preventDefault?: () => void }) => {
     transition?.startTransition(href, e);
   };
@@ -366,6 +370,8 @@ export default function Header() {
   }, [activeIndex, currentPath]);
 
   useEffect(() => {
+    // В окне рабочего стола шапка скрыта — не будим её волну прокруткой.
+    if (document.documentElement.classList.contains("embed")) return;
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
     };
@@ -404,6 +410,9 @@ export default function Header() {
                 window.dispatchEvent(new Event("hashchange"));
               }, 60);
             }
+          } else {
+            // Штора уехала за экран — начинка больше не нужна.
+            setSheetOn(false);
           }
         }}
       >
@@ -411,24 +420,26 @@ export default function Header() {
           className="absolute inset-x-0 top-0 bg-sky-100"
           style={{ bottom: SHEET_BAND }}
         >
-          <SheetScene layout={layout} />
+          {sheetOn && <SheetScene layout={layout} />}
         </div>
-        <svg
-          className="absolute inset-x-0 bottom-0 w-full text-blue-600"
-          style={{ height: SHEET_BAND }}
-          viewBox="0 0 200 100"
-          preserveAspectRatio="none"
-        >
-          <path className="wave-rule fill-sky-100" d={SHEET_FILL} />
-          <path
-            className="wave-rule"
-            d={SHEET_WAVE}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
+        {sheetOn && (
+          <svg
+            className="absolute inset-x-0 bottom-0 w-full text-blue-600"
+            style={{ height: SHEET_BAND }}
+            viewBox="0 0 200 100"
+            preserveAspectRatio="none"
+          >
+            <path className="wave-rule fill-sky-100" d={SHEET_FILL} />
+            <path
+              className="wave-rule"
+              d={SHEET_WAVE}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+        )}
       </motion.div>
 
       {/* ClipPath Definition - пауза когда шапка не видна (submerged=false) */}
@@ -461,31 +472,38 @@ export default function Header() {
               className="fixed inset-0 z-40 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-2xl md:hidden flex flex-col justify-between pt-20 pb-8 px-6 overflow-y-auto"
             >
               <div className="flex flex-col gap-6 max-w-sm mx-auto w-full pt-4">
-                <nav className="flex flex-col gap-3">
+                <motion.nav
+                  className="flex flex-col gap-3"
+                  variants={listVariants}
+                  initial="closed"
+                  animate="open"
+                  exit="closed"
+                >
                   {NAV_LINKS.map((link) => {
                     const isActive =
                       currentPath === link.href ||
                       (link.href !== "/" && currentPath.startsWith(link.href));
                     return (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        onClick={(e) => {
-                          haptic.tap();
-                          setIsOpen(false);
-                          startTransition(link.href)(e);
-                        }}
-                        className={`block text-2xl font-black tracking-tight py-2 transition-colors ${
-                          isActive
-                            ? "text-blue-600"
-                            : "text-neutral-900 dark:text-neutral-100 hover:text-blue-600"
-                        }`}
-                      >
-                        {link.label}
-                      </Link>
+                      <motion.div key={link.href} variants={itemVariants}>
+                        <Link
+                          href={link.href}
+                          onClick={(e) => {
+                            haptic.tap();
+                            setIsOpen(false);
+                            startTransition(link.href)(e);
+                          }}
+                          className={`block text-2xl font-black tracking-tight py-2 transition-colors ${
+                            isActive
+                              ? "text-blue-600"
+                              : "text-neutral-900 dark:text-neutral-100 hover:text-blue-600"
+                          }`}
+                        >
+                          {link.label}
+                        </Link>
+                      </motion.div>
                     );
                   })}
-                </nav>
+                </motion.nav>
 
                 <div className="h-px bg-neutral-200 dark:bg-neutral-800 w-full my-1" />
 
@@ -566,7 +584,7 @@ export default function Header() {
             onClick={startTransition("/")}
             className="group flex items-center gap-2"
           >
-            <span className={`text-3xl font-extrabold tracking-tighter ${isDarkHeader ? "text-white" : "text-foreground"} group-hover:scale-105 transition-colors duration-200`}>
+            <span className={`text-3xl font-extrabold tracking-tighter ${isDarkHeader ? "text-white" : "text-foreground"} group-hover:scale-105 transition duration-200`}>
               maetti<span className="text-blue-500">.</span>
             </span>
           </Link>
@@ -630,7 +648,7 @@ export default function Header() {
             }}
             className={`md:hidden relative z-50 -mr-2 flex h-11 w-11 flex-col items-center justify-center gap-1.5 ${
               isDarkHeader && !isOpen ? "text-white" : "text-foreground"
-            } focus:outline-none active:scale-90 transition-colors cursor-pointer`}
+            } focus:outline-none active:scale-90 transition cursor-pointer`}
             aria-label={isOpen ? "Закрыть меню" : "Открыть меню"}
             aria-expanded={isOpen}
           >

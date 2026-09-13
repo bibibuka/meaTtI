@@ -2,6 +2,7 @@
 
 import {
   Fragment,
+  useEffect,
   useLayoutEffect,
   useRef,
   useState,
@@ -89,7 +90,7 @@ function HeroBlob({
     let start = performance.now();
     let dur = 1;
     let raf = 0;
-    let paused = document.hidden;
+    let offset = 0;
     const wobblePhase = Math.random() * Math.PI * 2;
     const wobbleA = rand(22, 48);
     const wobbleB = rand(14, 32);
@@ -122,21 +123,17 @@ function HeroBlob({
     retarget(performance.now());
 
     const tick = (now: number) => {
-      if (paused) {
-        raf = requestAnimationFrame(tick);
-        return;
-      }
       const b = cachedBox;
       let t = (now - start) / dur;
       if (t >= 1) {
         retarget(now);
         t = 0;
       }
-      const e = easeInOut(Math.min(1, t));
+      const e = easeInOut(Math.min(1, Math.max(0, t)));
       const omt = 1 - e;
       x = omt * omt * fromX + 2 * omt * e * cX + e * e * toX;
       y = omt * omt * fromY + 2 * omt * e * cY + e * e * toY;
-      const n = now * 0.001;
+      const n = (now - offset) * 0.001;
       x += wobbleA * Math.sin(n * wobbleSpeedA + wobblePhase);
       y += wobbleB * Math.cos(n * wobbleSpeedB + wobblePhase * 1.3);
       x = Math.min(b.maxX, Math.max(b.minX, x));
@@ -145,21 +142,47 @@ function HeroBlob({
       raf = requestAnimationFrame(tick);
     };
 
-    const onVis = () => {
-      paused = document.hidden;
-      if (!paused) start = performance.now() - (performance.now() - start);
+    // Цикл стоит, пока вкладка скрыта или hero далеко за экраном. На время
+    // паузы сдвигаем и часы кривой, и часы покачивания — после неё блоб
+    // продолжает ровно с того места, где замер, без рывка.
+    let running = false;
+    let offscreen = false;
+    let pausedAt = performance.now();
+    const sync = () => {
+      const run = !document.hidden && !offscreen;
+      if (run === running) return;
+      running = run;
+      const now = performance.now();
+      if (run) {
+        start += now - pausedAt;
+        offset += now - pausedAt;
+        raf = requestAnimationFrame(tick);
+      } else {
+        pausedAt = now;
+        cancelAnimationFrame(raf);
+      }
     };
-    document.addEventListener("visibilitychange", onVis);
+    // Запас в полэкрана: блоб оживает раньше, чем покажется.
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        offscreen = !entry.isIntersecting;
+        sync();
+      },
+      { rootMargin: "50% 0px" },
+    );
+    io.observe(stage);
+    document.addEventListener("visibilitychange", sync);
     const ro = new ResizeObserver(updateBox);
     ro.observe(stage);
     if (ctaEl) ro.observe(ctaEl);
     window.addEventListener("resize", updateBox, { passive: true });
 
-    raf = requestAnimationFrame(tick);
+    sync();
     return () => {
       cancelAnimationFrame(raf);
-      document.removeEventListener("visibilitychange", onVis);
+      document.removeEventListener("visibilitychange", sync);
       window.removeEventListener("resize", updateBox);
+      io.disconnect();
       ro.disconnect();
     };
   }, [ctaEl, reduceMotion, spec, stageRef]);
@@ -201,10 +224,44 @@ function HeroBlobs({
   );
 }
 
+// Заглушка на месте стола, пока его код не загружен. Класс desk-shell нужен
+// водолазу: по нему он считает, где остановиться.
+const DESK_STUB = "desk-shell h-dvh w-full bg-gradient-to-b from-[#1a4f8a] to-[#a9dbf5]";
+
 const WinDesktop = dynamic(() => import("@/components/WinDesktop"), {
   ssr: false,
-  loading: () => <div className="h-dvh w-full bg-gradient-to-b from-[#1a4f8a] to-[#a9dbf5]" aria-hidden />,
+  loading: () => <div className={DESK_STUB} aria-hidden />,
 });
+
+// Стол в самом низу главной: монтируем его (а с ним плеер и запрос mp3),
+// только когда до него остаётся экран прокрутки.
+function LazyDesk() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [near, setNear] = useState(false);
+
+  useEffect(() => {
+    // Сам код скачиваем заранее, в простое: при быстрой прокрутке вниз он
+    // уже в кэше, а загрузке страницы не мешает.
+    const warm = () => void import("@/components/WinDesktop");
+    if ("requestIdleCallback" in window) requestIdleCallback(warm);
+    else setTimeout(warm, 1500);
+
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setNear(true);
+        io.disconnect();
+      },
+      { rootMargin: "100% 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  return near ? <WinDesktop /> : <div ref={ref} className={DESK_STUB} aria-hidden />;
+}
 
 
 
@@ -436,7 +493,7 @@ export default function HomePage() {
       </section>
 
       {/* 3.5. РАБОЧИЙ СТОЛ — навигация ярлыками, шапка на нём прячется */}
-      <WinDesktop />
+      <LazyDesk />
     </div>
   );
 }

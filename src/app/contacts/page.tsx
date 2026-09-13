@@ -139,7 +139,7 @@ export default function ContactsPage() {
               href={TELEGRAM}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 min-h-[44px] px-1 text-xs text-blue-400 hover:text-blue-300 underline font-semibold self-start sm:self-auto"
+              className="inline-flex items-center gap-1.5 min-h-[44px] px-1 text-xs text-blue-400 hover:text-blue-300 transition-colors underline font-semibold self-start sm:self-auto"
             >
               <span>[ Наш Telegram @maetti_mihail ]</span>
             </a>
@@ -227,7 +227,7 @@ export default function ContactsPage() {
               />
               <label htmlFor="consentCheck" className="cursor-pointer leading-normal flex-1 py-2">
                 Согласен на обработку данных •{" "}
-                <TransitionLink href="/policy" className="underline hover:text-white">
+                <TransitionLink href="/policy" className="underline hover:text-white transition-colors">
                   Политика
                 </TransitionLink>
               </label>

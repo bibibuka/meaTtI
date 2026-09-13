@@ -32,7 +32,7 @@ export default function SpasiboPage() {
             href="https://t.me/maetti_mihail"
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-6 py-4 rounded-full transition-transform active:scale-95 shadow-md"
+            className="w-full inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-6 py-4 rounded-full transition active:scale-95 shadow-md"
           >
             <MessageSquareCode className="w-5 h-5" />
             <span>Написать нам напрямую</span>
@@ -40,7 +40,7 @@ export default function SpasiboPage() {
 
           <Link
             href="/"
-            className="w-full inline-flex items-center justify-center gap-2 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-foreground font-bold px-6 py-4 rounded-full transition-transform active:scale-95"
+            className="w-full inline-flex items-center justify-center gap-2 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-foreground font-bold px-6 py-4 rounded-full transition active:scale-95"
           >
             <span>На главную страницу</span>
             <ArrowRight className="w-4 h-4" />

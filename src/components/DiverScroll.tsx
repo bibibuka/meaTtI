@@ -41,6 +41,9 @@ export default function DiverScroll() {
     const controller = controllerRef.current;
     const bubbleLayer = bubbleLayerRef.current;
     if (!controller || !bubbleLayer) return;
+    // В окне рабочего стола водолаз скрыт через display: none. Пузырьки там не
+    // анимируются, animationend не приходит — и span'ы копились бы без конца.
+    if (document.documentElement.classList.contains("embed")) return;
 
     const track = controller.querySelector<HTMLElement>(".dive-track")!;
     const thumb = controller.querySelector<HTMLButtonElement>(".diver-thumb")!;
@@ -59,12 +62,23 @@ export default function DiverScroll() {
     } catch {}
     const ropeViewBoxWidth = ropeSvg.viewBox.baseVal.width;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    // кэшируем thumb ширину, чтобы не мерить каждый кадр
-    let cachedThumbWidth = thumb.getBoundingClientRect().width;
+    // кэшируем размеры водолаза, чтобы не мерить каждый кадр
+    let cachedThumbWidth = 0;
+    let cachedThumbHeight = 0;
+    const measureThumb = () => {
+      const box = thumb.getBoundingClientRect();
+      cachedThumbWidth = box.width;
+      cachedThumbHeight = box.height;
+    };
+    measureThumb();
     const roThumb = new ResizeObserver(() => {
-      cachedThumbWidth = thumb.getBoundingClientRect().width;
+      measureThumb();
       try { ropeLength = rope.getTotalLength(); } catch {}
     });
+    // Живые коллекции сами обновляются при смене страницы, а querySelector
+    // на каждом кадре прокрутки заново обходил документ.
+    const desks = document.getElementsByClassName("desk-shell");
+    const kelps = document.getElementsByClassName("kelp-strip");
     roThumb.observe(thumb);
     roThumb.observe(track);
 
@@ -84,7 +98,8 @@ export default function DiverScroll() {
 
     function releaseBubble(order: number, bubbleCount: number) {
       if (reducedMotion.matches || document.hidden) return;
-      if (controller!.style.opacity === "0") return;
+      // render() пишет прозрачность как "0.000", а не "0"
+      if (parseFloat(controller!.style.opacity) === 0) return;
       const origin = regulator.getBoundingClientRect();
       const shape = BUBBLE_SHAPES[bubbleIndex % BUBBLE_SHAPES.length];
       // Первые пузырьки пачки поднимаются выше последних.
@@ -121,10 +136,19 @@ export default function DiverScroll() {
       }
     }
 
+    // На сколько панель сейчас поднята, чтобы водолаз не залезал на ламинарии и стол.
+    let shift = 0;
+
     function render(nextProgress: number) {
       progress = clamp01(nextProgress);
-      controller!.style.transform = "";
+      // Сначала все замеры, потом все записи: вперемешку браузер пересчитывал
+      // раскладку по нескольку раз за кадр прокрутки.
       const trackRect = track.getBoundingClientRect();
+      // Панель поднята на shift — возвращаем трек на его место в потоке.
+      const trackTop = trackRect.top + shift;
+      const deskRect = desks[0]?.getBoundingClientRect();
+      const kelpRect = kelps[0]?.getBoundingClientRect();
+
       let thumbX = 0;
       const thumbY = progress * trackRect.height;
       try {
@@ -137,6 +161,19 @@ export default function DiverScroll() {
       }
       const percent = Math.round(progress * 100);
 
+      const diverBottom = trackTop + thumbY + cachedThumbHeight / 2;
+      let floor = Infinity;
+      for (const r of [deskRect, kelpRect]) {
+        if (r && r.height > 1) floor = Math.min(floor, r.top);
+      }
+      shift = Number.isFinite(floor) ? Math.max(0, diverBottom - floor) : 0;
+
+      let fade = "";
+      if (deskRect) {
+        const deskShift = Math.max(0, window.innerHeight - 52 - deskRect.top);
+        if (deskShift > 0) fade = Math.max(0, 1 - deskShift / 70).toFixed(3);
+      }
+
       thumb.style.transform = `translate3d(${thumbX.toFixed(2)}px, ${thumbY.toFixed(2)}px, 0) translateY(-50%)`;
       thumb.setAttribute("aria-valuenow", String(percent));
       thumb.setAttribute(
@@ -147,40 +184,12 @@ export default function DiverScroll() {
             ? "100 процентов, дно"
             : `${percent} процентов, глубина ${percent} метров`,
       );
-      // clipPath триггерит перерисовку, используем более дешевую трансформацию через opacity/height
       rope.style.clipPath = `inset(0 0 ${((1 - progress) * 100).toFixed(2)}% 0)`;
-
-      const deskEl = document.querySelector<HTMLElement>(".desk-shell");
-      const kelpEl = document.querySelector<HTMLElement>(".kelp-strip");
-      const thumbH = thumb.getBoundingClientRect().height;
-      const diverBottom = trackRect.top + progress * trackRect.height + thumbH / 2;
-      let floor = Infinity;
-      for (const el of [deskEl, kelpEl]) {
-        const r = el?.getBoundingClientRect();
-        if (r && r.height > 1) floor = Math.min(floor, r.top);
-      }
-      const shift = Number.isFinite(floor) ? Math.max(0, diverBottom - floor) : 0;
-      if (shift > 0) {
-        controller!.style.transform = `translate3d(0, -${shift.toFixed(2)}px, 0)`;
-      }
-
-      if (deskEl) {
-        const deskShift = Math.max(0, window.innerHeight - 52 - deskEl.getBoundingClientRect().top);
-        if (deskShift > 0) {
-          const fade = Math.max(0, 1 - deskShift / 70);
-          controller!.style.opacity = fade.toFixed(3);
-          controller!.style.pointerEvents = fade < 0.1 ? "none" : "";
-          if (bubbleLayer) bubbleLayer.style.opacity = fade.toFixed(3);
-        } else {
-          controller!.style.opacity = "";
-          controller!.style.pointerEvents = "";
-          if (bubbleLayer) bubbleLayer.style.opacity = "";
-        }
-      } else {
-        controller!.style.opacity = "";
-        controller!.style.pointerEvents = "";
-        if (bubbleLayer) bubbleLayer.style.opacity = "";
-      }
+      controller!.style.transform =
+        shift > 0 ? `translate3d(0, -${shift.toFixed(2)}px, 0)` : "";
+      controller!.style.opacity = fade;
+      controller!.style.pointerEvents = fade && parseFloat(fade) < 0.1 ? "none" : "";
+      bubbleLayer!.style.opacity = fade;
     }
 
     function setDirection(nextProgress: number) {
@@ -205,7 +214,7 @@ export default function DiverScroll() {
     }
 
     const getMaxScroll = () => {
-      const deskEl = document.querySelector<HTMLElement>(".desk-shell");
+      const deskEl = desks[0];
       if (deskEl) {
         const deskTop = deskEl.getBoundingClientRect().top + window.scrollY;
         // Водолаз останавливается над шапкой интерактивного стола и дальше вниз не идёт

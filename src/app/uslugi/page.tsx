@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Send, Plus, Minus } from "lucide-react";
 import { SECTIONS } from "./data";
@@ -291,10 +292,19 @@ function isValidSectionId(id: string) {
 }
 
 export default function ServicesPage() {
+  const pathname = usePathname();
   const transition = usePageTransition();
   const isPending = !!transition?.pending;
+  // Пришли сюда по ссылке, и шторка ещё закрывает экран (а не уходим отсюда)
+  const arriving = isPending && transition?.pending?.from !== pathname;
 
-  const [activeId, setActiveId] = useState<string | null>(null);
+  // Карточку из ссылки «/uslugi#id» раскрываем с первого кадра, прямо под шторкой:
+  // AnimatePresence initial={false} рисует её сразу открытой, без анимации, и к
+  // подъёму шторки она уже стоит на месте.
+  const pendingHash = transition?.pending?.href.split("#")[1] ?? "";
+  const [activeId, setActiveId] = useState<string | null>(
+    arriving && isValidSectionId(pendingHash) ? pendingHash : null
+  );
   const [animTrigger, setAnimTrigger] = useState<Record<string, number>>({});
 
   // URL hash — единственный источник правды: deep-link, назад/вперёд, клик.
@@ -323,21 +333,22 @@ export default function ServicesPage() {
     };
   }, [isPending]);
 
+  // Иконка «оживает» уже на виду — не под шторкой.
   useEffect(() => {
-    if (!activeId) return;
+    if (!activeId || isPending) return;
     const t = setTimeout(() => {
       setAnimTrigger((prev) => ({ ...prev, [activeId]: (prev[activeId] || 0) + 1 }));
     }, 320);
     return () => clearTimeout(t);
-  }, [activeId]);
+  }, [activeId, isPending]);
 
-  // Плавный скролл к открытой карточке — после анимации раскрытия.
-  // Работает и на клик, и на переход по ссылке: открылся — уехал в удобную позицию.
+  // Скролл к открытой карточке. Под шторкой — сразу и мгновенно (её всё равно не
+  // видно), при уходе со страницы — не трогаем, иначе плавно после раскрытия.
   useEffect(() => {
-    if (!activeId || isPending) return;
+    if (!activeId || (isPending && !arriving)) return;
     if (!isValidSectionId(activeId)) return;
 
-    const timer = setTimeout(() => {
+    const scrollToCard = () => {
       const el = document.getElementById(activeId);
       if (!el) return;
 
@@ -360,12 +371,17 @@ export default function ServicesPage() {
 
       // скроллим только если надо (не дергаем если уже в центре)
       if (Math.abs(window.scrollY - targetScroll) > 8) {
-        window.scrollTo({ top: targetScroll, behavior: "smooth" });
+        window.scrollTo({ top: targetScroll, behavior: arriving ? "instant" : "smooth" });
       }
-    }, 350);
+    };
 
+    if (arriving) {
+      scrollToCard();
+      return;
+    }
+    const timer = setTimeout(scrollToCard, 350);
     return () => clearTimeout(timer);
-  }, [activeId, isPending]);
+  }, [activeId, isPending, arriving]);
 
   const toggleAccordion = (id: string) => {
     if (isPending) return;
@@ -457,7 +473,7 @@ export default function ServicesPage() {
                       <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
+                        exit={{ opacity: 0, transition: { duration: 0.15 } }}
                         transition={{ duration: 0.22, delay: 0.28 }}
                         className="pt-6 pb-4 pl-0 sm:pl-16 flex flex-col md:grid md:grid-cols-12 gap-8 md:items-start"
                       >

@@ -41,10 +41,6 @@ export default function RootLayout({
           globals.css), и ставим мы его синхронно при разборе HTML, иначе шапка
           успеет мигнуть. Любая ссылка изнутри окна выводит на настоящий сайт
           поверх симуляции — перехватываем на capture, до роутера. */}
-      <head>
-        <link rel="preconnect" href="https://images.unsplash.com" />
-        <link rel="dns-prefetch" href="https://images.unsplash.com" />
-      </head>
       <body suppressHydrationWarning className="min-h-full flex flex-col bg-background text-foreground overflow-x-hidden selection:bg-emerald-500 selection:text-white">
         <Script
           id="embed-detect"

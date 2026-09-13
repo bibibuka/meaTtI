@@ -308,11 +308,11 @@ export default function IosMobileDesktop({
           {dynamicIslandExpanded && (
             <div
               onClick={() => setDynamicIslandExpanded(false)}
-              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-start justify-center pt-14 px-4"
+              className="desk-fade fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-start justify-center pt-14 px-4"
             >
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-xs rounded-[28px] bg-neutral-950/95 border border-white/20 p-4 text-white shadow-2xl backdrop-blur-2xl animate-in zoom-in-95 duration-150"
+                className="w-full max-w-xs rounded-[28px] bg-neutral-950/95 border border-white/20 p-4 text-white shadow-2xl backdrop-blur-2xl desk-pop"
               >
                 <div className="flex items-center gap-3">
                   <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-700 shadow-md">
@@ -347,7 +347,7 @@ export default function IosMobileDesktop({
                       sounds.playGlassClick();
                       prevTrack();
                     }}
-                    className="grid h-8 w-8 place-items-center rounded-full text-neutral-300 active:scale-90"
+                    className="grid h-8 w-8 place-items-center rounded-full text-neutral-300 transition active:scale-90"
                   >
                     <SkipBack className="h-4 w-4" />
                   </button>
@@ -357,7 +357,7 @@ export default function IosMobileDesktop({
                       sounds.playGlassClick();
                       toggleSound();
                     }}
-                    className="grid h-10 w-10 place-items-center rounded-full bg-white text-black active:scale-90 shadow-md"
+                    className="grid h-10 w-10 place-items-center rounded-full bg-white text-black transition active:scale-90 shadow-md"
                   >
                     {isPlayingSound ? <Pause className="h-4 w-4 fill-black" /> : <Play className="h-4 w-4 ml-0.5 fill-black" />}
                   </button>
@@ -367,7 +367,7 @@ export default function IosMobileDesktop({
                       sounds.playGlassClick();
                       nextTrack();
                     }}
-                    className="grid h-8 w-8 place-items-center rounded-full text-neutral-300 active:scale-90"
+                    className="grid h-8 w-8 place-items-center rounded-full text-neutral-300 transition active:scale-90"
                   >
                     <SkipForward className="h-4 w-4" />
                   </button>
@@ -455,7 +455,7 @@ export default function IosMobileDesktop({
 
             {/* Контент: Плеер */}
             {widgetTab === "music" && (
-              <div className="space-y-2.5">
+              <div className="desk-fade space-y-2.5">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 flex-1 items-center gap-2.5">
                     <span className="relative grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-blue-500 via-sky-600 to-indigo-700 shadow-md">
@@ -483,7 +483,7 @@ export default function IosMobileDesktop({
                         prevTrack();
                       }}
                       title="Предыдущий трек"
-                      className="grid h-7 w-7 place-items-center rounded-full text-[var(--desk-muted)] transition-colors hover:text-[var(--desk-fg)] active:scale-90 cursor-pointer"
+                      className="grid h-7 w-7 place-items-center rounded-full text-[var(--desk-muted)] transition hover:text-[var(--desk-fg)] active:scale-90 cursor-pointer"
                     >
                       <SkipBack className="h-3.5 w-3.5 stroke-[2.5]" />
                     </button>
@@ -513,7 +513,7 @@ export default function IosMobileDesktop({
                         nextTrack();
                       }}
                       title="Следующий трек"
-                      className="grid h-7 w-7 place-items-center rounded-full text-[var(--desk-muted)] transition-colors hover:text-[var(--desk-fg)] active:scale-90 cursor-pointer"
+                      className="grid h-7 w-7 place-items-center rounded-full text-[var(--desk-muted)] transition hover:text-[var(--desk-fg)] active:scale-90 cursor-pointer"
                     >
                       <SkipForward className="h-3.5 w-3.5 stroke-[2.5]" />
                     </button>
@@ -550,7 +550,7 @@ export default function IosMobileDesktop({
 
             {/* Контент: Заметки */}
             {widgetTab === "notes" && (
-              <div className="space-y-1.5">
+              <div className="desk-fade space-y-1.5">
                 <textarea
                   value={noteText}
                   onChange={(e) => updateNote(e.target.value)}
@@ -567,7 +567,7 @@ export default function IosMobileDesktop({
 
             {/* Контент: Обои */}
             {widgetTab === "wallpaper" && (
-              <div className="py-1">
+              <div className="desk-fade py-1">
                 <div className="text-[10px] text-[var(--desk-muted)] mb-2 font-medium">Выберите стиль обоев:</div>
                 <div className="grid grid-cols-5 gap-2">
                   {THEME_ORDER.map((t) => (
@@ -581,7 +581,7 @@ export default function IosMobileDesktop({
                       }}
                       title={THEMES[t].name}
                       style={{ background: THEME_SWATCH[t] }}
-                      className={`h-7 rounded-xl border border-white/20 transition-transform active:scale-90 cursor-pointer ${
+                      className={`h-7 rounded-xl border border-white/20 transition active:scale-90 cursor-pointer ${
                         theme === t ? "ring-2 ring-white scale-105 shadow-md" : "opacity-75"
                       }`}
                     />
@@ -688,7 +688,7 @@ export default function IosMobileDesktop({
           3. ПОЛНОЭКРАННЫЙ РЕЖИМ ПРИЛОЖЕНИЯ (iOS APP VIEW)
           ========================================================================= */}
       {activeApp && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-neutral-950 text-white select-none animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex flex-col bg-neutral-950 text-white select-none desk-fade">
           {/* Верхняя навигационная панель iOS */}
           <div className="flex h-12 shrink-0 items-center justify-between border-b border-white/10 bg-neutral-900/95 px-3 backdrop-blur-xl">
             {/* Кнопка «‹ Назад» в стиле iOS */}
@@ -749,7 +749,7 @@ export default function IosMobileDesktop({
       {spotlightOpen && (
         <div
           onClick={() => setSpotlightOpen(false)}
-          className="fixed inset-0 z-50 flex flex-col bg-black/70 p-4 backdrop-blur-xl animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex flex-col bg-black/70 p-4 backdrop-blur-xl desk-fade"
         >
           <div onClick={(e) => e.stopPropagation()} className="w-full flex-1 flex flex-col max-w-md mx-auto">
             {/* Поисковая строка iOS */}
@@ -792,7 +792,7 @@ export default function IosMobileDesktop({
                     key={app.id}
                     type="button"
                     onClick={() => openApp(app.id)}
-                    className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/10 p-3 text-left transition-colors hover:bg-white/20 active:scale-[0.98] cursor-pointer"
+                    className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/10 p-3 text-left transition hover:bg-white/20 active:scale-[0.98] cursor-pointer"
                   >
                     <span
                       className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-b ${app.gradient} text-white shadow-md`}

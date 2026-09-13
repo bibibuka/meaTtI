@@ -35,10 +35,17 @@ export default function HoverLine() {
 
     sync();
 
-    // Наблюдаем за появлением новых .group при гидратации и динамических переходах
+    // Наблюдаем за появлением новых .group при гидратации и динамических переходах.
+    // Мутации идут пачками (пузырьки водолаза, печать текста) — пересканируем
+    // документ не чаще раза за кадр.
+    let raf = 0;
     const mo = new MutationObserver(() => {
-      if (!io || !mq.matches) return;
-      document.querySelectorAll(".group").forEach((el) => io!.observe(el));
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        if (!io || !mq.matches) return;
+        document.querySelectorAll(".group").forEach((el) => io!.observe(el));
+      });
     });
     mo.observe(document.body, { childList: true, subtree: true });
 
@@ -46,6 +53,7 @@ export default function HoverLine() {
     return () => {
       mq.removeEventListener("change", sync);
       mo.disconnect();
+      cancelAnimationFrame(raf);
       io?.disconnect();
       document.querySelectorAll(".at-line").forEach((el) => el.classList.remove("at-line"));
     };

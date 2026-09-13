@@ -462,7 +462,7 @@ function WidgetsContent({
               onClick={prevTrack}
               title="Предыдущий трек"
               aria-label="Предыдущий трек"
-              className="grid h-7 w-7 place-items-center rounded-full text-[var(--desk-muted)] transition-colors hover:bg-[var(--desk-surface-2)] hover:text-[var(--desk-fg)] cursor-pointer active:scale-90"
+              className="grid h-7 w-7 place-items-center rounded-full text-[var(--desk-muted)] transition hover:bg-[var(--desk-surface-2)] hover:text-[var(--desk-fg)] cursor-pointer active:scale-90"
             >
               <SkipBack className="h-3 w-3 stroke-[2.5]" />
             </button>
@@ -482,7 +482,7 @@ function WidgetsContent({
               onClick={nextTrack}
               title="Следующий трек"
               aria-label="Следующий трек"
-              className="grid h-7 w-7 place-items-center rounded-full text-[var(--desk-muted)] transition-colors hover:bg-[var(--desk-surface-2)] hover:text-[var(--desk-fg)] cursor-pointer active:scale-90"
+              className="grid h-7 w-7 place-items-center rounded-full text-[var(--desk-muted)] transition hover:bg-[var(--desk-surface-2)] hover:text-[var(--desk-fg)] cursor-pointer active:scale-90"
             >
               <SkipForward className="h-3 w-3 stroke-[2.5]" />
             </button>
@@ -803,6 +803,7 @@ export default function WinDesktop() {
   // Магнитный доводчик к столу при прокрутке до середины (>= 45%)
   useEffect(() => {
     if (embed) return;
+    let stopSnap: (() => void) | null = null;
 
     const io = new IntersectionObserver(
       ([entry]) => {
@@ -814,20 +815,64 @@ export default function WinDesktop() {
         }
 
         const snapAt = phone ? 0.85 : 0.45;
-        if (ratio >= snapAt && !userExitedRef.current && !isDeskActiveRef.current) {
+        const el = secRef.current;
+        if (el && ratio >= snapAt && !userExitedRef.current && !isDeskActiveRef.current) {
           isDeskActiveRef.current = true;
-          if (secRef.current) {
-            const top = secRef.current.getBoundingClientRect().top + window.scrollY;
-            window.scrollTo({ top, left: 0, behavior: "instant" });
-          }
-          setIsDeskActive(true);
+
+          // Доезжаем плавно и только потом включаем стол: его замок (overflow: hidden)
+          // обрывал плавную прокрутку на полпути. Колесо и палец на время доводки
+          // глушим, иначе инерция тачпада перебивает прокрутку.
+          const block = (e: Event) => {
+            if (e.cancelable) e.preventDefault();
+          };
+          const start = performance.now();
+          let raf = 0;
+          stopSnap = () => {
+            cancelAnimationFrame(raf);
+            window.removeEventListener("wheel", block);
+            window.removeEventListener("touchmove", block);
+            stopSnap = null;
+          };
+          const tick = () => {
+            if (userExitedRef.current) {
+              // Нажали «К сайту» прямо во время доводки
+              stopSnap?.();
+              isDeskActiveRef.current = false;
+              return;
+            }
+            const off = el.getBoundingClientRect().top;
+            if (Math.abs(off) < 1 || performance.now() - start > 1000) {
+              stopSnap?.();
+              // Прокрутку всё же перебили — добиваем остаток
+              if (Math.abs(off) >= 1) window.scrollBy({ top: off, left: 0, behavior: "instant" });
+              setIsDeskActive(true);
+              return;
+            }
+            raf = requestAnimationFrame(tick);
+          };
+
+          window.addEventListener("wheel", block, { passive: false });
+          window.addEventListener("touchmove", block, { passive: false });
+          const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+          window.scrollTo({
+            top: el.getBoundingClientRect().top + window.scrollY,
+            left: 0,
+            behavior: reduce ? "instant" : "smooth",
+          });
+          raf = requestAnimationFrame(tick);
         }
       },
       { threshold: [0.05, 0.45, 0.85] }
     );
 
     if (secRef.current) io.observe(secRef.current);
-    return () => io.disconnect();
+    return () => {
+      io.disconnect();
+      if (stopSnap) {
+        stopSnap();
+        isDeskActiveRef.current = false;
+      }
+    };
   }, [embed, phone]);
 
   // Запрет выхода с рабочего стола скроллом (когда стол активен)
@@ -1050,7 +1095,7 @@ export default function WinDesktop() {
   };
 
   const iconBtn =
-    "grid h-8 w-8 place-items-center rounded-lg border border-[var(--desk-border)] bg-[var(--desk-surface-2)] text-[var(--desk-muted)] transition-colors hover:bg-[var(--desk-surface-3)] hover:text-[var(--desk-fg)] cursor-pointer active:scale-95";
+    "grid h-8 w-8 place-items-center rounded-lg border border-[var(--desk-border)] bg-[var(--desk-surface-2)] text-[var(--desk-muted)] transition hover:bg-[var(--desk-surface-3)] hover:text-[var(--desk-fg)] cursor-pointer active:scale-95";
 
   if (embed) return null;
 
@@ -1144,7 +1189,7 @@ export default function WinDesktop() {
             type="button"
             onClick={handleExitDesk}
             title="Вернуться к началу сайта"
-            className="flex items-center gap-1.5 rounded-lg border border-[var(--desk-border)] bg-[var(--desk-surface-2)] px-2.5 py-1 text-xs font-bold text-[var(--desk-fg)] transition-colors hover:bg-[var(--desk-surface-3)] cursor-pointer active:scale-95"
+            className="flex items-center gap-1.5 rounded-lg border border-[var(--desk-border)] bg-[var(--desk-surface-2)] px-2.5 py-1 text-xs font-bold text-[var(--desk-fg)] transition hover:bg-[var(--desk-surface-3)] cursor-pointer active:scale-95"
           >
             <ArrowUp className="h-3.5 w-3.5 stroke-[2.5]" />
             <span className="max-sm:hidden">К сайту</span>
@@ -1190,7 +1235,7 @@ export default function WinDesktop() {
                 title={`Тема: ${THEMES[t].name}`}
                 aria-label={`Тема: ${THEMES[t].name}`}
                 style={{ background: THEME_SWATCH[t] }}
-                className={`h-3.5 w-3.5 rounded-full border border-black/10 transition-transform cursor-pointer ${
+                className={`h-3.5 w-3.5 rounded-full border border-black/10 transition cursor-pointer ${
                   theme === t ? "scale-110 ring-2 ring-[var(--desk-accent)]" : "opacity-70 hover:opacity-100"
                 }`}
               />
@@ -1286,7 +1331,7 @@ export default function WinDesktop() {
       {mobileWidgetsOpen && (
         <div
           onClick={() => setMobileWidgetsOpen(false)}
-          className="fixed inset-0 z-[60] flex justify-end bg-[var(--desk-scrim)] backdrop-blur-xs transition-opacity duration-200 sm:hidden"
+          className="fixed inset-0 z-[60] flex justify-end bg-[var(--desk-scrim)] desk-fade backdrop-blur-xs sm:hidden"
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -1382,7 +1427,7 @@ export default function WinDesktop() {
             setStartOpen((s) => !s);
           }}
           aria-expanded={startOpen}
-          className={`flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-3 text-[0.8125rem] font-bold transition-colors cursor-pointer active:scale-95 ${
+          className={`flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-3 text-[0.8125rem] font-bold transition cursor-pointer active:scale-95 ${
             startOpen
               ? "bg-[var(--desk-accent)] text-[var(--desk-accent-fg)]"
               : "bg-[var(--desk-surface-2)] text-[var(--desk-fg)] hover:bg-[var(--desk-surface-3)]"
@@ -1445,7 +1490,7 @@ export default function WinDesktop() {
               }}
               title={allMin ? "Развернуть все окна" : "Свернуть все окна"}
               aria-label={allMin ? "Развернуть все окна" : "Свернуть все окна"}
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--desk-border)] bg-[var(--desk-surface-2)] text-[var(--desk-muted)] transition-colors hover:bg-[var(--desk-surface-3)] hover:text-[var(--desk-fg)] cursor-pointer active:scale-90"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--desk-border)] bg-[var(--desk-surface-2)] text-[var(--desk-muted)] transition hover:bg-[var(--desk-surface-3)] hover:text-[var(--desk-fg)] cursor-pointer active:scale-90"
             >
               {allMin ? <Maximize2 className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
             </button>
@@ -1473,7 +1518,7 @@ export default function WinDesktop() {
                 key={app.id}
                 type="button"
                 onClick={() => openApp(app.id)}
-                className="flex flex-col items-center gap-1.5 rounded-xl p-2.5 text-[var(--desk-fg)] transition-colors hover:bg-[var(--desk-surface-2)] cursor-pointer active:scale-95"
+                className="flex flex-col items-center gap-1.5 rounded-xl p-2.5 text-[var(--desk-fg)] transition hover:bg-[var(--desk-surface-2)] cursor-pointer active:scale-95"
               >
                 <span style={tileStyle(app.tint)} className="grid h-11 w-11 place-items-center rounded-2xl border">
                   <app.glyph className="h-5 w-5 stroke-[1.75]" />
@@ -1489,7 +1534,7 @@ export default function WinDesktop() {
       {spotlightOpen && (
         <div
           onClick={() => setSpotlightOpen(false)}
-          className="absolute inset-0 z-[60] flex items-start justify-center bg-[var(--desk-scrim)] pt-24 backdrop-blur-[2px]"
+          className="desk-fade absolute inset-0 z-[60] flex items-start justify-center bg-[var(--desk-scrim)] pt-24 backdrop-blur-[2px]"
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -1570,7 +1615,7 @@ export default function WinDesktop() {
                 title={THEMES[t].name}
                 aria-label={THEMES[t].name}
                 style={{ background: THEME_SWATCH[t] }}
-                className={`h-6 w-full rounded-lg border border-black/10 transition-transform cursor-pointer ${
+                className={`h-6 w-full rounded-lg border border-black/10 transition cursor-pointer ${
                   theme === t ? "scale-105 ring-2 ring-[var(--desk-accent)]" : "opacity-75 hover:opacity-100"
                 }`}
               />
