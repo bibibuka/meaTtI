@@ -813,15 +813,14 @@ export default function WinDesktop() {
           userExitedRef.current = false;
         }
 
-        // Если пользователя увлекло до середины стола (>=45%) и он не нажимал "К сайту"
-        if (ratio >= 0.45 && !userExitedRef.current && !isDeskActiveRef.current) {
+        const snapAt = phone ? 0.85 : 0.45;
+        if (ratio >= snapAt && !userExitedRef.current && !isDeskActiveRef.current) {
           isDeskActiveRef.current = true;
-          setIsDeskActive(true);
-
           if (secRef.current) {
             const top = secRef.current.getBoundingClientRect().top + window.scrollY;
-            window.scrollTo({ top, behavior: "smooth" });
+            window.scrollTo({ top, left: 0, behavior: "instant" });
           }
+          setIsDeskActive(true);
         }
       },
       { threshold: [0.05, 0.45, 0.85] }

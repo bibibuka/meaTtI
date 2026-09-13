@@ -203,7 +203,7 @@ function HeroBlobs({
 
 const WinDesktop = dynamic(() => import("@/components/WinDesktop"), {
   ssr: false,
-  loading: () => <div className="h-[100svh] w-full bg-gradient-to-b from-[#1a4f8a] to-[#a9dbf5]" aria-hidden />,
+  loading: () => <div className="h-dvh w-full bg-gradient-to-b from-[#1a4f8a] to-[#a9dbf5]" aria-hidden />,
 });
 
 

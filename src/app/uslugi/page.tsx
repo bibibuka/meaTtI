@@ -345,7 +345,12 @@ export default function ServicesPage() {
       const elementTop = window.scrollY + rect.top;
       const elementHeight = rect.height;
 
-      const headerOffset = window.matchMedia("(min-width: 768px)").matches ? 96 : 64; // md:h-24 / h-16
+      const embed = document.documentElement.classList.contains("embed");
+      const headerOffset = embed
+        ? 12
+        : window.matchMedia("(min-width: 768px)").matches
+          ? 96
+          : 64;
       const viewportHeight = window.innerHeight;
       const visibleAreaHeight = viewportHeight - headerOffset;
 
@@ -484,7 +489,7 @@ export default function ServicesPage() {
 
                         <div className="md:col-span-4 self-start w-full">
                           <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-5 sm:p-8 flex flex-col justify-center gap-4 sm:gap-5 rounded-2xl md:min-h-[420px]">
-                            <div className="flex items-baseline justify-between md:block">
+                            <div className="flex flex-col gap-1">
                               <div>
                                 <div className="text-xs font-mono text-neutral-400 uppercase tracking-widest mb-1">Стоимость</div>
                                 <div className="text-2xl sm:text-3xl font-light text-blue-600 dark:text-blue-400">{sec.price}</div>

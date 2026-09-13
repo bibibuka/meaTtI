@@ -367,7 +367,7 @@ function SnakeBoard({ restart, active }: { restart: () => void; active: boolean 
       ctx.fillStyle = "#0a0f18";
       ctx.fillRect(0, 0, size, size);
 
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.04)";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.06)";
       ctx.lineWidth = 1;
       for (let i = 0; i <= N; i++) {
         ctx.beginPath();
@@ -379,6 +379,9 @@ function SnakeBoard({ restart, active }: { restart: () => void; active: boolean 
         ctx.lineTo(size, i * cell);
         ctx.stroke();
       }
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.28)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(1, 1, size - 2, size - 2);
 
       ctx.fillStyle = "#ef4444";
       ctx.fillRect(food.x * cell + 2, food.y * cell + 2, cell - 4, cell - 4);
@@ -469,11 +472,11 @@ function SnakeBoard({ restart, active }: { restart: () => void; active: boolean 
         ref={containerRef}
         className="relative min-h-0 w-full flex-1 flex items-center justify-center rounded-xl border border-[var(--desk-border)] bg-[#0a0f18] p-2 shadow-inner"
       >
-        <div className="relative" style={{ width: boardSize, height: boardSize }}>
+        <div className="relative overflow-hidden rounded-lg border border-white/25" style={{ width: boardSize, height: boardSize }}>
           <canvas
             ref={cv}
             style={{ width: boardSize, height: boardSize }}
-            className="block rounded-lg shadow-sm"
+            className="block"
           />
           {over && <Overlay title="Игра окончена" hint={`Счёт: ${score}`} onRestart={restart} onAction={restart} />}
         </div>

@@ -219,7 +219,7 @@ export default function IosMobileDesktop({
       ref={secRef}
       aria-label="maeTtI iOS Mobile Desktop"
       style={{ ...(THEMES[theme].vars as CSSProperties), background: THEMES[theme].wall }}
-      className="desk-shell relative z-10 isolate h-[100svh] w-full shrink-0 select-none overflow-hidden font-sans text-[var(--desk-fg)]"
+      className="desk-shell relative z-10 isolate flex h-dvh w-full shrink-0 flex-col select-none overflow-hidden font-sans text-[var(--desk-fg)]"
     >
       {/* ЖИВЫЕ ОБОИ (орбы темы) */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -402,7 +402,7 @@ export default function IosMobileDesktop({
       {/* =========================================================================
           2. ГЛАВНЫЙ ЭКРАН (SPRINGBOARD)
           ========================================================================= */}
-      <div className="relative z-20 flex h-[calc(100svh-2.75rem)] flex-col justify-between px-3 pb-1.5 pt-1 select-none">
+      <div className="relative z-20 flex min-h-0 flex-1 flex-col justify-between px-3 pb-1.5 pt-1 select-none">
         {/* ВЕРХНЯЯ ЧАСТЬ: iOS Smart Widget */}
         <div className="w-full">
           <div className="relative overflow-hidden rounded-[26px] border border-[var(--desk-border)] bg-[var(--desk-surface)] p-3.5 shadow-xl backdrop-blur-2xl text-[var(--desk-fg)]">
