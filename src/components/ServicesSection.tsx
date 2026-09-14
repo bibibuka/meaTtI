@@ -303,12 +303,16 @@ export default function ServicesSection() {
         : HEADER_HEIGHT + 12;
     const targetScrollY = Math.max(0, Math.round(window.scrollY + rect.top - targetTop));
 
+    const dir = Math.sign(targetScrollY - window.scrollY);
     window.scrollTo({ top: targetScrollY, behavior: "smooth" });
 
+    // Замок включаем, когда доехали до цели или проскочили её по инерции тачпада:
+    // раньше — мгновенный возврат оборвёт плавный подъезд. Таймер — на случай,
+    // если подъезд перебили и до цели так и не доехали.
     let locked = false;
     const anchorTimer = setTimeout(() => {
       locked = true;
-    }, 120);
+    }, 1000);
 
     const block = (e: Event) => e.preventDefault();
     const onKey = (e: KeyboardEvent) => {
@@ -317,8 +321,13 @@ export default function ServicesSection() {
       }
     };
     const onScroll = () => {
-      if (locked && Math.abs(window.scrollY - targetScrollY) > 6) {
-        window.scrollTo({ top: targetScrollY });
+      const y = window.scrollY;
+      if (!locked && (y - targetScrollY) * dir >= -6) locked = true;
+      // Возврат строго мгновенный: у html стоит scroll-behavior: smooth, и обычный
+      // scrollTo становился анимацией. Инерцию тачпада отменить нельзя (события
+      // колеса уже некэнселабельны), она сбивала эту анимацию — отсюда тряска.
+      if (locked && Math.abs(y - targetScrollY) > 6) {
+        window.scrollTo({ top: targetScrollY, behavior: "instant" });
       }
     };
 
