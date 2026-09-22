@@ -1,36 +1,25 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# maeTtI — сайт студии
 
-## Getting Started
+Next.js 16 со статическим экспортом (`output: "export"`) и PHP-бот для формы заявки (`public/bot/`).
 
-First, run the development server:
+## Разработка
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev     # http://localhost:3000
+npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Выкладка на хостинг (Apache + PHP)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Создать `public/bot/config.php` по образцу `config.example.php`: токен бота, `admin_chat_id`, секреты, `site_url`. Файл в git не попадает, но уходит в сборку.
+2. `npm run build` — готовый сайт появится в `out/`.
+3. Залить содержимое `out/` в корень сайта, включая скрытый `.htaccess`. Папка `bot/data/` должна быть доступна PHP на запись.
+4. После первой выкладки и после смены `hmac_secret` один раз открыть `https://<домен>/bot/setup.php?secret=<setup_secret>` — это привязывает вебхук бота.
+5. Проверить: прямая ссылка `/uslugi` открывается, несуществующий адрес отдаёт страницу 404, заявка с `/contacts` приходит в Telegram.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Адрес в `robots.txt` и `sitemap.xml` — `https://maetti.ru`; другой домен задаётся переменной `SITE_URL` при сборке. Редирект на HTTPS в `public/.htaccess` закомментирован: включите его, если хостинг не делает этого сам.
 
-## Learn More
+## GitHub Pages
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Каждый пуш в `main` собирает копию сайта на GitHub Pages (путь `/meaTtI`). PHP там нет, поэтому форма заявки открывает Telegram с готовым текстом. Копия закрыта от поисковиков (`noindex`).

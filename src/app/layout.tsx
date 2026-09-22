@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import DiverScroll from "@/components/DiverScroll";
 import HoverLine from "@/components/HoverLine";
 import ViewportGate from "@/components/ViewportGate";
+import { IS_PREVIEW_BUILD, SITE_URL } from "@/utils/site";
 
 import { TransitionProvider } from "@/context/TransitionContext";
 
@@ -23,11 +24,20 @@ const geistMono = Geist_Mono({
 // Страницы — клиентские компоненты и metadata сами не экспортируют: свои
 // title/description они задают через layout.tsx в папке маршрута.
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "maeTtI — IT Студия Разработки",
     template: "%s — maeTtI",
   },
   description: "Разработка высококлассных веб-сайтов, Telegram-ботов, макросов, интеграций, рекламы и SEO.",
+  // og:title и og:description для превью ссылок (Telegram, VK) Next берёт из
+  // title и description страницы сам — здесь только то, чего там нет.
+  openGraph: {
+    type: "website",
+    locale: "ru_RU",
+    siteName: "maeTtI",
+  },
+  ...(IS_PREVIEW_BUILD && { robots: { index: false, follow: false } }),
 };
 
 export default function RootLayout({

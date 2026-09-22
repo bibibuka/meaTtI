@@ -1,0 +1,63 @@
+# Настройки Apache для статической сборки (содержимое out/ в корне сайта).
+# GitHub Pages этот файл игнорирует.
+
+# Если хостинг отвечает 500 на весь сайт — он запрещает Options в .htaccess,
+# удалите эту строку.
+Options -Indexes
+
+ErrorDocument 404 /404.html
+AddDefaultCharset utf-8
+
+<IfModule mod_mime.c>
+  AddType image/webp .webp
+  AddType font/woff2 .woff2
+</IfModule>
+
+# Страница /uslugi лежит файлом uslugi.html, а рядом папка uslugi/ со
+# служебными данными роутера. Без этих правил Apache на прямой ссылке или
+# обновлении страницы находит папку и отвечает 403/404.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # HTTPS. Включите, если хостинг сам не перенаправляет с http:// (на части
+  # хостингов за прокси %{HTTPS} всегда off — будет бесконечный редирект).
+  # RewriteCond %{HTTPS} !=on
+  # RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+  # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+  # /uslugi/ → /uslugi: у страницы один адрес
+  RewriteCond %{REQUEST_FILENAME} ^(.+?)/*$
+  RewriteCond %1.html -f
+  RewriteRule ^(.+?)/+$ /$1 [R=301,L]
+
+  # /uslugi → uslugi.html
+  RewriteCond %{REQUEST_FILENAME}.html -f
+  RewriteRule ^(.+)$ $1.html [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  # Окна «рабочего стола» на главной открывают страницы сайта в iframe,
+  # поэтому SAMEORIGIN, а не DENY.
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+
+  # HTML и данные роутера (.txt) браузер перепроверяет при каждом заходе —
+  # после выкладки посетители сразу получают новую версию.
+  <FilesMatch "\.(html|txt|xml)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  # Картинки, аудио и шрифты при обновлении сайта не переименовываются — неделя.
+  <FilesMatch "\.(webp|png|jpe?g|svg|ico|mp3|woff2?)$">
+    Header set Cache-Control "public, max-age=604800"
+  </FilesMatch>
+  # Файлы сборки с хэшем в имени не меняются никогда.
+  <If "%{REQUEST_URI} =~ m#^/_next/static/#">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </If>
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml text/javascript application/javascript application/json application/xml image/svg+xml
+</IfModule>

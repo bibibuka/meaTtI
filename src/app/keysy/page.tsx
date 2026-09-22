@@ -742,8 +742,21 @@ export default function CasesPage() {
       }
       if (best !== photoIndex) setPhotoIndex(best);
     };
-    strip.addEventListener("scrollend", onEnd);
-    return () => strip.removeEventListener("scrollend", onEnd);
+    if ("onscrollend" in window) {
+      strip.addEventListener("scrollend", onEnd);
+      return () => strip.removeEventListener("scrollend", onEnd);
+    }
+    // Safari scrollend не знает — конец прокрутки ловим паузой в scroll.
+    let t = 0;
+    const onScroll = () => {
+      window.clearTimeout(t);
+      t = window.setTimeout(onEnd, 150);
+    };
+    strip.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.clearTimeout(t);
+      strip.removeEventListener("scroll", onScroll);
+    };
   }, [galleryCase, photoIndex]);
 
   // Предзагрузка соседних фото галереи, чтобы листалось без задержек
