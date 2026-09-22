@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { AnimatePresence, motion, useInView, useReducedMotion } from "framer-motion";
 import { ArrowUpRight, MousePointerClick } from "lucide-react";
 import { Unbounded, Onest } from "next/font/google";
@@ -108,6 +108,14 @@ const readSessionIntroSeen = () => {
   }
 };
 
+// Интро уже видели до этой загрузки страницы (перезагрузка в той же вкладке).
+// Снимок берётся один раз на загрузку: раскрытие секции его не меняет, иначе
+// сама анимация раскрытия стала бы мгновенной. В статическом HTML — false.
+let seenAtLoad: boolean | null = null;
+const getSeenAtLoad = () => (seenAtLoad ??= readSessionIntroSeen());
+const getSeenOnServer = () => false;
+const noSubscribe = () => () => {};
+
 export default function ServicesSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, {
@@ -117,16 +125,19 @@ export default function ServicesSection() {
   });
   const shouldReduceMotion = useReducedMotion();
 
-  const [isSettled, setIsSettled] = useState(hasCompletedIntroInSession);
+  const restored = useSyncExternalStore(noSubscribe, getSeenAtLoad, getSeenOnServer);
+  const [settled, setIsSettled] = useState(hasCompletedIntroInSession);
+  const isSettled = settled || restored;
   const [charCount, setCharCount] = useState(hasCompletedIntroInSession ? FULL_TEXT.length : 0);
   const [isTyped, setIsTyped] = useState(hasCompletedIntroInSession);
   const [canSettle, setCanSettle] = useState(hasCompletedIntroInSession);
   const [isClickBlocked, setIsClickBlocked] = useState(false);
   const clickBlockedUntilRef = useRef<number>(0);
-  const wasAlreadySettledOnMount = useRef(hasCompletedIntroInSession);
+  // Секция открылась уже раскрытой — анимации появления не нужны
+  const [instantState, setInstant] = useState(hasCompletedIntroInSession);
+  const instant = instantState || restored;
   const [inPlace, setInPlace] = useState<boolean | null>(null);
   const inPlaceRef = useRef(false);
-  const [introGo, setIntroGo] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
@@ -137,14 +148,6 @@ export default function ServicesSection() {
     };
     apply();
     mq.addEventListener("change", apply);
-    if (readSessionIntroSeen()) {
-      hasCompletedIntroInSession = true;
-      wasAlreadySettledOnMount.current = true;
-      setIsSettled(true);
-      setCharCount(FULL_TEXT.length);
-      setIsTyped(true);
-      setCanSettle(true);
-    }
     return () => mq.removeEventListener("change", apply);
   }, []);
 
@@ -182,7 +185,7 @@ export default function ServicesSection() {
 
   const settleSection = useCallback(() => {
     hasCompletedIntroInSession = true;
-    wasAlreadySettledOnMount.current = false;
+    setInstant(false);
     setIsSettled(true);
     setIsTyped(true);
     setCanSettle(true);
@@ -197,10 +200,10 @@ export default function ServicesSection() {
     } catch {}
   }, []);
 
-  useEffect(() => {
-    if (shouldReduceMotion || isSettled || !isInView || inPlace === null) return;
-    setIntroGo(true);
-  }, [isInView, isSettled, shouldReduceMotion, inPlace]);
+  // Печать стартует, когда секция дошла до середины экрана. useInView с once
+  // сам «защёлкивается», поэтому отдельное состояние не нужно; после
+  // раскрытия introGo нигде не читается.
+  const introGo = !shouldReduceMotion && isInView && inPlace !== null;
 
   // Natural typewriter effect with cadence on punctuation
   useEffect(() => {
@@ -253,14 +256,14 @@ export default function ServicesSection() {
 
   // Strict 0.75-second click block after typing completes (no click allowed during or within 750ms after typing)
   useEffect(() => {
-    if (wasAlreadySettledOnMount.current || isSettled || !isTyped) return;
+    if (instant || isSettled || !isTyped) return;
 
     const cooldownTimer = setTimeout(() => {
       setCanSettle(true);
     }, 750);
 
     return () => clearTimeout(cooldownTimer);
-  }, [isTyped, isSettled]);
+  }, [instant, isTyped, isSettled]);
 
   // Handle interaction: NO SKIPPING during typing. Click only triggers after text is finished + 0.75s passed
   const handleInteraction = useCallback((e?: React.MouseEvent) => {
@@ -404,7 +407,7 @@ export default function ServicesSection() {
         {/* Left: Title + Wave (reveals when typing completes and user clicks) */}
         <motion.div
           initial={
-            wasAlreadySettledOnMount.current || inPlace
+            instant || inPlace
               ? { opacity: 1, x: 0, filter: "blur(0px)" }
               : { opacity: 0, x: -28, filter: "blur(4px)" }
           }
@@ -414,8 +417,8 @@ export default function ServicesSection() {
               : { opacity: 0, x: -28, filter: "blur(4px)" }
           }
           transition={{
-            duration: wasAlreadySettledOnMount.current || inPlace ? 0 : 0.9,
-            delay: wasAlreadySettledOnMount.current || inPlace ? 0 : (isSettled ? 0.25 : 0),
+            duration: instant || inPlace ? 0 : 0.9,
+            delay: instant || inPlace ? 0 : (isSettled ? 0.25 : 0),
             ease: [0.16, 1, 0.3, 1],
           }}
           className={`w-fit shrink-0 ${isSettled && !isClickBlocked ? "pointer-events-auto" : "pointer-events-none"}`}
@@ -432,7 +435,7 @@ export default function ServicesSection() {
             <motion.div
               layoutId={inPlace ? undefined : "services-statement-box"}
               transition={{
-                duration: wasAlreadySettledOnMount.current || inPlace ? 0 : 2,
+                duration: instant || inPlace ? 0 : 2,
                 ease: [0.16, 1, 0.3, 1],
               }}
               className="w-full text-neutral-500 dark:text-neutral-400 text-sm md:text-base font-normal leading-relaxed text-left"
@@ -462,7 +465,7 @@ export default function ServicesSection() {
             <motion.div
               key={s.id}
               initial={
-                wasAlreadySettledOnMount.current || inPlace
+                instant || inPlace
                   ? { opacity: 1, y: 0 }
                   : { opacity: 0, y: 35 }
               }
@@ -472,8 +475,8 @@ export default function ServicesSection() {
                   : { opacity: 0, y: 35 }
               }
               transition={{
-                duration: wasAlreadySettledOnMount.current || inPlace ? 0 : 0.8,
-                delay: wasAlreadySettledOnMount.current || inPlace ? 0 : (isSettled ? 0.45 + idx * 0.25 : 0),
+                duration: instant || inPlace ? 0 : 0.8,
+                delay: instant || inPlace ? 0 : (isSettled ? 0.45 + idx * 0.25 : 0),
                 ease: [0.16, 1, 0.3, 1],
               }}
               className={`h-full ${!isSettled || isClickBlocked ? "pointer-events-none select-none" : ""}`}

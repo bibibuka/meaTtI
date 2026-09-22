@@ -20,8 +20,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin", "cyrillic"],
 });
 
+// Страницы — клиентские компоненты и metadata сами не экспортируют: свои
+// title/description они задают через layout.tsx в папке маршрута.
 export const metadata: Metadata = {
-  title: "maeTtI — IT Студия Разработки",
+  title: {
+    default: "maeTtI — IT Студия Разработки",
+    template: "%s — maeTtI",
+  },
   description: "Разработка высококлассных веб-сайтов, Telegram-ботов, макросов, интеграций, рекламы и SEO.",
 };
 
@@ -31,8 +36,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    // data-scroll-behavior: без него Next 16 при смене страницы прокручивает к
+    // началу тоже плавно (из-за scroll-behavior: smooth) — прокрутка тянулась
+    // из-под шторки и цепляла на главной интро услуг и «магнит» стола.
     <html
       lang="ru"
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased scroll-smooth`}
     >

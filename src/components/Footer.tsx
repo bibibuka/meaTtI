@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import KelpFrame from "@/components/KelpFrame";
 import { TransitionLink } from "@/context/TransitionContext";
@@ -47,8 +47,18 @@ const DEFAULT_CONFIG = {
   logo: "text-foreground",
 };
 
+// Год на момент сборки попадает в статический HTML, а в браузере считается
+// заново: после Нового года без пересборки они расходились, и React ругался
+// на гидратацию. Серверный снимок — год сборки (вшит в оба бандла через env
+// в next.config), клиентский — текущий.
+const BUILD_YEAR = Number(process.env.NEXT_PUBLIC_BUILD_YEAR) || new Date().getFullYear();
+const noSubscribe = () => () => {};
+const currentYear = () => new Date().getFullYear();
+const buildYear = () => BUILD_YEAR;
+
 export default function Footer() {
   const pathname = usePathname();
+  const year = useSyncExternalStore(noSubscribe, currentYear, buildYear);
   if (pathname === "/") return null;
   const config = PAGE_CONFIG[pathname] ?? DEFAULT_CONFIG;
 
@@ -75,7 +85,7 @@ export default function Footer() {
 
           <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center md:justify-end gap-x-3 gap-y-1 text-[11px] text-center md:text-right">
             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-              <span>© {new Date().getFullYear()} maeTtI. Все права защищены.</span>
+              <span>© {year} maeTtI. Все права защищены.</span>
               <span className="text-neutral-300 dark:text-neutral-700 hidden sm:inline">•</span>
               <TransitionLink href="/policy" className="inline-flex items-center min-h-[44px] hover:text-foreground transition-colors underline sm:no-underline px-1">
                 Политика конфиденциальности

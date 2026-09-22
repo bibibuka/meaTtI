@@ -1,7 +1,13 @@
 import React from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import WaveRule from "@/components/WaveRule";
+
+export const metadata: Metadata = {
+  title: "Политика конфиденциальности",
+  description: "Политика обработки персональных данных ИП Маетный Д. А.",
+};
 
 export default function PolicyPage() {
   return (

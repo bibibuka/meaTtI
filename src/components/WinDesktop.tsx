@@ -62,6 +62,8 @@ const APPS: DesktopApp[] = [
   { id: "dragon", label: "Дракончик", glyph: Flame, tint: "#ef4444", description: "Аркада Flappy Dragon" },
 ];
 
+const APP_ORDER: Record<string, number> = Object.fromEntries(APPS.map((a, i) => [a.id, i]));
+
 const TITLES: Record<string, string> = {
   info: "О системе",
   uslugi: "Услуги студии",
@@ -977,6 +979,8 @@ export default function WinDesktop() {
       if (spotlightOpen) return setSpotlightOpen(false);
       if (startOpen) return setStartOpen(false);
       if (menu) return setMenu(null);
+      // Стол не на экране (листают главную выше) — окна не трогаем.
+      if (!isDeskActiveRef.current) return;
       const top = [...wins].reverse().find((w) => !w.min);
       if (top) minWin(top.id);
     };
@@ -1372,14 +1376,17 @@ export default function WinDesktop() {
         </div>
       )}
 
-      {/* ОКНА */}
-      {wins.map((w, i) => (
+      {/* ОКНА. Массив wins — это порядок наложения, но рисуем окна всегда в
+          одном порядке (как в APPS), а слой задаём z-index'ом. Иначе при
+          выводе окна наверх React переставлял его узел в DOM, а iframe при
+          переносе загружается заново — терялись прокрутка и набранный текст. */}
+      {[...wins].sort((a, b) => APP_ORDER[a.id] - APP_ORDER[b.id]).map((w) => (
         <Win
           key={w.id}
           title={TITLES[w.id] || w.id}
           size={SIZES[w.id] ?? [580, 490]}
-          offset={i}
-          z={30 + i}
+          offset={wins.indexOf(w)}
+          z={30 + wins.indexOf(w)}
           min={w.min}
           focused={topWinId === w.id}
           phone={phone}
@@ -1403,8 +1410,9 @@ export default function WinDesktop() {
           {w.id === "terminal" && (
             <TerminalApp onThemeChange={changeTheme} onOpenApp={openApp} />
           )}
-          {w.id === "snake" && <Snake active={topWinId === "snake" && !w.min} />}
-          {w.id === "dragon" && <Dragon active={topWinId === "dragon" && !w.min} />}
+          {/* Игра идёт, только пока её окно сверху и стол на экране */}
+          {w.id === "snake" && <Snake active={isDeskActive && topWinId === "snake" && !w.min} />}
+          {w.id === "dragon" && <Dragon active={isDeskActive && topWinId === "dragon" && !w.min} />}
           {w.id === "info" && <InfoApp onClose={() => closeWin("info")} />}
         </Win>
       ))}

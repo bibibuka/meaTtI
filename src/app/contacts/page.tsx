@@ -10,12 +10,22 @@ const TELEGRAM = "https://t.me/maetti_mihail";
 const botBase = () => `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/bot`;
 
 const ERR: Record<string, string> = {
-  captcha: "C:\\MAETTI> ERROR: Captcha failed.",
-  consent: "C:\\MAETTI> ERROR: User consent required.",
-  rate: "C:\\MAETTI> ERROR: Too many requests.",
-  telegram: "C:\\MAETTI> ERROR: Telegram unavailable.",
-  config: "C:\\MAETTI> ERROR: Bot not configured.",
+  captcha: "C:\\MAETTI> ERROR: Неверный ответ капчи. Попробуйте ещё раз.",
+  consent: "C:\\MAETTI> ERROR: Нужно согласие на обработку данных.",
+  rate: "C:\\MAETTI> ERROR: Слишком часто. Подождите немного и отправьте снова.",
+  name: "C:\\MAETTI> ERROR: Имя — от 2 до 80 символов.",
+  contact: "C:\\MAETTI> ERROR: Контакт — от 3 до 120 символов.",
+  message: "C:\\MAETTI> ERROR: Сообщение — от 3 до 2000 символов.",
 };
+
+// Те же пределы, что проверяет public/bot/send.php. Длину считаем по
+// символам, как mb_strlen на сервере (эмодзи — один символ, а не два).
+const LIMITS = {
+  name: [2, 80],
+  contact: [3, 120],
+  message: [3, 2000],
+} as const;
+const charLen = (v: string) => [...v.trim()].length;
 
 export default function ContactsPage() {
   const router = useRouter();
@@ -27,19 +37,26 @@ export default function ContactsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [captcha, setCaptcha] = useState<{ q: string; token: string } | null>(null);
   const [captchaAnswer, setCaptchaAnswer] = useState("");
+  // Ссылка на Telegram с готовым текстом заявки — когда сайт не смог
+  // отправить её сам (нет PHP, бот не настроен, Telegram не ответил).
+  const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
 
-  const loadCaptcha = () => {
+  const fetchCaptcha = () => {
     fetch(`${botBase()}/captcha.php`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
         if (d?.token && d?.q) setCaptcha({ q: d.q, token: d.token });
       })
       .catch(() => setCaptcha(null));
+  };
+
+  const reloadCaptcha = () => {
     setCaptchaAnswer("");
+    fetchCaptcha();
   };
 
   useEffect(() => {
-    loadCaptcha();
+    fetchCaptcha();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,18 +65,36 @@ export default function ContactsPage() {
       setErrorMsg(ERR.consent);
       return;
     }
+    const values = { name, contact, message };
+    for (const key of Object.keys(LIMITS) as (keyof typeof LIMITS)[]) {
+      const [min, max] = LIMITS[key];
+      const len = charLen(values[key]);
+      if (len < min || len > max) {
+        setErrorMsg(ERR[key]);
+        return;
+      }
+    }
 
     setErrorMsg("");
+    setFallbackUrl(null);
     setIsSubmitting(true);
     haptic.tap();
 
+    // Сайт не смог отправить заявку сам — открываем Telegram с готовым
+    // текстом. Окно открывается уже после ответа сервера, и браузер может его
+    // заблокировать, поэтому ссылку показываем и в самой форме.
     const fallback = () => {
-      const text = `Заявка с сайта\nИмя: ${name}\nКонтакт: ${contact}\n\n${message}`;
-      window.open(
-        `${TELEGRAM}?text=${encodeURIComponent(text)}`,
-        "_blank",
-        "noopener,noreferrer",
-      );
+      const text = `Заявка с сайта\nИмя: ${name.trim()}\nКонтакт: ${contact.trim()}\n\n${message.trim()}`;
+      const url = `${TELEGRAM}?text=${encodeURIComponent(text)}`;
+      // Без "noopener" в параметрах: с ним window.open всегда возвращает null,
+      // и заблокированное окно не отличить от открытого.
+      const w = window.open(url, "_blank");
+      if (w) {
+        try {
+          w.opener = null;
+        } catch {}
+      }
+      setFallbackUrl(url);
       setIsSubmitting(false);
     };
 
@@ -76,7 +111,9 @@ export default function ContactsPage() {
           captcha_answer: captchaAnswer,
         }),
       });
-      if (res.status === 404 || res.status === 405) {
+      // 404/405 — на хостинге нет PHP; 5xx — бот не настроен или Telegram
+      // не ответил. В обоих случаях заявка не должна пропасть.
+      if (res.status === 404 || res.status === 405 || res.status >= 500) {
         fallback();
         return;
       }
@@ -86,8 +123,8 @@ export default function ContactsPage() {
         return;
       }
       if (!res.ok || data.ok !== true) {
-        setErrorMsg(ERR[data.error] ?? "C:\\MAETTI> ERROR: Send failed.");
-        loadCaptcha();
+        setErrorMsg(ERR[data.error] ?? "C:\\MAETTI> ERROR: Не удалось отправить. Попробуйте ещё раз.");
+        reloadCaptcha();
         setIsSubmitting(false);
         return;
       }
@@ -159,6 +196,7 @@ export default function ContactsPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Иван Петров"
+                maxLength={LIMITS.name[1]}
                 required
                 className="w-full bg-[#111111] border border-neutral-800 focus:border-emerald-500 outline-none text-white px-3 py-2.5 text-base md:text-sm font-mono transition-colors placeholder:text-neutral-600 rounded-none"
               />
@@ -175,6 +213,7 @@ export default function ContactsPage() {
                 value={contact}
                 onChange={(e) => setContact(e.target.value)}
                 placeholder="Telegram @username / Телефон / Email"
+                maxLength={LIMITS.contact[1]}
                 required
                 className="w-full bg-[#111111] border border-neutral-800 focus:border-emerald-500 outline-none text-white px-3 py-2.5 text-base md:text-sm font-mono transition-colors placeholder:text-neutral-600 rounded-none"
               />
@@ -191,6 +230,7 @@ export default function ContactsPage() {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Опишите ваш проект или задачу..."
+                maxLength={LIMITS.message[1]}
                 required
                 className="w-full bg-[#111111] border border-neutral-800 focus:border-emerald-500 outline-none text-white px-3 py-2.5 text-base md:text-sm font-mono transition-colors placeholder:text-neutral-600 resize-none rounded-none"
               />
@@ -237,6 +277,20 @@ export default function ContactsPage() {
             {errorMsg && (
               <div className="text-xs text-red-400 bg-red-950/40 border border-red-800 p-2 font-mono">
                 {errorMsg}
+              </div>
+            )}
+
+            {fallbackUrl && (
+              <div className="text-xs text-emerald-300 bg-emerald-950/40 border border-emerald-800 p-2 font-mono space-y-1">
+                <p>C:\MAETTI&gt; Сайт не смог отправить заявку сам. Отправьте её в Telegram — текст уже готов.</p>
+                <a
+                  href={fallbackUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center min-h-[44px] px-1 underline font-semibold text-emerald-200 hover:text-white transition-colors"
+                >
+                  [ Открыть Telegram ]
+                </a>
               </div>
             )}
 

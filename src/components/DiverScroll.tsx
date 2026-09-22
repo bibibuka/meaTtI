@@ -94,8 +94,6 @@ export default function DiverScroll() {
     let bubbleBurstIndex = 0;
     const pendingBubbles = new Set<number>();
 
-    const scrollHeight = () => document.documentElement.scrollHeight;
-
     function releaseBubble(order: number, bubbleCount: number) {
       if (reducedMotion.matches || document.hidden) return;
       // render() пишет прозрачность как "0.000", а не "0"

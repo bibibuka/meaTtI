@@ -355,6 +355,18 @@ function scrollTrackToProgress(track: HTMLElement, progress: number, stickyTop =
   window.scrollTo({ top: window.scrollY + delta, behavior: "smooth" });
 }
 
+// Центрирует элемент в горизонтальной ленте, двигая только саму ленту.
+// scrollIntoView тянул за собой и всю страницу: на телефоне свайп карточки
+// уводил страницу вверх, к ленте направлений.
+function centerInStrip(strip: Element, item: Element) {
+  const s = strip.getBoundingClientRect();
+  const r = item.getBoundingClientRect();
+  strip.scrollBy({
+    left: r.left - s.left - (s.width - r.width) / 2,
+    behavior: "smooth",
+  });
+}
+
 function CaseDetail({
   c,
   onOpenGallery,
@@ -494,6 +506,17 @@ function CaseDetail({
 const ZMIN = 1;
 const ZMAX = 4;
 
+type Zoom = { s: number; x: number; y: number };
+const NO_ZOOM: Zoom = { s: 1, x: 0, y: 0 };
+
+// Почти единичный масштаб считаем исходным — и сбрасываем сдвиг.
+function clampZoom(s: number, x: number, y: number): Zoom {
+  const ns = Math.min(ZMAX, Math.max(ZMIN, s));
+  return ns <= 1.02 ? NO_ZOOM : { s: ns, x, y };
+}
+
+// Новое фото приходит новым экземпляром (родитель ключуется по индексу),
+// поэтому сбрасывать масштаб при смене src не нужно.
 function ZoomableImg({
   src,
   alt,
@@ -504,31 +527,37 @@ function ZoomableImg({
   onSwipe: (dir: -1 | 1) => void;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
-  const z = useRef({ s: 1, x: 0, y: 0 });
+  const [zoom, setZoom] = useState<Zoom>(NO_ZOOM);
+  // Пока палец или мышь двигают картинку, transition выключен — иначе она
+  // отстаёт от курсора.
+  const [moving, setMoving] = useState(false);
   const drag = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
   const pinch = useRef<{ dist: number; s: number } | null>(null);
   const swipeX = useRef<number | null>(null);
   const lastTap = useRef(0);
-  const [, bump] = useState(0);
-  const paint = () => bump((n) => n + 1);
+  const pointerType = useRef("mouse");
 
-  const setZ = (s: number, x: number, y: number) => {
-    const ns = Math.min(ZMAX, Math.max(ZMIN, s));
-    z.current = ns <= 1.02 ? { s: 1, x: 0, y: 0 } : { s: ns, x, y };
-    paint();
+  const toggleZoom = () => setZoom((z) => (z.s > 1 ? NO_ZOOM : clampZoom(2.5, 0, 0)));
+
+  // Двойной тап: второй тап в пределах 280 мс переключает масштаб.
+  const tap = () => {
+    const now = Date.now();
+    if (now - lastTap.current < 280) {
+      lastTap.current = 0;
+      toggleZoom();
+      return true;
+    }
+    lastTap.current = now;
+    return false;
   };
-
-  useEffect(() => {
-    z.current = { s: 1, x: 0, y: 0 };
-    paint();
-  }, [src]);
 
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      setZ(z.current.s * (e.deltaY < 0 ? 1.12 : 0.89), z.current.x, z.current.y);
+      const k = e.deltaY < 0 ? 1.12 : 0.89;
+      setZoom((z) => clampZoom(z.s * k, z.x, z.y));
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
@@ -541,76 +570,87 @@ function ZoomableImg({
     <div
       ref={wrapRef}
       className="max-w-5xl max-h-[72vh] relative flex items-center justify-center overflow-hidden touch-none"
-      style={{ cursor: z.current.s > 1 ? "grab" : "zoom-in" }}
+      style={{ cursor: zoom.s > 1 ? "grab" : "zoom-in" }}
       onTouchStart={(e) => {
         if (e.touches.length === 2) {
-          pinch.current = { dist: dist(e.touches[0], e.touches[1]), s: z.current.s };
+          pinch.current = { dist: dist(e.touches[0], e.touches[1]), s: zoom.s };
           swipeX.current = null;
           drag.current = null;
+          setMoving(true);
           return;
         }
-        if (z.current.s > 1) {
+        if (zoom.s > 1) {
           drag.current = {
-            x: z.current.x,
-            y: z.current.y,
+            x: zoom.x,
+            y: zoom.y,
             px: e.touches[0].clientX,
             py: e.touches[0].clientY,
           };
           swipeX.current = null;
+          setMoving(true);
         } else {
           swipeX.current = e.touches[0].clientX;
         }
       }}
       onTouchMove={(e) => {
-        if (e.touches.length === 2 && pinch.current) {
-          const d = dist(e.touches[0], e.touches[1]);
-          setZ((d / pinch.current.dist) * pinch.current.s, z.current.x, z.current.y);
+        const p = pinch.current;
+        if (e.touches.length === 2 && p) {
+          const ratio = dist(e.touches[0], e.touches[1]) / p.dist;
+          setZoom((z) => clampZoom(ratio * p.s, z.x, z.y));
           return;
         }
-        if (drag.current && e.touches.length === 1) {
+        const d = drag.current;
+        if (d && e.touches.length === 1) {
           const t = e.touches[0];
-          setZ(
-            z.current.s,
-            drag.current.x + (t.clientX - drag.current.px),
-            drag.current.y + (t.clientY - drag.current.py),
-          );
+          setZoom((z) => clampZoom(z.s, d.x + (t.clientX - d.px), d.y + (t.clientY - d.py)));
         }
       }}
       onTouchEnd={(e) => {
         if (pinch.current) {
-          pinch.current = e.touches.length >= 2 ? pinch.current : null;
+          if (e.touches.length < 2) {
+            pinch.current = null;
+            setMoving(false);
+          }
           return;
         }
-        if (drag.current) {
+        const d = drag.current;
+        if (d) {
           drag.current = null;
+          setMoving(false);
+          // Тап без сдвига по увеличенному фото тоже считаем: иначе двойным
+          // тапом нельзя было вернуть исходный масштаб.
+          const t = e.changedTouches[0];
+          if (t && Math.hypot(t.clientX - d.px, t.clientY - d.py) < 12) tap();
           return;
         }
         if (swipeX.current == null || !e.changedTouches[0]) return;
         const dx = e.changedTouches[0].clientX - swipeX.current;
         swipeX.current = null;
-        const now = Date.now();
-        if (now - lastTap.current < 280 && Math.abs(dx) < 12) {
-          lastTap.current = 0;
-          setZ(z.current.s > 1 ? 1 : 2.5, 0, 0);
-          return;
-        }
-        lastTap.current = now;
+        if (Math.abs(dx) < 12 && tap()) return;
         if (dx > 45) onSwipe(-1);
         else if (dx < -45) onSwipe(1);
       }}
       onPointerDown={(e) => {
-        if (e.pointerType !== "mouse" || z.current.s <= 1) return;
-        drag.current = { x: z.current.x, y: z.current.y, px: e.clientX, py: e.clientY };
+        pointerType.current = e.pointerType;
+        if (e.pointerType !== "mouse" || zoom.s <= 1) return;
+        drag.current = { x: zoom.x, y: zoom.y, px: e.clientX, py: e.clientY };
+        setMoving(true);
         (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
       }}
       onPointerMove={(e) => {
-        if (!drag.current || e.pointerType !== "mouse") return;
-        setZ(z.current.s, drag.current.x + e.clientX - drag.current.px, drag.current.y + e.clientY - drag.current.py);
+        const d = drag.current;
+        if (!d || e.pointerType !== "mouse") return;
+        setZoom((z) => clampZoom(z.s, d.x + e.clientX - d.px, d.y + e.clientY - d.py));
       }}
-      onPointerUp={() => {
+      onPointerUp={(e) => {
+        if (e.pointerType !== "mouse") return;
         drag.current = null;
+        setMoving(false);
       }}
-      onDoubleClick={() => setZ(z.current.s > 1 ? 1 : 2.5, 0, 0)}
+      onDoubleClick={() => {
+        // Двойной тап пальцем уже обработан в onTouchEnd — второй раз не переключаем
+        if (pointerType.current === "mouse") toggleZoom();
+      }}
     >
       <img
         src={src}
@@ -619,9 +659,9 @@ function ZoomableImg({
         draggable={false}
         className="max-w-full max-h-[72vh] object-contain rounded-md shadow-2xl border border-neutral-800"
         style={{
-          transform: `translate(${z.current.x}px, ${z.current.y}px) scale(${z.current.s})`,
+          transform: `translate(${zoom.x}px, ${zoom.y}px) scale(${zoom.s})`,
           transformOrigin: "center center",
-          transition: drag.current || pinch.current ? "none" : "transform 120ms ease-out",
+          transition: moving ? "none" : "transform 120ms ease-out",
         }}
       />
     </div>
@@ -677,7 +717,7 @@ export default function CasesPage() {
     const thumb = strip.children[photoIndex] as HTMLElement | undefined;
     if (!thumb) return;
     thumbsLockRef.current = true;
-    thumb.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    centerInStrip(strip, thumb);
     const t = window.setTimeout(() => {
       thumbsLockRef.current = false;
     }, 420);
@@ -718,11 +758,17 @@ export default function CasesPage() {
 
   // Keyboard navigation for lightbox
   useEffect(() => {
+    if (!galleryCase) return;
+    const n = galleryCase.gallery.length;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!galleryCase) return;
-      if (e.key === "Escape") handleCloseGallery();
-      if (e.key === "ArrowRight") handleNextPhoto();
-      if (e.key === "ArrowLeft") handlePrevPhoto();
+      if (e.key === "Escape") {
+        haptic.toggle();
+        setGalleryCase(null);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        const step = e.key === "ArrowRight" ? 1 : -1;
+        haptic.tick();
+        setPhotoIndex((prev) => (prev + step + n) % n);
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -850,22 +896,18 @@ export default function CasesPage() {
     if (window.matchMedia("(min-width: 1024px)").matches) return;
     const activeGroupIndex = GROUPS.findIndex((g) => g.id === activeGroup.id);
     if (activeGroupIndex < 0) return;
-    chipsRef.current?.children[activeGroupIndex]?.scrollIntoView({
-      behavior: "smooth",
-      inline: "center",
-      block: "nearest",
-    });
+    const chips = chipsRef.current;
+    const chip = chips?.children[activeGroupIndex];
+    if (chips && chip) centerInStrip(chips, chip);
   }, [active, activeGroup.id]);
 
   const goToMobile = (i: number) => {
     haptic.tap();
     prevActiveRef.current = i;
     setActive(i);
-    railRef.current?.children[i]?.scrollIntoView({
-      behavior: "smooth",
-      inline: "center",
-      block: "nearest",
-    });
+    const rail = railRef.current;
+    const card = rail?.children[i];
+    if (rail && card) centerInStrip(rail, card);
   };
 
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -306,13 +306,33 @@ export default function Header() {
   const reduce = useReducedMotion();
   const state = isOpen ? "open" : "closed";
 
+  // Переход запускаем один раз на каждый pending: обычно по окончании спуска
+  // шторки, а таймер — запасной, если анимация так и не завершилась. Раньше
+  // срабатывали оба, и страница открывалась дважды.
+  const pushedRef = useRef<typeof pending>(null);
+  const go = useCallback(
+    (p: NonNullable<typeof pending>) => {
+      if (pushedRef.current === p) return;
+      pushedRef.current = p;
+      const hash = p.href.split("#")[1];
+      router.push(p.href, { scroll: !hash });
+      if (hash) {
+        setTimeout(() => {
+          if (window.location.hash !== `#${hash}`) {
+            window.location.hash = hash;
+          }
+          window.dispatchEvent(new Event("hashchange"));
+        }, 60);
+      }
+    },
+    [router],
+  );
+
   useEffect(() => {
     if (!pending) return;
-    const t = window.setTimeout(() => {
-      router.push(pending.href, { scroll: !pending.href.includes("#") });
-    }, reduce ? 0 : 900);
+    const t = window.setTimeout(() => go(pending), reduce ? 0 : 900);
     return () => window.clearTimeout(t);
-  }, [pending, reduce, router]);
+  }, [pending, reduce, go]);
   // Вода в шапке. Наверху страницы её нет — шапка пропускает фон насквозь;
   // при скролле, открытом меню или переходе она спускается со своей волной.
   // На переходе завязана прямо на pending, поэтому уходит вверх вместе со
@@ -394,16 +414,7 @@ export default function Header() {
         }
         onAnimationComplete={() => {
           if (pending) {
-            router.push(pending.href, { scroll: !pending.href.includes("#") });
-            if (pending.href.includes("#")) {
-              const h = pending.href.split("#")[1];
-              setTimeout(() => {
-                if (window.location.hash !== `#${h}`) {
-                  window.location.hash = h;
-                }
-                window.dispatchEvent(new Event("hashchange"));
-              }, 60);
-            }
+            go(pending);
           } else {
             // Штора уехала за экран — начинка больше не нужна.
             setSheetOn(false);

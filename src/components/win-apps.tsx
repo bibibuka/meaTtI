@@ -126,6 +126,9 @@ export const sounds = new SoundEngine();
 
 /* ----------------------------- ТЕРМИНАЛ ----------------------------- */
 
+// Что открывает команда `app <id>` — те же id, что у приложений стола.
+const TERMINAL_APPS = ["uslugi", "keysy", "team", "contacts", "snake", "dragon", "info", "terminal"];
+
 export function TerminalApp({
   onThemeChange,
   onOpenApp,
@@ -163,7 +166,7 @@ export function TerminalApp({
         "  services     — услуги и стек",
         "  team         — команда",
         "  theme <name> — тема: aurora, light, sunset, ice, cyber",
-        "  app <id>     — открыть приложение (uslugi, keysy, team, contacts, snake, dragon)",
+        `  app <id>     — открыть приложение (${TERMINAL_APPS.join(", ")})`,
         "  skills       — технический стек",
         "  contact      — контакты",
         "  clear        — очистить экран",
@@ -188,7 +191,7 @@ export function TerminalApp({
         "",
       );
     } else if (cmd === "calc") {
-      log.push("Калькулятора нет. Напишите в Telegram: @maetti");
+      log.push("Калькулятора нет. Напишите в Telegram: @maetti_mihail");
     } else if (cmd.startsWith("theme ")) {
       const t = cmd.replace("theme ", "").trim() as WallpaperTheme;
       if (["aurora", "light", "sunset", "ice", "cyber"].includes(t)) {
@@ -199,8 +202,12 @@ export function TerminalApp({
       }
     } else if (cmd.startsWith("app ")) {
       const id = cmd.replace("app ", "").trim();
-      log.push(`Открываю '${id}'…`);
-      onOpenApp(id);
+      if (TERMINAL_APPS.includes(id)) {
+        log.push(`Открываю '${id}'…`);
+        onOpenApp(id);
+      } else {
+        log.push(`Нет приложения '${id}'. Варианты: ${TERMINAL_APPS.join(", ")}`);
+      }
     } else if (cmd === "skills") {
       log.push("Стек: Next.js, React, TypeScript, Three.js, TailwindCSS, Web Audio API, Node.js.");
     } else if (cmd === "contact") {
@@ -394,6 +401,8 @@ function SnakeBoard({ restart, active }: { restart: () => void; active: boolean 
     draw();
 
     const tick = setInterval(() => {
+      // Пауза: окно не сверху, стол ушёл с экрана или вкладка скрыта
+      if (!activeRef.current || document.hidden) return;
       dir = next;
       const h = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
       if (h.x < 0 || h.y < 0 || h.x >= N || h.y >= N || snake.some((s) => s.x === h.x && s.y === h.y)) {
@@ -496,9 +505,12 @@ function Sky({ restart, active }: { restart: () => void; active: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cv = useRef<HTMLCanvasElement>(null);
   const flap = useRef<() => void>(() => {});
+  // Цикл отрисовки стоит, пока окно не активно; resume запускает его снова.
+  const resume = useRef<() => void>(() => {});
   const activeRef = useRef(active);
   useEffect(() => {
     activeRef.current = active;
+    if (active) resume.current();
   }, [active]);
 
   const [score, setScore] = useState(0);
@@ -782,6 +794,10 @@ function Sky({ restart, active }: { restart: () => void; active: boolean }) {
     let raf = 0;
     let last = performance.now();
     const step = (now: number) => {
+      raf = 0;
+      // Окно свернули, перекрыли другим или ушли со стола — замираем на
+      // последнем кадре, а не рисуем 60 раз в секунду впустую.
+      if (!activeRef.current) return;
       const dt = Math.min((now - last) / 1000, 0.033);
       last = now;
 
@@ -847,10 +863,18 @@ function Sky({ restart, active }: { restart: () => void; active: boolean }) {
       }
     };
     window.addEventListener("keydown", onKey);
-    raf = requestAnimationFrame(step);
+    resume.current = () => {
+      if (raf) return;
+      last = performance.now();
+      raf = requestAnimationFrame(step);
+    };
+    // Первый кадр рисуем всегда: иначе неактивное окно осталось бы пустым.
+    draw(performance.now());
+    resume.current();
 
     return () => {
       cancelAnimationFrame(raf);
+      resume.current = () => {};
       window.removeEventListener("keydown", onKey);
     };
   }, []);

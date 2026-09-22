@@ -9,7 +9,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
 $cfg = bot_config();
 $secret = $cfg['hmac_secret'] ?? '';
 $admin = (string) ($cfg['admin_chat_id'] ?? '');
-if ($secret === '' || $admin === '' || $admin === '123456789') {
+if (!bot_secret_ready($secret) || $admin === '' || $admin === '123456789') {
     json_out(['ok' => false, 'error' => 'config'], 500);
 }
 
@@ -19,8 +19,12 @@ if (!is_array($body)) {
     json_out(['ok' => false, 'error' => 'json'], 400);
 }
 
+// Раньше 20-секундный лимит срабатывал до проверок: ошибся в капче или в
+// длине поля — и повторная отправка упиралась в «слишком часто». Теперь
+// попытки ограничены мягко (10 в минуту), а 20 секунд отсчитываются только
+// между заявками, прошедшими все проверки.
 $ip = $_SERVER['REMOTE_ADDR'] ?? '0';
-if (!bot_rate_ok('form-' . $ip, 20)) {
+if (!bot_attempts_ok('try-' . $ip, 10, 60)) {
     json_out(['ok' => false, 'error' => 'rate'], 429);
 }
 
@@ -43,8 +47,11 @@ if (bot_len($contact) < 3 || bot_len($contact) > 120) {
 if (bot_len($message) < 3 || bot_len($message) > 2000) {
     json_out(['ok' => false, 'error' => 'message'], 400);
 }
-if (!captcha_verify($secret, $token, $answer)) {
+if (!captcha_verify($secret, $token, $answer) || !captcha_consume($token)) {
     json_out(['ok' => false, 'error' => 'captcha'], 400);
+}
+if (!bot_rate_ok('form-' . $ip, 20)) {
+    json_out(['ok' => false, 'error' => 'rate'], 429);
 }
 
 $text = format_lead([

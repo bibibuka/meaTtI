@@ -182,6 +182,8 @@ export default function IosMobileDesktop({
   const [widgetTab, setWidgetTab] = useState<"music" | "notes" | "wallpaper">("music");
 
   const openApp = useCallback((id: string) => {
+    // Неизвестный id (например, из терминала) просто закрывал открытое приложение
+    if (!IOS_APPS.some((a) => a.id === id)) return;
     sounds.playGlassClick();
     haptic.tap();
     setActiveAppId(id);
@@ -344,7 +346,6 @@ export default function IosMobileDesktop({
                   <button
                     type="button"
                     onClick={() => {
-                      sounds.playGlassClick();
                       prevTrack();
                     }}
                     className="grid h-8 w-8 place-items-center rounded-full text-neutral-300 transition active:scale-90"
@@ -354,7 +355,6 @@ export default function IosMobileDesktop({
                   <button
                     type="button"
                     onClick={() => {
-                      sounds.playGlassClick();
                       toggleSound();
                     }}
                     className="grid h-10 w-10 place-items-center rounded-full bg-white text-black transition active:scale-90 shadow-md"
@@ -364,7 +364,6 @@ export default function IosMobileDesktop({
                   <button
                     type="button"
                     onClick={() => {
-                      sounds.playGlassClick();
                       nextTrack();
                     }}
                     className="grid h-8 w-8 place-items-center rounded-full text-neutral-300 transition active:scale-90"
@@ -478,8 +477,6 @@ export default function IosMobileDesktop({
                     <button
                       type="button"
                       onClick={() => {
-                        sounds.playGlassClick();
-                        haptic.tick();
                         prevTrack();
                       }}
                       title="Предыдущий трек"
@@ -491,8 +488,6 @@ export default function IosMobileDesktop({
                     <button
                       type="button"
                       onClick={() => {
-                        sounds.playGlassClick();
-                        haptic.tap();
                         toggleSound();
                       }}
                       title={isPlayingSound ? "Пауза" : "Слушать"}
@@ -508,8 +503,6 @@ export default function IosMobileDesktop({
                     <button
                       type="button"
                       onClick={() => {
-                        sounds.playGlassClick();
-                        haptic.tick();
                         nextTrack();
                       }}
                       title="Следующий трек"

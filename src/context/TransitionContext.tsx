@@ -46,8 +46,23 @@ export function TransitionProvider({
       e?: React.MouseEvent | { preventDefault?: () => void }
     ) => {
       if (href.startsWith("#")) return;
+      // Ctrl/Cmd/Shift/Alt-клик и не левая кнопка — это «открыть в новой
+      // вкладке/окне»: отдаём браузеру, без шторки и preventDefault.
+      if (
+        e &&
+        "button" in e &&
+        (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
+      ) {
+        return;
+      }
 
       const targetPath = href.split("#")[0] || "/";
+      // Та же страница, только без hash. Берём путь из адресной строки: в нём
+      // есть basePath, а в targetPath его нет — иначе /meaTtI выпадал из адреса.
+      const clearHash = () => {
+        history.replaceState(null, "", window.location.pathname + window.location.search);
+        window.dispatchEvent(new Event("hashchange"));
+      };
       if (targetPath === pathname) {
         if (href.includes("#")) {
           const targetHash = href.split("#")[1];
@@ -55,13 +70,11 @@ export function TransitionProvider({
             window.location.hash = targetHash;
             window.dispatchEvent(new Event("hashchange"));
           } else if (window.location.hash) {
-            history.replaceState(null, "", targetPath);
-            window.dispatchEvent(new Event("hashchange"));
+            clearHash();
           }
         } else {
           if (window.location.hash) {
-            history.replaceState(null, "", targetPath);
-            window.dispatchEvent(new Event("hashchange"));
+            clearHash();
           }
           window.scrollTo({ top: 0, behavior: "smooth" });
         }

@@ -9,7 +9,11 @@ const nextConfig: NextConfig = {
   basePath: base,
   // next/link дописывает basePath сам, а сырые пути (адресная строка и iframe
   // окна на «рабочем столе») о нём не знают — отдаём значение в клиент.
-  env: { NEXT_PUBLIC_BASE_PATH: base },
+  // Год сборки — футер сверяет с ним статический HTML при гидратации.
+  env: {
+    NEXT_PUBLIC_BASE_PATH: base,
+    NEXT_PUBLIC_BUILD_YEAR: String(new Date().getFullYear()),
+  },
   productionBrowserSourceMaps: false,
   experimental: {
     optimizePackageImports: ["framer-motion", "lucide-react"],

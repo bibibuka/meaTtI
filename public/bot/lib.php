@@ -49,6 +49,46 @@ function captcha_verify(string $secret, string $token, string $answer): bool
     return hash_equals($mac, $calc);
 }
 
+// Гасит токен капчи после успешной проверки: один решённый пример больше не
+// годится для повторных отправок. Метка живёт до истечения самого токена.
+function captcha_consume(string $token): bool
+{
+    $parts = explode('|', $token);
+    if (count($parts) !== 3 || !ctype_xdigit($parts[0]) || !ctype_digit($parts[1])) {
+        return false;
+    }
+    [$nonce, $exp] = $parts;
+    $dir = bot_data_dir();
+    $now = time();
+    foreach (glob($dir . '/c-*.txt') ?: [] as $old) {
+        if ((int) @file_get_contents($old) < $now) {
+            @unlink($old);
+        }
+    }
+    // Режим 'x' создаёт файл, только если его ещё нет, — атомарно, без гонок
+    $h = @fopen($dir . '/c-' . $nonce . '.txt', 'x');
+    if ($h === false) {
+        return false;
+    }
+    fwrite($h, $exp);
+    fclose($h);
+    return true;
+}
+
+// Секрет задан и не заглушка из config.example.php
+function bot_secret_ready(string $secret): bool
+{
+    return $secret !== '' && $secret !== 'replace-with-long-random-string';
+}
+
+// Секрет для заголовка вебхука. Telegram принимает в secret_token только
+// A-Z, a-z, 0-9, _ и -, а hmac_secret может быть любой строкой, поэтому
+// отдаём производный hex.
+function bot_webhook_secret(string $secret): string
+{
+    return hash_hmac('sha256', 'telegram-webhook', $secret);
+}
+
 function format_lead(array $lead): string
 {
     $name = $lead['name'] ?? '';
@@ -207,6 +247,34 @@ function bot_rate_ok(string $key, int $seconds = 20): bool
     }
     file_put_contents($file, (string) $now, LOCK_EX);
     return true;
+}
+
+// Не больше $max попыток за $window секунд — против перебора капчи и спама.
+// В отличие от bot_rate_ok не мешает исправить ошибку и сразу отправить снова.
+function bot_attempts_ok(string $key, int $max, int $window): bool
+{
+    $file = bot_data_dir() . '/a-' . hash('sha256', $key) . '.json';
+    $now = time();
+    $h = @fopen($file, 'c+');
+    if ($h === false) {
+        return true;
+    }
+    flock($h, LOCK_EX);
+    $hits = json_decode((string) stream_get_contents($h), true);
+    $hits = array_values(array_filter(
+        is_array($hits) ? $hits : [],
+        fn($t) => is_int($t) && $now - $t < $window
+    ));
+    $ok = count($hits) < $max;
+    if ($ok) {
+        $hits[] = $now;
+    }
+    ftruncate($h, 0);
+    rewind($h);
+    fwrite($h, json_encode($hits));
+    flock($h, LOCK_UN);
+    fclose($h);
+    return $ok;
 }
 
 function bot_public_url(string $file): string

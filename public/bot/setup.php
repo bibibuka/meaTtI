@@ -12,10 +12,18 @@ if ($want === '' || $want === 'replace-setup-secret' || !hash_equals($want, $got
     exit;
 }
 
+$secret = (string) ($cfg['hmac_secret'] ?? '');
+if (!bot_secret_ready($secret)) {
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=utf-8');
+    echo "hmac_secret не задан в config.php";
+    exit;
+}
+
 $url = bot_public_url('webhook.php');
 $res = tg_api('setWebhook', [
     'url' => $url,
-    'secret_token' => (string) ($cfg['hmac_secret'] ?? ''),
+    'secret_token' => bot_webhook_secret($secret),
     'drop_pending_updates' => true,
 ]);
 

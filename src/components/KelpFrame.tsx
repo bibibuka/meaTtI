@@ -24,12 +24,19 @@ export default function KelpFrame({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    // Пауза, если полоса за экраном ИЛИ вкладка скрыта. Раньше возврат на
+    // вкладку снимал паузу, даже когда полоса была далеко за экраном.
+    let offscreen = false;
+    const sync = () => setPaused(offscreen || document.hidden);
     const io = new IntersectionObserver(
-      ([e]) => setPaused(!e.isIntersecting),
+      ([e]) => {
+        offscreen = !e.isIntersecting;
+        sync();
+      },
       { threshold: 0, rootMargin: "100px" }
     );
     io.observe(el);
-    const onVis = () => setPaused(document.hidden);
+    const onVis = sync;
     document.addEventListener("visibilitychange", onVis);
     return () => {
       io.disconnect();

@@ -12,12 +12,15 @@ if ($token === '' || $token === '000000000:REPLACE_ME') {
     exit;
 }
 
-$headerSecret = $_SERVER['HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN'] ?? '';
-if ($secret !== '' && $secret !== 'replace-with-long-random-string') {
-    if (!hash_equals($secret, $headerSecret)) {
-        http_response_code(403);
-        exit;
-    }
+// Без секрета любой мог бы слать сюда поддельные «апдейты» и заявки админу
+if (!bot_secret_ready($secret)) {
+    http_response_code(500);
+    exit;
+}
+$headerSecret = (string) ($_SERVER['HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN'] ?? '');
+if (!hash_equals(bot_webhook_secret($secret), $headerSecret)) {
+    http_response_code(403);
+    exit;
 }
 
 $update = json_decode(file_get_contents('php://input') ?: '[]', true);
