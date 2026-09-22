@@ -67,8 +67,8 @@ const GROUPS: CaseGroup[] = [
     num: "03",
     roman: "III",
     title: "Автоматизация и парсинг",
-    subtitle: "Скрипты, API и данные",
-    caseIndices: [6],
+    subtitle: "Скрипты, CRM и данные",
+    caseIndices: [6, 7],
   },
   {
     id: "software",
@@ -76,7 +76,7 @@ const GROUPS: CaseGroup[] = [
     roman: "IV",
     title: "Игры, софт и SaaS",
     subtitle: "Лаунчеры, десктоп и клиенты",
-    caseIndices: [7, 8],
+    caseIndices: [8, 9],
   },
 ];
 
@@ -267,8 +267,37 @@ const CASES: Case[] = [
     ],
   },
   {
-    id: "lunate",
+    id: "poehali",
     num: "08",
+    groupId: "automation",
+    groupTitle: "Автоматизация и парсинг",
+    title: "Операционная CRM и дашборд автобусного перевозчика «Poehali.by»",
+    category: "CRM & Аналитика данных",
+    short: "Poehali.by",
+    note: "Python • PostgreSQL • Chart.js",
+    challenge:
+      "Перевозчику с рейсами из Минска в Польшу, Литву и Латвию нужна была единая рабочая система: прежний дашборд хранил рейсы и продажи в браузере одного сотрудника, данные передавали JSON-файлами, а неявки и загрузку автобуса по участкам маршрута считали вручную.",
+    solution:
+      "Перенесли систему на сервер с PostgreSQL и ролями руководителя, диспетчера и водителя: журнал рейсов и продаж с тарифами по плечам, посадки по остановкам с расчётом неявок и загрузки каждого участка, импорт билетов Infobus с печатью. Все KPI и графики считает сервер, правки видны всем без перезагрузки, отчёты — в Excel и PDF.",
+    results: [
+      { metric: "1 сек", label: "Правки видны всем" },
+      { metric: "0", label: "Потерянных записей" },
+      { metric: "3 роли", label: "Свой доступ каждому" },
+    ],
+    gallery: [
+      { url: "/cases/poehali/dashboard.webp" },
+      { url: "/cases/poehali/mobile.webp" },
+      { url: "/cases/poehali/boarding.webp" },
+      { url: "/cases/poehali/matrix.webp" },
+      { url: "/cases/poehali/dynamics.webp" },
+      { url: "/cases/poehali/dark.webp" },
+      { url: "/cases/poehali/classic.webp" },
+      { url: "/cases/poehali/sales.webp" },
+    ],
+  },
+  {
+    id: "lunate",
+    num: "09",
     groupId: "software",
     groupTitle: "Игры, софт и SaaS",
     title: "Игровой комплекс и лаунчер техномагического сервера «Lunate»",
@@ -299,7 +328,7 @@ const CASES: Case[] = [
   },
   {
     id: "mozority",
-    num: "09",
+    num: "10",
     groupId: "software",
     groupTitle: "Игры, софт и SaaS",
     title: "Приватный чит для Counter-Strike 2 и SaaS-платформа «Mozority»",
