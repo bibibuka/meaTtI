@@ -8,8 +8,6 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      // Служебное: PHP-бот формы и страница после отправки заявки
-      disallow: ["/bot/", "/spasibo"],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };

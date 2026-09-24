@@ -3,7 +3,7 @@ import { SITE_URL } from "@/utils/site";
 
 export const dynamic = "force-static";
 
-// Новая страница сайта — добавить сюда же. /spasibo в поиске не нужна.
+// Новая страница сайта — добавить сюда же.
 const PAGES: [path: string, priority: number][] = [
   ["", 1],
   ["/uslugi", 0.9],

@@ -525,7 +525,7 @@ export default function ServicesPage() {
                             <div className="h-px bg-neutral-100 dark:bg-neutral-800" />
 
                             <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-light leading-relaxed text-pretty">
-                              Если сомневаетесь, оставьте заявку - поможем разобраться и подобрать подходящий вариант. Итоговая стоимость может быть ниже указанной.
+                              Если сомневаетесь, напишите нам - поможем разобраться и подобрать подходящий вариант. Итоговая стоимость может быть ниже указанной.
                             </p>
 
                             <a

@@ -44,7 +44,3 @@ next-env.d.ts
 # raw case assets
 /cases/
 
-# PHP bot secrets and session files
-/public/bot/config.php
-/public/bot/data/*
-!/public/bot/data/.htaccess
