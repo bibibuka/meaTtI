@@ -28,11 +28,13 @@ function easeInOut(t: number) {
 
 const BLOBS = [
   {
-    className: "w-96 h-96 bg-purple-500/40 blur-[100px]",
+    className: "w-96 h-96",
+    background: "radial-gradient(circle, rgba(168,85,247,0.4) 0%, rgba(168,85,247,0.23) 35%, transparent 72%)",
     start: [0.28, 0.32] as const,
   },
   {
-    className: "w-[25rem] h-[25rem] bg-blue-500/30 blur-[120px]",
+    className: "w-[25rem] h-[25rem]",
+    background: "radial-gradient(circle, rgba(59,130,246,0.3) 0%, rgba(59,130,246,0.18) 35%, transparent 72%)",
     start: [0.72, 0.48] as const,
   },
 ];
@@ -191,7 +193,7 @@ function HeroBlob({
     <div
       ref={ref}
       className={`absolute rounded-full will-change-transform ${spec.className}`}
-      style={{ left: 0, top: 0 }}
+      style={{ left: 0, top: 0, background: spec.background }}
     />
   );
 }
@@ -240,24 +242,34 @@ function LazyDesk() {
   const [near, setNear] = useState(false);
 
   useEffect(() => {
-    // Сам код скачиваем заранее, в простое: при быстрой прокрутке вниз он
-    // уже в кэше, а загрузке страницы не мешает.
-    const warm = () => void import("@/components/WinDesktop");
-    if ("requestIdleCallback" in window) requestIdleCallback(warm);
-    else setTimeout(warm, 1500);
-
     const el = ref.current;
     if (!el) return;
-    const io = new IntersectionObserver(
+
+    // Код подгружаем при приближении к столу, а монтируем чуть позже.
+    // Так быстрый скролл использует уже загруженный модуль, а первый экран
+    // не скачивает рабочий стол без необходимости.
+    const warmObserver = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        void import("@/components/WinDesktop");
+        warmObserver.disconnect();
+      },
+      { rootMargin: `${window.innerHeight}px 0px` },
+    );
+    const mountObserver = new IntersectionObserver(
       ([entry]) => {
         if (!entry.isIntersecting) return;
         setNear(true);
-        io.disconnect();
+        mountObserver.disconnect();
       },
-      { rootMargin: "100% 0px" },
+      { rootMargin: `${Math.round(window.innerHeight * 0.25)}px 0px` },
     );
-    io.observe(el);
-    return () => io.disconnect();
+    warmObserver.observe(el);
+    mountObserver.observe(el);
+    return () => {
+      warmObserver.disconnect();
+      mountObserver.disconnect();
+    };
   }, []);
 
   return near ? <WinDesktop /> : <div ref={ref} className={DESK_STUB} aria-hidden />;
@@ -390,7 +402,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col w-full">
       {/* 1. HERO SECTION */}
-      <section className="relative min-h-svh md:min-h-[85vh] flex flex-col overflow-x-hidden px-6 -mt-16 md:-mt-24 pt-16 md:pt-24 bg-white text-neutral-950">
+      <section className="relative min-h-svh flex flex-col overflow-x-hidden px-6 -mt-16 md:-mt-24 pt-16 md:pt-24 bg-white text-neutral-950">
         {/* Colorful blob backgrounds. Центр круга не ниже линии на 20px выше CTA. */}
         <HeroBlobs ctaEl={ctaEl} reduceMotion={shouldReduceMotion} />
 

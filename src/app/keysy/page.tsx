@@ -17,6 +17,7 @@ import { haptic } from "@/utils/haptics";
 
 export interface Case {
   id: string;
+  coverOriginalWidth: number;
   num: string;
   groupId: "web" | "bots" | "automation" | "software";
   groupTitle: string;
@@ -84,10 +85,15 @@ const asset = (path: string) => `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}${pat
 // Рядом с каждым скриншотом лежит копия шириной 320px (-thumb.webp) для ленты
 // миниатюр: иначе открытие галереи качало все оригиналы ради плашек в 80px.
 const thumbUrl = (path: string) => asset(path.replace(/\.webp$/, "-thumb.webp"));
+// Для карточек статического экспорта заранее подготовлены изображения 640/960px.
+// Оригинал выбирается на широких экранах и остаётся доступен в галерее.
+const cardUrl = (path: string, width: 640 | 960) =>
+  asset(path.replace(/\.webp$/, `-card-${width}.webp`));
 
 const CASES: Case[] = [
   {
     id: "barori",
+    coverOriginalWidth: 1280,
     num: "01",
     groupId: "web",
     groupTitle: "Веб-разработка",
@@ -115,6 +121,7 @@ const CASES: Case[] = [
   },
   {
     id: "academie",
+    coverOriginalWidth: 2551,
     num: "02",
     groupId: "web",
     groupTitle: "Веб-разработка",
@@ -142,6 +149,7 @@ const CASES: Case[] = [
   },
   {
     id: "alina",
+    coverOriginalWidth: 2544,
     num: "03",
     groupId: "web",
     groupTitle: "Веб-разработка",
@@ -169,6 +177,7 @@ const CASES: Case[] = [
   },
   {
     id: "rahim",
+    coverOriginalWidth: 2546,
     num: "04",
     groupId: "web",
     groupTitle: "Веб-разработка",
@@ -196,6 +205,7 @@ const CASES: Case[] = [
   },
   {
     id: "omnichannel",
+    coverOriginalWidth: 1280,
     num: "05",
     groupId: "bots",
     groupTitle: "Чат-боты и ИИ",
@@ -220,6 +230,7 @@ const CASES: Case[] = [
   },
   {
     id: "hr-bot",
+    coverOriginalWidth: 1210,
     num: "06",
     groupId: "bots",
     groupTitle: "Чат-боты и ИИ",
@@ -244,6 +255,7 @@ const CASES: Case[] = [
   },
   {
     id: "parsinghh",
+    coverOriginalWidth: 2496,
     num: "07",
     groupId: "automation",
     groupTitle: "Автоматизация и парсинг",
@@ -268,6 +280,7 @@ const CASES: Case[] = [
   },
   {
     id: "poehali",
+    coverOriginalWidth: 2160,
     num: "08",
     groupId: "automation",
     groupTitle: "Автоматизация и парсинг",
@@ -297,6 +310,7 @@ const CASES: Case[] = [
   },
   {
     id: "lunate",
+    coverOriginalWidth: 1904,
     num: "09",
     groupId: "software",
     groupTitle: "Игры, софт и SaaS",
@@ -328,6 +342,7 @@ const CASES: Case[] = [
   },
   {
     id: "mozority",
+    coverOriginalWidth: 1916,
     num: "10",
     groupId: "software",
     groupTitle: "Игры, софт и SaaS",
@@ -425,7 +440,9 @@ function CaseDetail({
             className="w-full relative aspect-[16/9] rounded-xl overflow-hidden bg-neutral-900 group cursor-pointer border border-neutral-200/80 dark:border-neutral-800 shadow-sm"
           >
             <img
-              src={asset(mainPhoto.url)}
+              src={cardUrl(mainPhoto.url, 640)}
+              srcSet={`${thumbUrl(mainPhoto.url)} 320w, ${cardUrl(mainPhoto.url, 640)} 640w, ${cardUrl(mainPhoto.url, 960)} 960w, ${asset(mainPhoto.url)} ${c.coverOriginalWidth}w`}
+              sizes="(min-width: 2880px) 720px, (min-width: 1440px) 25vw, (min-width: 1200px) 360px, (min-width: 640px) 448px, calc(100vw - 88px)"
               alt={c.title}
               loading={eager ? "eager" : "lazy"}
               fetchPriority={eager ? "high" : "auto"}
@@ -523,7 +540,7 @@ function CaseDetail({
             rel="noopener noreferrer"
             className="w-full sm:w-auto justify-center inline-flex items-center gap-2.5 bg-neutral-900 dark:bg-white text-white dark:text-black font-semibold px-5 py-2.5 rounded-lg hover:bg-blue-600 hover:dark:bg-blue-400 hover:text-white dark:hover:text-white active:scale-95 transition-all duration-200 shadow-sm text-xs sm:text-sm"
           >
-            <span>Подробный разбор</span>
+            <span>Разобрать свой проект</span>
             <Send className="w-3.5 h-3.5" />
           </a>
         </div>
@@ -957,7 +974,7 @@ export default function CasesPage() {
       <div className="bg-neutral-50 dark:bg-neutral-950 min-h-screen text-neutral-900 dark:text-neutral-100 font-sans">
         {/* Hero */}
         <section className="max-w-7xl mx-auto px-6 pt-8 pb-12 border-b border-neutral-200 dark:border-neutral-800">
-          <div className="max-w-3xl">
+          <div className="max-w-3xl lg:max-w-none">
             <div className="w-fit mb-4">
               <WaveRule className="mb-4" />
               <h1 className="text-3xl md:text-5xl font-light tracking-tight">

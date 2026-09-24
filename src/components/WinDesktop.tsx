@@ -1133,7 +1133,8 @@ export default function WinDesktop() {
       style={{ ...(THEMES[theme].vars as CSSProperties), background: THEMES[theme].wall }}
       className="desk-shell relative z-10 isolate h-dvh w-full shrink-0 select-none overflow-hidden font-sans transition-[background] duration-700 text-[var(--desk-fg)]"
     >
-      {/* ЖИВЫЕ ОБОИ: два медленно дрейфующих орба */}
+      {/* ЖИВЫЕ ОБОИ: два медленно дрейфующих орба. Мягкий край задан градиентом,
+          чтобы движение не пересчитывало большое размытие каждый кадр. */}
       <div
         className="absolute inset-0"
         onClick={() => {
@@ -1148,10 +1149,10 @@ export default function WinDesktop() {
           <div
             key={i}
             aria-hidden
-            className={`desk-orb pointer-events-none absolute rounded-full blur-[110px] ${orb.pos}`}
+            className={`desk-orb pointer-events-none absolute rounded-full ${orb.pos}`}
             style={
               {
-                background: `radial-gradient(circle, ${orb.color} 0%, transparent 65%)`,
+                background: `radial-gradient(circle, color-mix(in srgb, ${orb.color} 75%, transparent) 0%, color-mix(in srgb, ${orb.color} 35%, transparent) 38%, transparent 78%)`,
                 "--dx": `${orb.dx}px`,
                 "--dy": `${orb.dy}px`,
                 "--dur": `${orb.dur}s`,

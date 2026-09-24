@@ -28,7 +28,7 @@ export const SERVICES = [
   {
     id: "sajty",
     title: "Веб-сайты",
-    desc: "Сайты под любую задачу и любое пожелание: от одной страницы до большого сервиса. Витрина, продажи, заявки, нестандартный функционал - без шаблона «как у всех». Если сами не знаете, какой именно сайт нужен, подскажем формат.",
+    desc: "Создаём сайты для бизнеса: лендинги, корпоративные сайты, интернет-магазины и веб-сервисы. Работаем и с готовыми сайтами: обновляем дизайн, редактируем тексты и страницы, добавляем функции, исправляем ошибки и ускоряем загрузку.",
     color: "from-purple-600 to-indigo-600",
     bg: "bg-purple-500/10",
     border: "group-hover:border-blue-500/30 dark:group-hover:border-blue-400/30",
@@ -37,8 +37,8 @@ export const SERVICES = [
   },
   {
     id: "boty",
-    title: "Чат-боты и\nМини‑приложения",
-    desc: "Любые боты и мини-приложения: консультации, запись, продажи, оплата, рассылки - в Telegram, ВКонтакте и MAX. От простого автоответа до умного ассистента и приложения внутри мессенджера. Опишете, как должно отвечать и что уметь - сделаем.",
+    title: "Чат-боты и\nмини‑приложения",
+    desc: "Разрабатываем ботов и мини-приложения для Telegram, ВКонтакте и MAX. Настраиваем запись, приём заявок и оплату, ответы на вопросы и рассылки. Подключаем CRM и базы знаний, чтобы клиентам было проще получить помощь, а команде — обрабатывать обращения.",
     color: "from-blue-600 to-cyan-600",
     bg: "bg-blue-500/10",
     border: "group-hover:border-blue-500/30 dark:group-hover:border-blue-400/30",
@@ -47,8 +47,8 @@ export const SERVICES = [
   },
   {
     id: "avtomatizacija",
-    title: "Автоматизация и Интеграции",
-    desc: "Избавляем от рутины и связываем ваши сервисы в единую систему. Разрабатываем скрипты для парсинга данных, настраиваем сквозные API-интеграции между CRM, складом и мессенджерами, автоматизируем отчеты в Excel и Google Таблицах и многое другое.",
+    title: "Автоматизация и интеграции",
+    desc: "Автоматизируем повторяющиеся задачи: сбор данных, отчёты, перенос заявок и уведомления. Связываем сайт, CRM, склад и мессенджеры, настраиваем обмен данными с Excel и Google Таблицами. Помогаем сократить ручную работу и освободить время команды.",
     color: "from-teal-600 to-emerald-600",
     bg: "bg-teal-500/10",
     border: "group-hover:border-blue-500/30 dark:group-hover:border-blue-400/30",
@@ -118,6 +118,7 @@ const noSubscribe = () => () => {};
 
 export default function ServicesSection() {
   const sectionRef = useRef<HTMLElement>(null);
+  const headingRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(sectionRef, {
     once: true,
     amount: 0,
@@ -292,71 +293,91 @@ export default function ServicesSection() {
     };
   }, [canSettle, isSettled, settleSection]);
 
+  // Идея владельца сайта: при первом просмотре на ПК интро намеренно
+  // удерживает прокрутку до окончания печати и последующего клика.
+  // Такое поведение предусмотрено сценарием знакомства с услугами.
   useEffect(() => {
     if (shouldReduceMotion || !isInView || isSettled || inPlace !== false) return;
-    const el = sectionRef.current;
-    if (!el) return;
+    const heading = headingRef.current;
+    if (!heading) return;
 
-    const HEADER_HEIGHT = 88;
-    const rect = el.getBoundingClientRect();
-    const availableHeight = window.innerHeight - HEADER_HEIGHT;
-    const targetTop =
-      rect.height <= availableHeight
-        ? HEADER_HEIGHT + Math.max(0, (availableHeight - rect.height) / 2)
-        : HEADER_HEIGHT + 12;
-    const targetScrollY = Math.max(0, Math.round(window.scrollY + rect.top - targetTop));
-
-    let lastDrift = Math.abs(window.scrollY - targetScrollY);
-    window.scrollTo({ top: targetScrollY, behavior: "smooth" });
-
-    // Инерцию тачпада из JS не отменить (события колеса уже некэнселабельны):
-    // пока страница прокручиваема, браузер двигает её сам, а возврат по scroll
-    // догоняет кадром позже — на быстром скролле это тряска. Поэтому замок
-    // выключает прокрутку совсем, как у стола. Включать его раньше подъезда
-    // нельзя: overflow: hidden обрывает плавную прокрутку. Таймер — на случай,
-    // если подъезд перебили и до цели так и не доехали.
+    const header = document.querySelector<HTMLElement>(".site-header");
     const root = document.documentElement;
     const body = document.body;
-    let locked = false;
-    let prevOverflow: [string, string] = ["", ""];
-    const lock = () => {
-      if (!locked) {
-        locked = true;
-        prevOverflow = [root.style.overflow, body.style.overflow];
-        root.style.overflow = "hidden";
-        body.style.overflow = "hidden";
-      }
-      window.scrollTo({ top: targetScrollY, behavior: "instant" });
-    };
-    const anchorTimer = setTimeout(lock, 1000);
+    const prevOverflow = [root.style.overflow, body.style.overflow];
 
-    const block = (e: Event) => e.preventDefault();
+    // Сначала останавливаем инерцию в текущей позиции. Дальше прокруткой
+    // управляет один цикл: нативный smooth-scroll не спорит с блокировкой
+    // и не обрывается мгновенным переносом к цели.
+    root.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+
+    let raf = 0;
+    const align = () => {
+      cancelAnimationFrame(raf);
+      const from = window.scrollY;
+      window.scrollTo({ top: from, behavior: "instant" });
+      // Выравниваем видимый заголовок, а не секцию вместе с её padding.
+      // После раскрытия карточки остаются выше и помещаются на ноутбуке.
+      const targetTop = (header?.getBoundingClientRect().bottom ?? 0) + 24;
+      const maxScroll = Math.max(0, root.scrollHeight - window.innerHeight);
+      const to = Math.min(maxScroll, Math.max(0, from + heading.getBoundingClientRect().top - targetTop));
+      const distance = to - from;
+      const duration = Math.min(1000, 650 + Math.abs(distance) * 0.35);
+      let previousFrame = performance.now();
+      let elapsed = 0;
+
+      const tick = (now: number) => {
+        // Если браузер пропустил кадры, продолжаем небольшим шагом,
+        // а не перескакиваем через оставшуюся часть движения.
+        elapsed += Math.min(40, Math.max(0, now - previousFrame));
+        previousFrame = now;
+        const t = Math.min(1, elapsed / duration);
+        const eased = t * t * (3 - 2 * t);
+        // instant применяется к маленькому шагу каждого кадра; плавность
+        // задаёт eased, без второй анимации со стороны браузера.
+        window.scrollTo({ top: from + distance * eased, behavior: "instant" });
+        if (t < 1) raf = requestAnimationFrame(tick);
+      };
+
+      raf = requestAnimationFrame(tick);
+    };
+
+    const scheduleAlign = () => {
+      cancelAnimationFrame(raf);
+      // Последнее событие колеса могло уже уйти в compositor. Даём ему
+      // завершиться после блокировки и берём фактическую позицию, иначе
+      // первый кадр анимации возвращает страницу назад на один шаг колеса.
+      raf = requestAnimationFrame(() => {
+        raf = requestAnimationFrame(align);
+      });
+    };
+
+    const block = (e: Event) => {
+      if (e.cancelable) e.preventDefault();
+    };
     const onKey = (e: KeyboardEvent) => {
       if (["ArrowDown", "ArrowUp", "PageDown", "PageUp", " ", "Home", "End"].includes(e.key)) {
         e.preventDefault();
       }
     };
-    const onScroll = () => {
-      const drift = Math.abs(window.scrollY - targetScrollY);
-      // Доехали до цели — или страницу понесло прочь от неё (инерция проскочила
-      // цель ещё до старта эффекта). Возврат строго "instant": у html стоит
-      // scroll-behavior: smooth, и обычный scrollTo стал бы анимацией.
-      if (!locked ? drift <= 6 || drift > lastDrift : drift > 6) lock();
-      lastDrift = drift;
-    };
-
     window.addEventListener("wheel", block, { passive: false });
     window.addEventListener("touchmove", block, { passive: false });
     window.addEventListener("keydown", onKey);
-    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", scheduleAlign);
+    const observer = new ResizeObserver(scheduleAlign);
+    observer.observe(heading);
+    if (header) observer.observe(header);
+    scheduleAlign();
 
     return () => {
-      clearTimeout(anchorTimer);
-      if (locked) [root.style.overflow, body.style.overflow] = prevOverflow;
+      cancelAnimationFrame(raf);
+      observer.disconnect();
+      [root.style.overflow, body.style.overflow] = prevOverflow;
       window.removeEventListener("wheel", block);
       window.removeEventListener("touchmove", block);
       window.removeEventListener("keydown", onKey);
-      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", scheduleAlign);
     };
   }, [isInView, isSettled, shouldReduceMotion, inPlace]);
 
@@ -406,6 +427,7 @@ export default function ServicesSection() {
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6 min-h-[100px] relative z-10">
         {/* Left: Title + Wave (reveals when typing completes and user clicks) */}
         <motion.div
+          ref={headingRef}
           initial={
             instant || inPlace
               ? { opacity: 1, x: 0, filter: "blur(0px)" }
@@ -497,7 +519,7 @@ export default function ServicesSection() {
                     <h3 className="text-2xl font-black text-foreground mb-4 md:min-h-[4rem] whitespace-pre-line">
                       {s.title}
                     </h3>
-                    <p className="text-sm text-neutral-500 leading-relaxed mb-8">
+                    <p className="text-[15px] text-neutral-600 dark:text-neutral-300 leading-relaxed mb-8">
                       {s.desc}
                     </p>
                   </div>

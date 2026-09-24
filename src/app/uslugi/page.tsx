@@ -397,7 +397,7 @@ export default function ServicesPage() {
     <div className="bg-neutral-50 dark:bg-neutral-950 min-h-screen text-neutral-900 dark:text-neutral-100 font-sans">
       {/* Hero */}
       <section className="max-w-7xl mx-auto px-6 pt-12 pb-16 border-b border-neutral-200 dark:border-neutral-800">
-        <div className="max-w-3xl">
+        <div className="max-w-3xl lg:max-w-none">
           <div className="w-fit mb-6">
             <WaveRule className="mb-5" />
             <h1 className="text-4xl md:text-6xl font-light tracking-tight">
@@ -406,6 +406,15 @@ export default function ServicesPage() {
           </div>
           <p className="text-base md:text-lg text-neutral-500 dark:text-neutral-400 font-light leading-relaxed text-pretty">
             Три направления - один подрядчик. Раскройте любую позицию, чтобы увидеть состав, сроки и стоимость.
+          </p>
+          <p className="mt-4 text-base md:text-lg text-neutral-500 dark:text-neutral-400 font-light leading-relaxed text-pretty">
+            Предлагаем и индивидуальные форматы сотрудничества: возьмём на себя{" "}
+            <span className="text-blue-600 dark:text-blue-400 font-medium">все IT-задачи вашего бизнеса</span>{" "}
+            или только{" "}
+            <span className="text-blue-600 dark:text-blue-400 font-medium">сопровождение и развитие сайта</span>.
+            {" "}Объём работ, условия и стоимость{" "}
+            <span className="text-blue-600 dark:text-blue-400 font-medium">обсуждаем лично</span>{" "}
+            и согласовываем отдельно.
           </p>
         </div>
       </section>
@@ -450,7 +459,7 @@ export default function ServicesPage() {
                   </div>
 
                   <div className="flex items-center gap-2 sm:gap-6 shrink-0">
-                    <span className="hidden md:inline text-xs sm:text-sm font-mono font-medium text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                    <span className="hidden md:inline text-xl font-mono font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap">
                       {sec.price}
                     </span>
                     <div className="grid size-11 place-items-center shrink-0">
@@ -477,7 +486,7 @@ export default function ServicesPage() {
                         transition={{ duration: 0.22, delay: 0.28 }}
                         className="pt-6 pb-4 pl-0 sm:pl-16 flex flex-col md:grid md:grid-cols-12 gap-8 md:items-start"
                       >
-                        <div className="md:col-span-8 space-y-4 max-w-xl">
+                        <div className="md:col-span-8 space-y-4 max-w-xl lg:max-w-none">
                           <h3 className="text-xs font-mono text-neutral-400 uppercase tracking-widest">
                             Что входит:
                           </h3>
