@@ -47,8 +47,9 @@ const WAVE_LINE = `M ${wavePoints(AMP.closed)}`;
 // Штора перехода между страницами: полотно в высоту экрана + полоса волны под
 // ним. Едет сверху вниз (закрывает старую страницу), после чего идёт push, и
 // как только новый путь смонтирован — уезжает обратно вверх.
-// Путь нарисован на два периода, `.wave-rule` тянет его влево ровно на один
-// (viewBox шириной 200 = один период), так что волна ещё и бежит вбок.
+// Полоса нарисована на два периода в слое вдвое шире шторы, и
+// `.wave-rule-track` тянет слой влево ровно на один — волна ещё и бежит вбок.
+// Едет готовая картинка (transform), а не путь внутри SVG.
 const SHEET_BAND = 80; // px, высота полосы с волной
 const SHEET_WAVE = "M 0,50 q 50,-40 100,0 t 100,0 t 100,0 t 100,0";
 const SHEET_FILL = `${SHEET_WAVE} L 400,0 L 0,0 Z`;
@@ -386,8 +387,14 @@ export default function Header() {
   useEffect(() => {
     // В окне рабочего стола шапка скрыта — не будим её волну прокруткой.
     if (document.documentElement.classList.contains("embed")) return;
+    // Событие прокрутки приходит каждый кадр, а состояние меняется лишь
+    // на пороге в 10px — React трогаем только тогда.
+    let last: boolean | null = null;
     const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
+      const next = window.scrollY > 10;
+      if (next === last) return;
+      last = next;
+      setScrolled(next);
     };
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -401,7 +408,10 @@ export default function Header() {
         className="fixed inset-x-0 top-0 z-[45] pointer-events-none"
         style={{ height: `calc(100dvh + ${SHEET_BAND}px)` }}
         initial={false}
-        animate={{ y: pending ? "0%" : "-100%" }}
+        // Строкой transform, а не через y: такую анимацию framer-motion отдаёт
+        // браузеру (WAAPI), и штора едет плавно, даже пока главный поток
+        // занят сборкой новой страницы.
+        animate={{ transform: pending ? "translateY(0%)" : "translateY(-100%)" }}
         transition={
           reduce
             ? { duration: 0 }
@@ -428,22 +438,25 @@ export default function Header() {
           {sheetOn && <SheetScene layout={layout} />}
         </div>
         {sheetOn && (
-          <svg
-            className="absolute inset-x-0 bottom-0 w-full text-blue-600"
+          <div
+            className="absolute inset-x-0 bottom-0 overflow-hidden text-blue-600"
             style={{ height: SHEET_BAND }}
-            viewBox="0 0 200 100"
-            preserveAspectRatio="none"
           >
-            <path className="wave-rule fill-sky-100" d={SHEET_FILL} />
-            <path
-              className="wave-rule"
-              d={SHEET_WAVE}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              vectorEffect="non-scaling-stroke"
-            />
-          </svg>
+            <svg
+              className="wave-rule-track block h-full w-[200%]"
+              viewBox="0 0 400 100"
+              preserveAspectRatio="none"
+            >
+              <path className="fill-sky-100" d={SHEET_FILL} />
+              <path
+                d={SHEET_WAVE}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+          </div>
         )}
       </motion.div>
 

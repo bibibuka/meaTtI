@@ -36,10 +36,12 @@ export default function HoverLine() {
     sync();
 
     // Наблюдаем за появлением новых .group при гидратации и динамических переходах.
-    // Мутации идут пачками (пузырьки водолаза, печать текста) — пересканируем
-    // документ не чаще раза за кадр.
+    // Мутации идут пачками (печать текста) — пересканируем документ не чаще раза
+    // за кадр. Пузырьки водолаза появляются и исчезают пачками по 8–10 штук
+    // и карточек не несут — их мутации пропускаем.
     let raf = 0;
-    const mo = new MutationObserver(() => {
+    const mo = new MutationObserver((records) => {
+      if (records.every((r) => (r.target as Element).classList?.contains("bubble-trail"))) return;
       if (raf) return;
       raf = requestAnimationFrame(() => {
         raf = 0;

@@ -216,6 +216,10 @@ function Win({
     const sy = e.clientY;
     const p0 = p;
     let moved = false;
+    // Пока тянем, положение пишем прямо в style окна: перерисовывать React'ом
+    // всё окно на каждое движение мыши — лишняя работа на каждом кадре.
+    // В состояние оно попадает один раз, когда окно отпустили.
+    let last = p0;
 
     const move = (ev: PointerEvent) => {
       const dx = ev.clientX - sx;
@@ -223,6 +227,15 @@ function Win({
       if (!moved && Math.hypot(dx, dy) > 4) {
         moved = true;
         setDragging(true);
+        // setDragging снимет переход только на ближайшем рендере — а первый
+        // сдвиг пишем уже сейчас, и без этого он поехал бы с задержкой.
+        // will-change на время перетаскивания: без него Chrome на каждом
+        // сдвиге на долю пикселя перерисовывал всё содержимое окна вместе с
+        // сайтом в iframe — видеокарта не успевала, и окно шло рывками.
+        if (winRef.current) {
+          winRef.current.style.transition = "none";
+          winRef.current.style.willChange = "transform";
+        }
       }
       if (!moved) return;
 
@@ -238,12 +251,15 @@ function Win({
       const loX = -(vw / 2) + 90;
       const hiX = vw / 2 - 90;
 
-      setP({
+      last = {
         x: Math.min(Math.max(p0.x + dx, loX), Math.max(loX, hiX)),
         y: Math.min(Math.max(p0.y + dy, loY), Math.max(loY, hiY)),
-      });
+      };
+      if (el) el.style.transform = `translate(calc(-50% + ${last.x}px), calc(-50% + ${last.y}px))`;
     };
     const up = () => {
+      if (moved) setP(last);
+      if (winRef.current) winRef.current.style.willChange = "";
       setDragging(false);
       window.removeEventListener("pointermove", move);
     };

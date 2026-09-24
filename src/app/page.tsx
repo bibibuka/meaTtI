@@ -392,6 +392,20 @@ export default function HomePage() {
   const shouldReduceMotion = useReducedMotion();
   const [ctaEl, setCtaEl] = useState<HTMLDivElement | null>(null);
 
+  // Переливающийся градиент заголовка браузер перерисовывает каждый кадр —
+  // видеокарте такую анимацию не отдать. Когда заголовок ушёл с экрана, её
+  // незачем крутить: data-still ставит на паузу (.animate-gradient-flow).
+  const heroTitleRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    const el = heroTitleRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([entry]) => {
+      el.toggleAttribute("data-still", !entry.isIntersecting);
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   const MARQUEE_ITEMS = [
     "ВЕБ-САЙТЫ",
     "TELEGRAM-БОТЫ",
@@ -408,7 +422,7 @@ export default function HomePage() {
 
         <div className="relative max-w-7xl mx-auto w-full z-10 flex-1 flex flex-col justify-center">
           {/* Kinetic Offer */}
-          <h1 className="text-[2.55rem] sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter sm:tracking-tight leading-[1.05] sm:leading-[1.08] mb-4 sm:mb-6 select-none break-words">
+          <h1 ref={heroTitleRef} className="text-[2.55rem] sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter sm:tracking-tight leading-[1.05] sm:leading-[1.08] mb-4 sm:mb-6 select-none break-words">
             ПОКОРЯЙТЕ <span className="hidden sm:inline"><br /></span>
             <span className="animate-gradient-flow">
               ЦИФРОВУЮ СТИХИЮ.

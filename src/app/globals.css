@@ -105,22 +105,27 @@ html {
   }
 }
 
+[data-still] .animate-gradient-flow {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-gradient-flow {
     animation: none;
   }
 }
 
-/* Волна-линейка над заголовками: путь длиной в два периода уезжает влево
-   ровно на один за 6s linear — тот же такт, что у волны в шапке. */
-.wave-rule {
-  transform-box: view-box;
-  animation: wave-rule 6s linear infinite;
+/* Волна-линейка над заголовками и волна шторы перехода: рисунок в два
+   периода вдвое шире рамки уезжает влево ровно на один за 6s linear — тот же
+   такт, что у волны в шапке. Едет HTML-коробка, а не путь внутри SVG: такой
+   сдвиг ведёт видеокарта без перерисовки. */
+.wave-rule-track {
+  animation: wave-rule-track 6s linear infinite;
 }
 
-@keyframes wave-rule {
+@keyframes wave-rule-track {
   to {
-    transform: translateX(-200px);
+    transform: translateX(-50%);
   }
 }
 
@@ -351,8 +356,26 @@ html::-webkit-scrollbar {
 .completed-rope {
   stroke: currentColor;
   stroke-width: 2;
-  clip-path: inset(0 0 100% 0);
-  will-change: clip-path;
+}
+
+/* Пройденный путь открывается окном-шторкой: внешняя коробка едет вверх и
+   режет верёвку по нижнему краю, внутренняя едет обратно вниз — верёвка
+   остаётся на месте. Оба сдвига — transform, их ведёт видеокарта; прежний
+   clip-path на пути перерисовывал верёвку на каждом кадре прокрутки. */
+.rope-reveal,
+.rope-reveal-inner {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+
+.rope-reveal {
+  overflow: hidden;
+  transform: translateY(-100%);
+}
+
+.rope-reveal-inner {
+  transform: translateY(100%);
 }
 
 .surface-knot {
@@ -408,34 +431,53 @@ html::-webkit-scrollbar {
   cursor: grabbing;
 }
 
+/* Водолаз — стопка <svg> с общим viewBox 104×108 в HTML-коробках: так
+   покачивание и ласты — transform HTML-элементов, их ведёт видеокарта, и
+   страница в покое не будит главный поток. Точки вращения и сдвиги — те
+   же, что были у групп внутри одного SVG (fill-box), только в процентах
+   от viewBox: центр рисунка (57.25, 57.5), верх ласт (39, 65) и (64.5, 66),
+   2 единицы по высоте = 1.851852%. */
 .diver-art {
+  position: relative;
   display: block;
   width: 100%;
   height: 100%;
-  overflow: visible;
   transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
+.diver-float,
+.diver-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.diver-layer {
+  overflow: visible;
+}
+
 .diver-float {
-  transform-box: fill-box;
-  transform-origin: center;
+  transform-origin: 55.048077% 53.240741%;
   animation: diver-float 3.4s ease-in-out infinite;
 }
 
 @keyframes diver-float {
   0%,
   100% {
-    transform: translateY(-2px) rotate(-1.5deg);
+    transform: translateY(-1.851852%) rotate(-1.5deg);
   }
   50% {
-    transform: translateY(2px) rotate(1.5deg);
+    transform: translateY(1.851852%) rotate(1.5deg);
   }
 }
 
-.rear-fin,
+.rear-fin {
+  transform-origin: 37.5% 60.185185%;
+}
+
 .front-fin {
-  transform-box: fill-box;
-  transform-origin: top center;
+  transform-origin: 62.019231% 61.111111%;
 }
 
 .rear-fin {
@@ -556,6 +598,8 @@ html {
   overflow: hidden;
   pointer-events: none;
   contain: layout paint;
+  /* cqw внутри сцены — ширина полосы: в них заданы сдвиги в анимациях. */
+  container-type: inline-size;
 }
 
 .kelp-strip--invert {
@@ -590,8 +634,65 @@ html {
   opacity: 1;
 }
 
+/* Сцена прототипа (viewBox 1440×430) во всю ширину полосы, прижата к низу —
+   ровно как прежний <svg> с preserveAspectRatio="xMidYMax slice": его масштаб
+   всегда задавала ширина. Детали расставлены в процентах от сцены, а сдвиги
+   в анимациях — в cqw: единица сцены = 100cqw / 1440 ≈ 0.069444cqw. */
 .kelp-scene {
-  display: block;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  aspect-ratio: 1440 / 430;
+}
+
+.kelp-scene .kelp-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.kelp-scene .kelp-layer,
+.kelp-scene .kelp-seabed,
+.kelp-scene .bubble-stream {
+  position: absolute;
+  inset: 0;
+}
+
+.kelp-scene .kelp-seabed {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* <Sway> в KelpFrame: .kelp-sway (статичный scale(S)) → анимированная
+   коробка → .kelp-unscale (scale(S⁻¹)) → рисунок. Все три одного размера
+   и крутятся вокруг одной точки — основания детали, у пузырька — центра. */
+.kelp-scene .kelp-sway,
+.kelp-scene .kelp-motion,
+.kelp-scene .frond,
+.kelp-scene .kelp-bubble,
+.kelp-scene .kelp-unscale {
+  position: absolute;
+  transform-origin: 50% 100%;
+}
+
+.kelp-scene .kelp-motion,
+.kelp-scene .frond,
+.kelp-scene .kelp-bubble,
+.kelp-scene .kelp-unscale {
+  inset: 0;
+}
+
+.kelp-scene .bubble-stream .kelp-sway,
+.kelp-scene .kelp-bubble,
+.kelp-scene .kelp-bubble .kelp-unscale {
+  transform-origin: 50% 50%;
+}
+
+.kelp-scene .kelp-part {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   overflow: visible;
@@ -666,11 +767,11 @@ html {
   stroke-width: 0.9;
 }
 
-/* Куст качается целиком, каждая лопасть — ещё и сама по себе, в своей фазе. */
+/* Куст качается целиком, каждая лопасть — ещё и сама по себе, в своей фазе.
+   Это transform HTML-коробок: качание ведёт видеокарта, без перерисовки.
+   Keyframes общие и без var(): так Chrome пересчитывает их на кадре
+   дешевле всего. Масштаб куста добавляют обёртки <Sway>. */
 .kelp-scene .kelp-motion {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
-  will-change: transform;
   animation-iteration-count: infinite;
   animation-direction: alternate;
   animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
@@ -682,8 +783,6 @@ html {
 .kelp-scene .motion--d { animation-name: kelp-sway-d; animation-duration: 7.9s; animation-delay: -3.8s; }
 
 .kelp-scene .frond {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
   animation-direction: alternate;
   animation-iteration-count: infinite;
   animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
@@ -696,14 +795,10 @@ html {
 .kelp-scene .frond--e { animation-name: frond-sway-e; animation-duration: 5.1s; animation-delay: -4.6s; }
 
 .kelp-scene .kelp-bubble {
-  --bubble-drift: 4px;
-  --bubble-drift-end: 6px;
   fill: #ffffff;
   stroke-width: 0.725;
   opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: kelp-bubble-rise 5.8s linear infinite;
+  animation: kelp-bubble-rise-1 5.8s linear infinite;
   animation-delay: calc(var(--bubble-start, 0s) + var(--bubble-step, 0s));
 }
 
@@ -715,33 +810,34 @@ html {
 .kelp-scene .bubble-stream--f { --bubble-start: -5.2s; }
 
 .kelp-scene .bubble--1 { --bubble-step: 0s; }
-.kelp-scene .bubble--2 { --bubble-step: 0.18s; --bubble-drift: -3px; --bubble-drift-end: -5px; }
-.kelp-scene .bubble--3 { --bubble-step: 0.36s; --bubble-drift: 2px; --bubble-drift-end: 4px; }
-.kelp-scene .bubble--4 { --bubble-step: 0.54s; --bubble-drift: -2px; --bubble-drift-end: -4px; }
+.kelp-scene .bubble--2 { --bubble-step: 0.18s; animation-name: kelp-bubble-rise-2; }
+.kelp-scene .bubble--3 { --bubble-step: 0.36s; animation-name: kelp-bubble-rise-3; }
+.kelp-scene .bubble--4 { --bubble-step: 0.54s; animation-name: kelp-bubble-rise-4; }
 
 /* Качание — не одна ось, а композиция: куст целиком (наклон + изгиб
    skewX с промежуточными стопами), каждая лопасть — ещё своя ось
    наклона и своя ось изгиба в другой фазе. skewX от основания гнёт
-   вершину сильнее, чем низ, поэтому лопасть не ходит «палкой». */
+   вершину сильнее, чем низ, поэтому лопасть не ходит «палкой».
+   Сдвиги — в единицах сцены прототипа: -1.5 → -1.5 × 0.069444cqw. */
 @keyframes kelp-sway-a {
-  0%   { transform: translateX(-1.5px) rotate(-1.8deg) skewX(1.2deg); }
-  42%  { transform: translateX(0.3px) rotate(0.2deg) skewX(-1.6deg); }
-  100% { transform: translateX(2px) rotate(2.4deg) skewX(1deg); }
+  0%   { transform: translateX(-0.104167cqw) rotate(-1.8deg) skewX(1.2deg); }
+  42%  { transform: translateX(0.020833cqw) rotate(0.2deg) skewX(-1.6deg); }
+  100% { transform: translateX(0.138889cqw) rotate(2.4deg) skewX(1deg); }
 }
 @keyframes kelp-sway-b {
-  0%   { transform: translateX(1.5px) rotate(2deg) skewX(-1.1deg); }
-  55%  { transform: translateX(-0.6px) rotate(-0.5deg) skewX(1.7deg); }
-  100% { transform: translateX(-2px) rotate(-2.7deg) skewX(-0.9deg); }
+  0%   { transform: translateX(0.104167cqw) rotate(2deg) skewX(-1.1deg); }
+  55%  { transform: translateX(-0.041667cqw) rotate(-0.5deg) skewX(1.7deg); }
+  100% { transform: translateX(-0.138889cqw) rotate(-2.7deg) skewX(-0.9deg); }
 }
 @keyframes kelp-sway-c {
-  0%   { transform: translateX(-1px) rotate(-1.3deg) skewX(1.5deg); }
-  38%  { transform: translateX(1.1px) rotate(0.8deg) skewX(-1.3deg); }
-  100% { transform: translateX(2.5px) rotate(2.1deg) skewX(1.2deg); }
+  0%   { transform: translateX(-0.069444cqw) rotate(-1.3deg) skewX(1.5deg); }
+  38%  { transform: translateX(0.076389cqw) rotate(0.8deg) skewX(-1.3deg); }
+  100% { transform: translateX(0.173611cqw) rotate(2.1deg) skewX(1.2deg); }
 }
 @keyframes kelp-sway-d {
-  0%   { transform: translateX(1.2px) rotate(1.6deg) skewX(-1.4deg); }
-  60%  { transform: translateX(-0.7px) rotate(-0.7deg) skewX(1.6deg); }
-  100% { transform: translateX(-2.2px) rotate(-2.2deg) skewX(-1deg); }
+  0%   { transform: translateX(0.083333cqw) rotate(1.6deg) skewX(-1.4deg); }
+  60%  { transform: translateX(-0.048611cqw) rotate(-0.7deg) skewX(1.6deg); }
+  100% { transform: translateX(-0.152778cqw) rotate(-2.2deg) skewX(-1deg); }
 }
 
 @keyframes frond-sway-a {
@@ -772,20 +868,31 @@ html {
   100% { transform: rotate(8.8deg) skewX(-3.2deg); }
 }
 
-@keyframes kelp-bubble-rise {
-  0%, 6% {
-    opacity: 0;
-    transform: translate3d(0, 0, 0) scale(0.72);
-  }
+/* Пузырёк всплывает на 21, потом на 38 единиц сцены и сносится вбок;
+   у каждого из четырёх в струйке свой снос: 4/6, -3/-5, 2/4, -2/-4. */
+@keyframes kelp-bubble-rise-1 {
+  0%, 6% { opacity: 0; transform: translate3d(0, 0, 0) scale(0.72); }
   10% { opacity: 0.82; }
-  30% {
-    opacity: 0.66;
-    transform: translate3d(var(--bubble-drift), -21px, 0) scale(0.96);
-  }
-  46%, 100% {
-    opacity: 0;
-    transform: translate3d(var(--bubble-drift-end), -38px, 0) scale(1.08);
-  }
+  30% { opacity: 0.66; transform: translate3d(0.277778cqw, -1.458333cqw, 0) scale(0.96); }
+  46%, 100% { opacity: 0; transform: translate3d(0.416667cqw, -2.638889cqw, 0) scale(1.08); }
+}
+@keyframes kelp-bubble-rise-2 {
+  0%, 6% { opacity: 0; transform: translate3d(0, 0, 0) scale(0.72); }
+  10% { opacity: 0.82; }
+  30% { opacity: 0.66; transform: translate3d(-0.208333cqw, -1.458333cqw, 0) scale(0.96); }
+  46%, 100% { opacity: 0; transform: translate3d(-0.347222cqw, -2.638889cqw, 0) scale(1.08); }
+}
+@keyframes kelp-bubble-rise-3 {
+  0%, 6% { opacity: 0; transform: translate3d(0, 0, 0) scale(0.72); }
+  10% { opacity: 0.82; }
+  30% { opacity: 0.66; transform: translate3d(0.138889cqw, -1.458333cqw, 0) scale(0.96); }
+  46%, 100% { opacity: 0; transform: translate3d(0.277778cqw, -2.638889cqw, 0) scale(1.08); }
+}
+@keyframes kelp-bubble-rise-4 {
+  0%, 6% { opacity: 0; transform: translate3d(0, 0, 0) scale(0.72); }
+  10% { opacity: 0.82; }
+  30% { opacity: 0.66; transform: translate3d(-0.138889cqw, -1.458333cqw, 0) scale(0.96); }
+  46%, 100% { opacity: 0; transform: translate3d(-0.277778cqw, -2.638889cqw, 0) scale(1.08); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -801,10 +908,24 @@ html {
   }
 }
 
-.kelp-strip[data-paused="true"] .kelp-motion,
-.kelp-strip[data-paused="true"] .frond,
-.kelp-strip[data-paused="true"] .kelp-bubble {
-  animation-play-state: paused !important;
+/* Прогрев слоёв при открытии страницы (см. KelpFrame): три кадра полоса стоит
+   у низа экрана почти прозрачной. Ширина та же — 100% окна, — поэтому
+   нарисованные слои потом годятся и на её настоящем месте. */
+.kelp-strip.kelp-prewarm {
+  position: fixed;
+  z-index: 100;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  opacity: 0.001;
+}
+
+/* После гидратации качание ведут Web Animations (см. KelpFrame), CSS-анимации
+   снимаем, чтобы две не шли разом. */
+.kelp-live .kelp-motion,
+.kelp-live .frond,
+.kelp-live .kelp-bubble {
+  animation: none;
 }
 
 /* =========================================================
@@ -955,7 +1076,7 @@ body.desk-locked {
 }
 
 /* Волна шапки: слой вдвое шире шапки, нарисован на два периода и уезжает
-   влево ровно на один за 6s — тот же такт, что у .wave-rule. Браузер двигает
+   влево ровно на один за 6s — тот же такт, что у .wave-rule-track. Браузер двигает
    готовую картинку (transform), а не перерисовывает форму под размытием.
    Стоит, пока шапка без воды, и пока она спрятана на рабочем столе. */
 @keyframes header-wave {

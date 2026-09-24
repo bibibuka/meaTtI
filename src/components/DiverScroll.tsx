@@ -1,12 +1,17 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 
 // Водолаз вместо ползунка прокрутки. Источник правды — нативный скролл
 // документа: колесо, тач и клавиши работают как обычно, водолаза можно
 // дополнительно тащить мышью. Пройденный путь остаётся синей верёвкой.
 // Прототип и заметки по дизайну: public/diver-scroll/.
+//
+// Кадр прокрутки здесь дешёвый: раскладку (трек, стол, ламинарии) меряем
+// только при изменении размеров, а на кадре считаем по кэшу и пишем в DOM
+// лишь то, что поменялось. На телефоне прежний водолаз один отнимал около
+// четверти кадра.
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
@@ -19,6 +24,9 @@ const progressFromScroll = (
 
 const ROPE_PATH =
   "M 92 0 C 84 45 100 88 91 133 C 82 178 100 221 91 267 C 83 314 99 358 91 404 C 83 451 100 493 91 540 C 82 586 100 630 91 676 C 83 723 100 766 91 813 C 82 859 99 905 91 950 C 88 968 89 984 92 1000";
+
+// Сколько точек верёвки кэшируем: между ними x интерполируем линейно.
+const ROPE_SAMPLES = 256;
 
 const BUBBLE_SHAPES = [
   { size: 4, drift: 2 },
@@ -48,39 +56,43 @@ export default function DiverScroll() {
     const track = controller.querySelector<HTMLElement>(".dive-track")!;
     const thumb = controller.querySelector<HTMLButtonElement>(".diver-thumb")!;
     const rope = controller.querySelector<SVGPathElement>(".completed-rope")!;
-    const diverArt = thumb.querySelector<SVGSVGElement>(".diver-art")!;
+    const reveal = controller.querySelector<HTMLElement>(".rope-reveal")!;
+    const revealInner = controller.querySelector<HTMLElement>(".rope-reveal-inner")!;
     const grip = thumb.querySelector<SVGPathElement>(".grip")!;
     const regulator = thumb.querySelector<SVGPathElement>(".regulator")!;
     const ropeSvg = rope.ownerSVGElement!;
 
     const gripBox = grip.getBBox();
     const gripXRatio =
-      (gripBox.x + gripBox.width / 2) / diverArt.viewBox.baseVal.width;
-    let ropeLength = 0;
-    try {
-      ropeLength = rope.getTotalLength();
-    } catch {}
+      (gripBox.x + gripBox.width / 2) / grip.ownerSVGElement!.viewBox.baseVal.width;
     const ropeViewBoxWidth = ropeSvg.viewBox.baseVal.width;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    // кэшируем размеры водолаза, чтобы не мерить каждый кадр
-    let cachedThumbWidth = 0;
-    let cachedThumbHeight = 0;
-    const measureThumb = () => {
-      const box = thumb.getBoundingClientRect();
-      cachedThumbWidth = box.width;
-      cachedThumbHeight = box.height;
+    const phone = window.matchMedia("(max-width: 767px)");
+
+    // x верёвки (в единицах viewBox) по доле пути: getPointAtLength на каждом
+    // кадре заново обходил кривую.
+    const ropeX = new Float32Array(ROPE_SAMPLES + 1);
+    const sampleRope = () => {
+      try {
+        const length = rope.getTotalLength();
+        for (let i = 0; i <= ROPE_SAMPLES; i += 1) {
+          ropeX[i] = rope.getPointAtLength((length * i) / ROPE_SAMPLES).x;
+        }
+      } catch {
+        ropeX.fill(0);
+      }
     };
-    measureThumb();
-    const roThumb = new ResizeObserver(() => {
-      measureThumb();
-      try { ropeLength = rope.getTotalLength(); } catch {}
-    });
+    sampleRope();
+    const ropeXAt = (p: number) => {
+      const f = p * ROPE_SAMPLES;
+      const i = Math.min(ROPE_SAMPLES - 1, Math.floor(f));
+      return ropeX[i] + (ropeX[i + 1] - ropeX[i]) * (f - i);
+    };
+
     // Живые коллекции сами обновляются при смене страницы, а querySelector
     // на каждом кадре прокрутки заново обходил документ.
     const desks = document.getElementsByClassName("desk-shell");
     const kelps = document.getElementsByClassName("kelp-strip");
-    roThumb.observe(thumb);
-    roThumb.observe(track);
 
     let progress = 0;
     let previousScrollTop = window.scrollY;
@@ -93,6 +105,41 @@ export default function DiverScroll() {
     let bubbleIndex = 0;
     let bubbleBurstIndex = 0;
     const pendingBubbles = new Set<number>();
+
+    // На сколько панель сейчас поднята, чтобы водолаз не залезал на ламинарии и стол.
+    let shift = 0;
+
+    // Кэш раскладки. Трек и панель fixed — их место меняется только при
+    // ресайзе; стол и ламинарии храним в координатах документа и на кадре
+    // переводим в экранные через scrollY.
+    let trackTop = 0;
+    let trackHeight = 0;
+    let trackWidth = 0;
+    let thumbWidth = 0;
+    let thumbHeight = 0;
+    let deskTop: number | null = null;
+    let kelpTop: number | null = null;
+    let maxScroll = 1;
+
+    function measure() {
+      const trackRect = track.getBoundingClientRect();
+      // Панель поднята на shift — возвращаем трек на его место в потоке.
+      trackTop = trackRect.top + shift;
+      trackHeight = trackRect.height;
+      trackWidth = trackRect.width;
+      const thumbRect = thumb.getBoundingClientRect();
+      thumbWidth = thumbRect.width;
+      thumbHeight = thumbRect.height;
+      const scrollTop = window.scrollY;
+      const desk = desks[0]?.getBoundingClientRect();
+      const kelp = kelps[0]?.getBoundingClientRect();
+      deskTop = desk && desk.height > 1 ? desk.top + scrollTop : null;
+      kelpTop = kelp && kelp.height > 1 ? kelp.top + scrollTop : null;
+      // Водолаз останавливается над шапкой интерактивного стола и дальше вниз не идёт.
+      maxScroll = desks[0]
+        ? Math.max(1, (desk?.top ?? 0) + scrollTop - window.innerHeight + 52)
+        : Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    }
 
     function releaseBubble(order: number, bubbleCount: number) {
       if (reducedMotion.matches || document.hidden) return;
@@ -109,7 +156,7 @@ export default function DiverScroll() {
       bubble.style.left = `${(origin.right - 1).toFixed(2)}px`;
       bubble.style.top = `${(origin.top + origin.height * 0.55).toFixed(2)}px`;
       // Размеры в rem, чтобы на 27″ пузырьки росли вместе с водолазом.
-      const k = window.matchMedia("(max-width: 767px)").matches ? 0.55 : 1;
+      const k = phone.matches ? 0.55 : 1;
       bubble.style.width = `${(shape.size / 16) * k}rem`;
       bubble.style.setProperty("--bubble-drift", `${shape.drift / 16}rem`);
       bubble.style.setProperty("--bubble-rise", `${rise / 16}rem`);
@@ -134,69 +181,79 @@ export default function DiverScroll() {
       }
     }
 
-    // На сколько панель сейчас поднята, чтобы водолаз не залезал на ламинарии и стол.
-    let shift = 0;
+    // Последнее записанное в DOM: пишем только изменения.
+    let shownThumb = "";
+    let shownPercent = -1;
+    let shownReveal = "";
+    let shownShift = "";
+    let shownFade: string | null = null;
 
     function render(nextProgress: number) {
       progress = clamp01(nextProgress);
-      // Сначала все замеры, потом все записи: вперемешку браузер пересчитывал
-      // раскладку по нескольку раз за кадр прокрутки.
-      const trackRect = track.getBoundingClientRect();
-      // Панель поднята на shift — возвращаем трек на его место в потоке.
-      const trackTop = trackRect.top + shift;
-      const deskRect = desks[0]?.getBoundingClientRect();
-      const kelpRect = kelps[0]?.getBoundingClientRect();
+      const scrollTop = window.scrollY;
 
-      let thumbX = 0;
-      const thumbY = progress * trackRect.height;
-      try {
-        const ropePoint = rope.getPointAtLength(ropeLength * progress);
-        thumbX =
-          (ropePoint.x / ropeViewBoxWidth) * trackRect.width -
-          gripXRatio * cachedThumbWidth;
-      } catch {
-        thumbX = 0;
-      }
+      const thumbY = progress * trackHeight;
+      const thumbX =
+        (ropeXAt(progress) / ropeViewBoxWidth) * trackWidth -
+        gripXRatio * thumbWidth;
       const percent = Math.round(progress * 100);
 
-      const diverBottom = trackTop + thumbY + cachedThumbHeight / 2;
+      const diverBottom = trackTop + thumbY + thumbHeight / 2;
       let floor = Infinity;
-      for (const r of [deskRect, kelpRect]) {
-        if (r && r.height > 1) floor = Math.min(floor, r.top);
-      }
+      if (deskTop !== null) floor = Math.min(floor, deskTop - scrollTop);
+      if (kelpTop !== null) floor = Math.min(floor, kelpTop - scrollTop);
       shift = Number.isFinite(floor) ? Math.max(0, diverBottom - floor) : 0;
 
       let fade = "";
-      if (deskRect) {
-        const deskShift = Math.max(0, window.innerHeight - 52 - deskRect.top);
+      if (deskTop !== null) {
+        const deskShift = Math.max(0, window.innerHeight - 52 - (deskTop - scrollTop));
         if (deskShift > 0) fade = Math.max(0, 1 - deskShift / 70).toFixed(3);
       }
 
-      thumb.style.transform = `translate3d(${thumbX.toFixed(2)}px, ${thumbY.toFixed(2)}px, 0) translateY(-50%)`;
-      thumb.setAttribute("aria-valuenow", String(percent));
-      thumb.setAttribute(
-        "aria-valuetext",
-        percent === 0
-          ? "0 процентов, поверхность"
-          : percent === 100
-            ? "100 процентов, дно"
-            : `${percent} процентов, глубина ${percent} метров`,
-      );
-      rope.style.clipPath = `inset(0 0 ${((1 - progress) * 100).toFixed(2)}% 0)`;
-      controller!.style.transform =
-        shift > 0 ? `translate3d(0, -${shift.toFixed(2)}px, 0)` : "";
-      controller!.style.opacity = fade;
-      controller!.style.pointerEvents = fade && parseFloat(fade) < 0.1 ? "none" : "";
-      bubbleLayer!.style.opacity = fade;
+      const thumbTransform = `translate3d(${thumbX.toFixed(2)}px, ${thumbY.toFixed(2)}px, 0) translateY(-50%)`;
+      if (thumbTransform !== shownThumb) {
+        shownThumb = thumbTransform;
+        thumb.style.transform = thumbTransform;
+      }
+      if (percent !== shownPercent) {
+        shownPercent = percent;
+        thumb.setAttribute("aria-valuenow", String(percent));
+        thumb.setAttribute(
+          "aria-valuetext",
+          percent === 0
+            ? "0 процентов, поверхность"
+            : percent === 100
+              ? "100 процентов, дно"
+              : `${percent} процентов, глубина ${percent} метров`,
+        );
+      }
+      const hidden = ((1 - progress) * 100).toFixed(2);
+      if (hidden !== shownReveal) {
+        shownReveal = hidden;
+        reveal.style.transform = `translate3d(0, -${hidden}%, 0)`;
+        revealInner.style.transform = `translate3d(0, ${hidden}%, 0)`;
+      }
+      const shiftTransform = shift > 0 ? `translate3d(0, -${shift.toFixed(2)}px, 0)` : "";
+      if (shiftTransform !== shownShift) {
+        shownShift = shiftTransform;
+        controller!.style.transform = shiftTransform;
+      }
+      if (fade !== shownFade) {
+        shownFade = fade;
+        controller!.style.opacity = fade;
+        controller!.style.pointerEvents = fade && parseFloat(fade) < 0.1 ? "none" : "";
+        bubbleLayer!.style.opacity = fade;
+      }
     }
 
     function setDirection(nextProgress: number) {
       if (Math.abs(nextProgress - progress) < 0.0001) return;
-      controller!.dataset.direction = nextProgress > progress ? "down" : "up";
+      const direction = nextProgress > progress ? "down" : "up";
+      if (controller!.dataset.direction !== direction) controller!.dataset.direction = direction;
     }
 
     function showActivity() {
-      controller!.dataset.active = "true";
+      if (controller!.dataset.active !== "true") controller!.dataset.active = "true";
       window.clearTimeout(activityTimer);
       activityTimer = window.setTimeout(() => {
         if (pointerId === null) controller!.dataset.active = "false";
@@ -204,23 +261,12 @@ export default function DiverScroll() {
     }
 
     function showMovement() {
-      controller!.dataset.moving = "true";
+      if (controller!.dataset.moving !== "true") controller!.dataset.moving = "true";
       window.clearTimeout(movementTimer);
       movementTimer = window.setTimeout(() => {
         controller!.dataset.moving = "false";
       }, 180);
     }
-
-    const getMaxScroll = () => {
-      const deskEl = desks[0];
-      if (deskEl) {
-        const deskTop = deskEl.getBoundingClientRect().top + window.scrollY;
-        // Водолаз останавливается над шапкой интерактивного стола и дальше вниз не идёт
-        const targetScroll = deskTop - window.innerHeight + 52;
-        return Math.max(1, targetScroll);
-      }
-      return Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-    };
 
     // Пузырьки выпускаем только во время прокрутки, не чаще пачки в 3 секунды —
     // тот же темп, что был у таймера. В покое водолаз DOM не трогает.
@@ -229,7 +275,6 @@ export default function DiverScroll() {
     function syncFromScroll() {
       frame = 0;
       const nextScrollTop = window.scrollY;
-      const maxScroll = getMaxScroll();
       const nextProgress = progressFromScroll(nextScrollTop, maxScroll);
 
       if (nextScrollTop !== previousScrollTop) {
@@ -251,13 +296,22 @@ export default function DiverScroll() {
       if (!frame) frame = window.requestAnimationFrame(syncFromScroll);
     }
 
+    // Размеры поменялись: перемеряем раскладку и перерисовываем.
+    function scheduleMeasure() {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        measure();
+        render(progressFromScroll(window.scrollY, maxScroll));
+      });
+    }
+
     function scrollToProgress(nextProgress: number) {
       const clamped = clamp01(nextProgress);
       setDirection(clamped);
       render(clamped);
       showActivity();
       showMovement();
-      const maxScroll = getMaxScroll();
       window.scrollTo({
         top: clamped * maxScroll,
         left: 0,
@@ -339,9 +393,14 @@ export default function DiverScroll() {
       if (event.pointerId === pointerId) endDrag(event);
     };
 
+    const onResize = () => {
+      showActivity();
+      scheduleMeasure();
+    };
+
     window.addEventListener("scroll", scheduleSync, { passive: true });
-    window.addEventListener("resize", scheduleSync, { passive: true });
-    window.addEventListener("pageshow", scheduleSync);
+    window.addEventListener("resize", onResize, { passive: true });
+    window.addEventListener("pageshow", scheduleMeasure);
     thumb.addEventListener("pointerdown", beginDrag);
     thumb.addEventListener("pointermove", moveDrag);
     thumb.addEventListener("pointerup", endDrag);
@@ -349,19 +408,23 @@ export default function DiverScroll() {
     thumb.addEventListener("lostpointercapture", onLostCapture);
     thumb.addEventListener("keydown", handleKeydown);
 
-    // Высота страницы меняется на переходах между роутами.
-    const resizeObserver = new ResizeObserver(scheduleSync);
+    // Высота страницы меняется на переходах между роутами, при раскрытии
+    // блоков и догрузке шрифтов — тогда и перемеряем.
+    const resizeObserver = new ResizeObserver(scheduleMeasure);
     resizeObserver.observe(document.body);
+    resizeObserver.observe(track);
+    resizeObserver.observe(thumb);
 
-    render(progressFromScroll(window.scrollY, getMaxScroll()));
+    measure();
+    render(progressFromScroll(window.scrollY, maxScroll));
     activityTimer = window.setTimeout(() => {
       controller.dataset.active = "false";
     }, 1_800);
 
     return () => {
       window.removeEventListener("scroll", scheduleSync);
-      window.removeEventListener("resize", scheduleSync);
-      window.removeEventListener("pageshow", scheduleSync);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("pageshow", scheduleMeasure);
       thumb.removeEventListener("pointerdown", beginDrag);
       thumb.removeEventListener("pointermove", moveDrag);
       thumb.removeEventListener("pointerup", endDrag);
@@ -369,7 +432,6 @@ export default function DiverScroll() {
       thumb.removeEventListener("lostpointercapture", onLostCapture);
       thumb.removeEventListener("keydown", handleKeydown);
       resizeObserver.disconnect();
-      roThumb.disconnect();
       if (frame) window.cancelAnimationFrame(frame);
       pendingBubbles.forEach(window.clearTimeout);
       window.clearTimeout(activityTimer);
@@ -400,7 +462,25 @@ export default function DiverScroll() {
             focusable="false"
           >
             <path className="rope remaining-rope" d={ROPE_PATH} />
-            <path className="rope completed-rope" d={ROPE_PATH} />
+          </svg>
+          <div className="rope-reveal">
+            <div className="rope-reveal-inner">
+              <svg
+                className="rope-svg"
+                viewBox="0 0 120 1000"
+                preserveAspectRatio="none"
+                focusable="false"
+              >
+                <path className="rope completed-rope" d={ROPE_PATH} />
+              </svg>
+            </div>
+          </div>
+          <svg
+            className="rope-svg"
+            viewBox="0 0 120 1000"
+            preserveAspectRatio="none"
+            focusable="false"
+          >
             <circle className="surface-knot" cx="92" cy="3" r="5" />
           </svg>
         </div>
@@ -417,50 +497,62 @@ export default function DiverScroll() {
           aria-valuenow={0}
           aria-valuetext="0 процентов, поверхность"
         >
-          <svg
-            className="diver-art"
-            viewBox="0 0 104 108"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            focusable="false"
-            aria-hidden="true"
-          >
-            <g className="diver-float">
-              <path
-                className="tank"
-                d="M 36 35 C 36 30 39 27 44 27 C 49 27 52 30 52 35 L 52 65 C 52 70 49 73 44 73 C 39 73 36 70 36 65 Z"
-              />
-              <path className="tank-valve" d="M 41 27 L 41 23 L 47 23 L 47 27" />
-              <path className="harness" d="M 37 43 L 52 43 M 37 61 L 52 61" />
+          {/* Слои одного рисунка: ласты отдельно, чтобы качаться сами по себе. */}
+          <span className="diver-art" aria-hidden="true">
+            <span className="diver-float">
+              <DiverLayer>
+                <path
+                  className="tank"
+                  d="M 36 35 C 36 30 39 27 44 27 C 49 27 52 30 52 35 L 52 65 C 52 70 49 73 44 73 C 39 73 36 70 36 65 Z"
+                />
+                <path className="tank-valve" d="M 41 27 L 41 23 L 47 23 L 47 27" />
+                <path className="harness" d="M 37 43 L 52 43 M 37 61 L 52 61" />
+              </DiverLayer>
 
-              <g className="rear-fin">
+              <DiverLayer className="rear-fin">
                 <path d="M 47 65 C 46 75 43 82 40 88" />
                 <path d="M 40 86 L 31 99 L 43 96 L 47 88" />
-              </g>
-              <g className="front-fin">
+              </DiverLayer>
+              <DiverLayer className="front-fin">
                 <path d="M 56 66 C 58 76 60 82 64 88" />
                 <path d="M 63 86 L 67 101 L 73 91 L 66 85" />
-              </g>
+              </DiverLayer>
 
-              <path
-                className="torso"
-                d="M 48 34 C 55 32 62 37 64 45 L 62 63 C 59 69 50 70 44 65 L 42 45 C 42 39 44 36 48 34 Z"
-              />
-              <path className="belt" d="M 43 61 C 49 64 56 65 62 62" />
-              <circle className="head" cx="58" cy="23" r="9" />
-              <path className="mask" d="M 54 19 C 59 17 64 18 67 21 L 65 26 L 55 26 Z" />
-              <path className="regulator" d="M 67 25 q 6 0 6 4 M 71 29 q 2 3 5 0" />
-              <path className="hose" d="M 70 27 C 74 41 66 47 61 47" />
-              <path className="rope-arm" d="M 61 40 L 69 49 L 77 44 L 83 45" />
-              <path className="near-arm" d="M 58 44 L 66 56 L 77 53" />
-              <path className="grip" d="M 81 42 q 5 3 0 7" />
-            </g>
-          </svg>
+              <DiverLayer>
+                <path
+                  className="torso"
+                  d="M 48 34 C 55 32 62 37 64 45 L 62 63 C 59 69 50 70 44 65 L 42 45 C 42 39 44 36 48 34 Z"
+                />
+                <path className="belt" d="M 43 61 C 49 64 56 65 62 62" />
+                <circle className="head" cx="58" cy="23" r="9" />
+                <path className="mask" d="M 54 19 C 59 17 64 18 67 21 L 65 26 L 55 26 Z" />
+                <path className="regulator" d="M 67 25 q 6 0 6 4 M 71 29 q 2 3 5 0" />
+                <path className="hose" d="M 70 27 C 74 41 66 47 61 47" />
+                <path className="rope-arm" d="M 61 40 L 69 49 L 77 44 L 83 45" />
+                <path className="near-arm" d="M 58 44 L 66 56 L 77 53" />
+                <path className="grip" d="M 81 42 q 5 3 0 7" />
+              </DiverLayer>
+            </span>
+          </span>
         </button>
       </aside>
     </>
+  );
+}
+
+function DiverLayer({ className = "", children }: { className?: string; children: ReactNode }) {
+  return (
+    <svg
+      className={`diver-layer ${className}`}
+      viewBox="0 0 104 108"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      focusable="false"
+    >
+      {children}
+    </svg>
   );
 }
