@@ -1,11 +1,16 @@
 "use client";
 
 import React, { useState } from "react";
-import { Send } from "lucide-react";
+import { ArrowUpRight, Send } from "lucide-react";
 import { TransitionLink } from "@/context/TransitionContext";
 import { haptic } from "@/utils/haptics";
 
 const TELEGRAM = "https://t.me/maetti_mihail";
+// Профиль в MAX. Подставить текст в чат MAX по ссылке не умеет (только
+// в «Поделиться», где получателя выбирают вручную), поэтому это отдельная
+// кнопка без формы.
+const MAX = "https://max.ru/u/f9LHodD0cOKGThnHSWgl8mw0PMq4yYfP1ybLLKk1H0a35FPM1ht1QohKLCo";
+const PHONE = { href: "tel:+79216527496", label: "+7 (921) 652-74-96" };
 const GREETING = "Здравствуйте! Хочу обсудить проект.";
 const MESSAGE_MAX = 2000;
 
@@ -113,6 +118,30 @@ export default function ContactsPage() {
             </div>
 
           </form>
+
+          {/* Вне формы и под чертой: текст из поля сюда не уходит */}
+          <div className="border-t border-neutral-800 pt-5 sm:pt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <p className="text-xs text-neutral-500 leading-normal">
+                Удобнее в MAX или по телефону? Напишите или позвоните напрямую — без формы.
+              </p>
+              <a
+                href={PHONE.href}
+                className="inline-flex items-center min-h-[44px] px-1 -ml-1 text-sm text-neutral-200 hover:text-white underline underline-offset-4 transition-colors"
+              >
+                {PHONE.label}
+              </a>
+            </div>
+            <a
+              href={MAX}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-neutral-600 text-neutral-200 hover:border-white hover:text-white font-bold text-xs uppercase tracking-wider px-6 py-3.5 transition-all duration-200 active:scale-95 shrink-0"
+            >
+              <span>Написать в MAX</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </a>
+          </div>
 
         </div>
 
