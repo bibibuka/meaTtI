@@ -88,7 +88,8 @@ export default function ContactsPage() {
             <p className="text-xs text-neutral-500 leading-normal">
               Сайт не сохраняет и никуда не отправляет этот текст: он только подставится в сообщение, которое вы
               отправите сами. •{" "}
-              <TransitionLink href="/policy" className="underline hover:text-white transition-colors">
+              {/* Невидимые поля py/-my расширяют зону касания, не двигая строку */}
+              <TransitionLink href="/policy" className="inline-block py-3 -my-3 underline hover:text-white transition-colors">
                 Политика
               </TransitionLink>
             </p>
